@@ -227,7 +227,7 @@
     <div class="tagline">✨ Aqui, o brincar transforma!<br>Academia de desenvolvimento infantil em Londrina</div>
   </div>
 
-  <div class="badge">✨ Primeira Experiência Baby Gym — Garanta a sua!</div>
+  <div class="badge">✨ 1ª Experiência Baby Gym — Garanta a sua!</div>
 
   <div class="dots">
     <div class="dot"></div><div class="dot"></div>
@@ -243,7 +243,7 @@
       <div class="pulse-ring"></div>
       <div class="btn-icon">💬</div>
       <div class="btn-text">
-        <span class="btn-label">Agende a sua Primeira Experiência Baby Gym</span>
+        <span class="btn-label">Agende a sua 1ª Experiência</span>
         <span class="btn-sub">Fale com a gente pelo WhatsApp</span>
       </div>
       <span class="btn-arrow">→</span>
@@ -304,8 +304,8 @@ function trackClick(btn) {
   localStorage.setItem('bgClicks', JSON.stringify(counts));
   updateStats(counts);
 
-  // Google Analytics event (descomente quando tiver o GA configurado)
-  // gtag('event', 'click', { event_category: 'link', event_label: btn });
+  // Google Analytics event
+  gtag('event', 'click', { event_category: 'link', event_label: btn });
 }
 
 function updateStats(counts) {
