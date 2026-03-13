@@ -773,10 +773,10 @@
       <label>Link válido por</label>
       <select id="inp-expiry">
         <option value="1">1 dia</option>
-        <option value="2" selected>2 dias</option>
-        <option value="3">3 dias</option>
         <option value="5">5 dias</option>
         <option value="7">7 dias</option>
+        <option value="15">15 dias</option>
+        <option value="30" selected>30 dias</option>
       </select>
     </div>
 
@@ -809,6 +809,36 @@
 
 
 
+
+    <div style="margin-bottom:1.1rem;">
+      <div style="display:flex;align-items:center;gap:0.7rem;padding:0.75rem 1rem;background:#fafafa;border:2px solid #e8e8f0;border-radius:12px;cursor:pointer;" onclick="document.getElementById('chk-desconto').click()">
+        <input type="checkbox" id="chk-desconto" onchange="toggleDesconto()" style="width:18px;height:18px;accent-color:var(--pink-hot);cursor:pointer;flex-shrink:0;">
+        <label for="chk-desconto" style="font-size:0.85rem;font-weight:700;color:var(--text-light);cursor:pointer;margin:0;">🎁 Desconto especial</label>
+      </div>
+      <div id="desconto-fields" style="display:none;margin-top:0.75rem;background:#fff5fb;border:2px solid #ffd6ee;border-radius:12px;padding:0.9rem 1rem;">
+        <div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">
+          <div style="flex:0 0 80px;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;color:#6b6b8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;">% Off</label>
+            <input type="number" id="inp-desc-pct" min="1" max="99" placeholder="Ex: 10" style="width:100%;border:2px solid #e8e8f0;border-radius:10px;padding:0.6rem 0.7rem;font-family:Nunito,sans-serif;font-size:1rem;font-weight:700;color:#2d2d2d;background:white;outline:none;box-sizing:border-box;">
+          </div>
+          <div style="flex:1;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;color:#6b6b8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;">Código / Motivo</label>
+            <input type="text" id="inp-desc-motivo" placeholder="Ex: BEMVINDO10" style="width:100%;border:2px solid #e8e8f0;border-radius:10px;padding:0.6rem 0.7rem;font-family:Nunito,sans-serif;font-size:1rem;font-weight:700;color:#2d2d2d;background:white;outline:none;box-sizing:border-box;">
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:#6b6b8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;">Válido por (dias)</label>
+          <select id="inp-desc-dias" style="width:100%;border:2px solid #e8e8f0;border-radius:10px;padding:0.6rem 0.7rem;font-family:Nunito,sans-serif;font-size:1rem;font-weight:700;color:#2d2d2d;background:white;outline:none;">
+            <option value="1">1 dia</option>
+            <option value="5">5 dias</option>
+            <option value="7" selected>7 dias</option>
+            <option value="15">15 dias</option>
+            <option value="30">30 dias</option>
+          </select>
+        </div>
+        <div style="font-size:0.72rem;color:#c06;margin-top:0.5rem;font-weight:600;">⚠️ Substitui o 5% do primeiro dia · Não cumulativo com PIX</div>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:1.1rem;padding:0.75rem 1rem;background:#fafafa;border:2px solid #e8e8f0;border-radius:12px;cursor:pointer;" onclick="document.getElementById('chk-avulsa').click()">
       <input type="checkbox" id="chk-avulsa" style="width:18px;height:18px;accent-color:var(--purple);cursor:pointer;flex-shrink:0;">
       <label for="chk-avulsa" style="font-size:0.85rem;font-weight:700;color:var(--text-light);cursor:pointer;margin:0;">Mostrar opção de aula avulsa (R$127)</label>
@@ -1115,7 +1145,17 @@ async function gerarLink() {
   const days = parseInt(document.getElementById('inp-expiry').value);
   const exp = Date.now() + days * 86400000;
   const mostrarAvulsa = document.getElementById('chk-avulsa').checked;
-  const data = { mae, filho, sexo, destaque, exp, created: Date.now(), avulsa: mostrarAvulsa || undefined };
+  // Desconto especial
+  let descontoObj = undefined;
+  if (document.getElementById('chk-desconto').checked) {
+    const pct = parseInt(document.getElementById('inp-desc-pct').value);
+    const motivo = document.getElementById('inp-desc-motivo').value.trim();
+    const descDias = parseInt(document.getElementById('inp-desc-dias').value);
+    if (pct > 0 && motivo) {
+      descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000 };
+    }
+  }
+  const data = { mae, filho, sexo, destaque, exp, created: Date.now(), avulsa: mostrarAvulsa || undefined, desconto: descontoObj || undefined };
 
   if (fotoBase64) {
     document.getElementById('link-loading').style.display = 'block';
@@ -1313,8 +1353,20 @@ function renderClient(data) {
   const isHoje = data.created && (Date.now() - data.created < 86400000);
   window._isHoje = isHoje;
 
-  if (!isHoje) {
-    // Riscar e desabilitar todos os itens "5% desconto hoje"
+  // Desconto especial
+  const desc = data.desconto;
+  const descontoAtivo = desc && desc.exp && Date.now() < desc.exp && desc.pct > 0;
+  window._desconto = descontoAtivo ? desc : null;
+
+  if (descontoAtivo) {
+    // Substituir banner pelo desconto especial
+    const banner = document.querySelector('.urgency-banner');
+    banner.style.background = 'linear-gradient(135deg, var(--purple), #6a3fc8)';
+    banner.querySelector('.urgency-icon').textContent = '🎁';
+    banner.querySelector('strong').textContent = desc.pct + '% de desconto — ' + desc.motivo + '!';
+    banner.querySelector('span').textContent = 'Não cumulativo com PIX · Válido até ' + new Date(desc.exp).toLocaleDateString('pt-BR');
+  } else if (!isHoje) {
+    // Sem desconto de nenhum tipo
     document.querySelectorAll('.benefit-5pct-hoje').forEach(el => {
       el.classList.remove('yes');
       el.classList.add('no');
@@ -1363,6 +1415,12 @@ const PLANO_NOMES = {
 // ─── PAGAMENTO ────────────────────────────────────────────
 window._pagamento = 'cartao';
 
+
+function toggleDesconto() {
+  const on = document.getElementById('chk-desconto').checked;
+  document.getElementById('desconto-fields').style.display = on ? 'block' : 'none';
+}
+
 function setPagamento(tipo) {
   window._pagamento = tipo;
   document.getElementById('pag-cartao').classList.toggle('active', tipo === 'cartao');
@@ -1386,13 +1444,32 @@ function setPagamento(tipo) {
   if (window._selectedPlan) atualizarCTA();
 }
 
+function calcDescontoEspecial(precoStr, freqStr) {
+  // precoStr ex: "6x de R$397" ou "12x de R$367"
+  // Retorna string formatada com desconto aplicado
+  const desc = window._desconto;
+  if (!desc) return null;
+  const m = precoStr.match(/(\d+)x de R\$([\d,.]+)/);
+  if (!m) return null;
+  const parcelas = parseInt(m[1]);
+  const valorParcela = parseFloat(m[2].replace('.','').replace(',','.'));
+  const novoValor = valorParcela * (1 - desc.pct/100);
+  const fmt = novoValor.toFixed(2).replace('.',',');
+  return { preco: parcelas + 'x de R$' + fmt, label: '-' + desc.pct + '%' };
+}
+
 function getPrecoEfetivo(btn) {
   const isPix = window._pagamento === 'pix';
   if (isPix) {
-    // PIX: total à vista com 5% — não cumulativo com isHoje
+    // PIX: total à vista com 5% — não cumulativo com descontos
     return btn.dataset.pix ? { preco: btn.dataset.pix, porAula: null, tipo: 'pix' } : null;
   } else {
-    // Cartão: parcelas, com desconto no 1º dia se disponível
+    // Cartão: desconto especial > isHoje > normal
+    const desc = window._desconto;
+    if (desc && btn.dataset.preco) {
+      const calc = calcDescontoEspecial(btn.dataset.preco, btn.dataset.freq);
+      if (calc) return { preco: calc.preco, porAula: btn.dataset.porAula, tipo: 'desconto', label: calc.label };
+    }
     const preco = (window._isHoje && btn.dataset.precoDesc) ? btn.dataset.precoDesc : btn.dataset.preco;
     const porAula = (window._isHoje && btn.dataset.porAulaDesc) ? btn.dataset.porAulaDesc : btn.dataset.porAula;
     return { preco, porAula, tipo: 'cartao' };
@@ -1408,10 +1485,19 @@ function updateBtnDisplay(btn) {
   const isPix = window._pagamento === 'pix';
   const isHoje = window._isHoje;
 
+  const descEsp = window._desconto;
   if (isPix && btn.dataset.pix) {
-    const origTotal_raw = parseInt(btn.dataset.preco.replace(/\D/g,'')) * parseInt(btn.dataset.preco.match(/\d+x/)?.[0] || '1');
     priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${btn.dataset.pix} à vista ⚡</span>`;
     perEl.textContent = '5% off no total';
+  } else if (!isPix && descEsp && btn.dataset.preco) {
+    const calc = calcDescontoEspecial(btn.dataset.preco);
+    if (calc) {
+      priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${calc.preco} 🎁</span>`;
+      perEl.textContent = btn.dataset.porAula + ' (' + calc.label + ')';
+    } else {
+      priceEl.innerHTML = btn.dataset.preco;
+      perEl.textContent = btn.dataset.porAula;
+    }
   } else if (!isPix && isHoje && btn.dataset.precoDesc) {
     priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${btn.dataset.precoDesc} ✦</span>`;
     perEl.textContent = btn.dataset.porAulaDesc || btn.dataset.porAula;
@@ -1474,9 +1560,12 @@ function atualizarCTA() {
   } else {
     const freqLabel = freq === '1x' ? '1× por semana' : freq === '2x' ? '2× por semana' : '3× por semana';
     const pagLabel = window._pagamento === 'pix' ? 'PIX à vista' : 'Cartão parcelado';
+    const descAtivo = window._desconto;
     const diaLabel = window._pagamento === 'pix'
       ? '⚡ PIX à vista (5% off no total)'
-      : (window._isHoje ? '🟢 Primeiro dia (5% de desconto — só hoje)' : '📅 Após o primeiro dia');
+      : descAtivo
+        ? `🎁 Desconto ${descAtivo.pct}% — ${descAtivo.motivo}`
+        : (window._isHoje ? '🟢 Primeiro dia (5% de desconto — só hoje)' : '📅 Após o primeiro dia');
     msgWpp = `Olá! Quero garantir a matrícula d${d.artigo} ${d.filho} na Baby Gym! 😍
 
 📋 Plano: ${nPlano}
