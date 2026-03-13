@@ -799,7 +799,7 @@
     <div class="field">
       <label>Foto do bebê (opcional)</label>
       <div class="foto-area" id="foto-area">
-        <input type="file" id="inp-foto" accept="image/*" capture="environment">
+        <input type="file" id="inp-foto" accept="image/*">
         <img class="foto-preview" id="foto-preview" src="" alt="">
         <span class="foto-icon" id="foto-icon">📷</span>
         <p id="foto-txt">Toque para adicionar uma foto</p>
@@ -834,6 +834,20 @@
             <option value="15">15 dias</option>
             <option value="30">30 dias</option>
           </select>
+        </div>
+        <div style="margin-top:0.6rem;">
+          <label style="display:block;font-size:0.75rem;font-weight:700;color:#6b6b8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;">Aplicar em</label>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:0.4rem;background:white;border:2px solid #e8e8f0;border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.82rem;font-weight:700;color:var(--purple-dark);">
+              <input type="checkbox" id="chk-desc-anual" checked style="accent-color:var(--purple-dark);width:15px;height:15px;"> Anual
+            </label>
+            <label style="display:flex;align-items:center;gap:0.4rem;background:white;border:2px solid #e8e8f0;border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.82rem;font-weight:700;color:var(--pink-hot);">
+              <input type="checkbox" id="chk-desc-semestral" checked style="accent-color:var(--pink-hot);width:15px;height:15px;"> Semestral
+            </label>
+            <label style="display:flex;align-items:center;gap:0.4rem;background:white;border:2px solid #e8e8f0;border-radius:8px;padding:0.4rem 0.7rem;cursor:pointer;font-size:0.82rem;font-weight:700;color:var(--teal-dark);">
+              <input type="checkbox" id="chk-desc-trimestral" style="accent-color:var(--teal-dark);width:15px;height:15px;"> Trimestral
+            </label>
+          </div>
         </div>
         <div style="font-size:0.72rem;color:#c06;margin-top:0.5rem;font-weight:600;">⚠️ Substitui o 5% do primeiro dia · Não cumulativo com PIX</div>
       </div>
@@ -1158,7 +1172,12 @@ async function gerarLink() {
     const motivo = document.getElementById('inp-desc-motivo').value.trim();
     const descDias = parseInt(document.getElementById('inp-desc-dias').value);
     if (pct > 0 && motivo) {
-      descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000 };
+      const planos = [];
+      if (document.getElementById('chk-desc-anual').checked) planos.push('anual');
+      if (document.getElementById('chk-desc-semestral').checked) planos.push('semestral');
+      if (document.getElementById('chk-desc-trimestral').checked) planos.push('trimestral');
+      if (planos.length === 0) { alert('Selecione ao menos um plano para o desconto 😊'); return; }
+      descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000, planos };
     }
   }
   const data = { mae, filho, sexo, destaque, exp, created: Date.now(), avulsa: mostrarAvulsa || undefined, desconto: descontoObj || undefined };
@@ -1394,16 +1413,25 @@ function renderClient(data) {
     });
   }
 
-  // Nota de desconto nos cards Anual/Semestral
+  // Nota de desconto nos cards (todos os planos)
   if (ad) {
-    document.querySelectorAll('.plan-anual .freq-options, .plan-semestral .freq-options').forEach(el => {
+    const noteText = ad.tipo === 'hoje'
+      ? '✦ 5% de desconto no cartão — válido apenas hoje'
+      : '✦ ' + ad.pct + '% de desconto (' + ad.motivo + ') — no cartão';
+    const planosComDesconto = {
+      anual: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('anual'),
+      semestral: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('semestral'),
+      trimestral: ad.tipo === 'especial' && ad.planos && ad.planos.includes('trimestral')
+    };
+    [['anual', '.plan-anual'], ['semestral', '.plan-semestral'], ['trimestral', '.plan-trimestral']].forEach(([plano, sel]) => {
+      if (!planosComDesconto[plano]) return;
+      const el = document.querySelector(sel + ' .freq-options');
+      if (!el) return;
       if (!el.nextElementSibling || !el.nextElementSibling.classList.contains('freq-day1-note')) {
         const note = document.createElement('div');
         note.className = 'freq-day1-note';
         note.style.cssText = 'font-size:0.7rem;color:var(--orange);font-weight:700;margin-top:6px;padding:0 2px;';
-        note.textContent = ad.tipo === 'hoje'
-          ? '✦ 5% de desconto no cartão — válido apenas hoje'
-          : '✦ ' + ad.pct + '% de desconto (' + ad.motivo + ') — no cartão';
+        note.textContent = noteText;
         el.after(note);
       }
     });
@@ -1459,6 +1487,11 @@ function setPagamento(tipo) {
     note.style.display = 'none';
   }
 
+  // Mostrar nota de desconto só no cartão
+  document.querySelectorAll('.freq-day1-note').forEach(n => {
+    n.style.display = tipo === 'pix' ? 'none' : 'block';
+  });
+
   // Update all freq-btn displayed prices
   document.querySelectorAll('.freq-btn').forEach(btn => updateBtnDisplay(btn));
 
@@ -1477,13 +1510,19 @@ function calcDesconto(precoStr, pct) {
   return { preco: parcelas + 'x de R$' + fmt, label: '-' + pct + '%' };
 }
 
+function descontoAplicaAoPlano(ad, plano) {
+  if (ad.tipo === 'hoje') return plano === 'anual' || plano === 'semestral';
+  if (ad.tipo === 'especial') return !ad.planos || ad.planos.includes(plano);
+  return false;
+}
+
 function getPrecoEfetivo(btn) {
   const isPix = window._pagamento === 'pix';
   if (isPix) {
     return btn.dataset.pix ? { preco: btn.dataset.pix, porAula: null, tipo: 'pix' } : null;
   }
   const ad = window._activeDiscount;
-  if (ad && btn.dataset.preco) {
+  if (ad && btn.dataset.preco && descontoAplicaAoPlano(ad, btn.dataset.plano)) {
     const calc = calcDesconto(btn.dataset.preco, ad.pct);
     if (calc) return { preco: calc.preco, porAula: btn.dataset.porAula, tipo: 'desconto', label: calc.label };
   }
@@ -1501,7 +1540,7 @@ function updateBtnDisplay(btn) {
   if (isPix && btn.dataset.pix) {
     priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${btn.dataset.pix} à vista ⚡</span>`;
     perEl.textContent = '5% off no total';
-  } else if (!isPix && ad && btn.dataset.preco) {
+  } else if (!isPix && ad && btn.dataset.preco && descontoAplicaAoPlano(ad, btn.dataset.plano)) {
     const calc = calcDesconto(btn.dataset.preco, ad.pct);
     if (calc) {
       const icon = ad.tipo === 'hoje' ? '✦' : '🎁';
