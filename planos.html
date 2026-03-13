@@ -426,6 +426,108 @@
     font-weight: 600;
   }
 
+  /* Plan selection */
+  .plan-card { cursor: pointer; }
+  .plan-card.selected {
+    border-color: var(--purple) !important;
+    box-shadow: 0 0 0 3px rgba(98,95,183,0.2), 0 8px 32px rgba(98,95,183,0.18) !important;
+    transform: translateY(-2px);
+  }
+  .plan-card.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 12px; left: 14px;
+    width: 22px; height: 22px;
+    background: var(--purple);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 800;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 22px;
+    text-align: center;
+  }
+  .plan-card.plan-semestral.selected { border-color: #1565c0 !important; box-shadow: 0 0 0 3px rgba(21,101,192,0.18), 0 8px 32px rgba(21,101,192,0.15) !important; }
+  .plan-card.plan-semestral.selected::after { background: #1565c0; }
+  .plan-card.plan-trimestral.selected { border-color: #2e7d32 !important; box-shadow: 0 0 0 3px rgba(46,125,50,0.18), 0 8px 32px rgba(46,125,50,0.15) !important; }
+  .plan-card.plan-trimestral.selected::after { background: #2e7d32; }
+  .avulsa-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+  .avulsa-card.selected {
+    border: 2px solid #888;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.08) !important;
+    transform: translateY(-2px);
+  }
+
+  /* Freq selector */
+  .freq-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 10px 0 4px;
+    border: 1.5px solid #eceaf8;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .freq-btn {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px;
+    border: none;
+    border-bottom: 1px solid #eceaf8;
+    border-radius: 0;
+    background: #fafafe;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: "Nunito", sans-serif;
+    width: 100%;
+    text-align: left;
+    position: relative;
+  }
+  .freq-btn:last-child { border-bottom: none; }
+  .freq-btn:hover { background: #f0eeff; }
+  .freq-btn.active { background: #eeecff; }
+  .freq-btn.active::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--purple);
+  }
+  .plan-semestral .freq-btn:hover { background: #e8f0fc; }
+  .plan-semestral .freq-btn.active { background: #deeafb; }
+  .plan-semestral .freq-btn.active::before { background: #1565c0; }
+  .plan-trimestral .freq-btn:hover { background: #e8f5e9; }
+  .plan-trimestral .freq-btn.active { background: #d9f0da; }
+  .plan-trimestral .freq-btn.active::before { background: #2e7d32; }
+  .freq-left { display: flex; align-items: center; gap: 8px; }
+  .freq-dot {
+    width: 15px; height: 15px; border-radius: 50%;
+    border: 2px solid #ccc;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .freq-btn.active .freq-dot { border-color: var(--purple); background: var(--purple); }
+  .freq-btn.active .freq-dot::after {
+    content: ""; width: 5px; height: 5px;
+    background: white; border-radius: 50%;
+  }
+  .plan-semestral .freq-btn.active .freq-dot { border-color: #1565c0; background: #1565c0; }
+  .plan-trimestral .freq-btn.active .freq-dot { border-color: #2e7d32; background: #2e7d32; }
+  .freq-label { font-size: 0.82rem; font-weight: 700; color: var(--text-light); }
+  .freq-btn.active .freq-label { color: var(--text); }
+  .freq-price { font-size: 0.88rem; font-weight: 800; color: var(--text); }
+  .freq-right { text-align: right; }
+  .freq-per { display: block; font-size: 0.67rem; font-weight: 600; color: #bbb; }
+
+  /* Warn item (not crossed out) */
+  .plan-benefits li.warn { color: #b45309; text-decoration: none; }
+
+  /* CTA state */
+  .cta-selected { display: none; }
+  .cta-hint { font-size: 0.82rem; color: var(--text-light); font-weight: 600; margin-bottom: 1rem; padding: 0.7rem 1rem; background: #f5f4ff; border-radius: 12px; text-align: center; }
+
   /* Colors per plan */
   .plan-anual .plan-name { color: var(--purple-dark); }
   .plan-semestral .plan-name { color: #1565c0; }
@@ -645,12 +747,10 @@
       </div>
       <div class="freq-options">
         <button class="freq-btn" onclick="selecionarFreq(event,'anual','2x','12x de R$367','R$45,88/aula')">
-          <span class="freq-label">2× por semana</span>
-          <span><span class="freq-price">12× de R$367</span><br><span class="freq-per">R$45,88/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">2× por semana</span></span><span class="freq-right"><span class="freq-price">12× de R$367</span><span class="freq-per">R$45,88/aula</span></span>
         </button>
         <button class="freq-btn" onclick="selecionarFreq(event,'anual','3x','12x de R$417','R$34,75/aula')">
-          <span class="freq-label">3× por semana</span>
-          <span><span class="freq-price">12× de R$417</span><br><span class="freq-per">R$34,75/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">3× por semana</span></span><span class="freq-right"><span class="freq-price">12× de R$417</span><span class="freq-per">R$34,75/aula</span></span>
         </button>
       </div>
       <ul class="plan-benefits">
@@ -675,16 +775,13 @@
       </div>
       <div class="freq-options">
         <button class="freq-btn" onclick="selecionarFreq(event,'semestral','1x','6x de R$347','R$86,75/aula')">
-          <span class="freq-label">1× por semana</span>
-          <span><span class="freq-price">6× de R$347</span><br><span class="freq-per">R$86,75/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">1× por semana</span></span><span class="freq-right"><span class="freq-price">6× de R$347</span><span class="freq-per">R$86,75/aula</span></span>
         </button>
         <button class="freq-btn" onclick="selecionarFreq(event,'semestral','2x','6x de R$397','R$49,63/aula')">
-          <span class="freq-label">2× por semana</span>
-          <span><span class="freq-price">6× de R$397</span><br><span class="freq-per">R$49,63/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">2× por semana</span></span><span class="freq-right"><span class="freq-price">6× de R$397</span><span class="freq-per">R$49,63/aula</span></span>
         </button>
         <button class="freq-btn" onclick="selecionarFreq(event,'semestral','3x','6x de R$447','R$37,25/aula')">
-          <span class="freq-label">3× por semana</span>
-          <span><span class="freq-price">6× de R$447</span><br><span class="freq-per">R$37,25/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">3× por semana</span></span><span class="freq-right"><span class="freq-price">6× de R$447</span><span class="freq-per">R$37,25/aula</span></span>
         </button>
       </div>
       <ul class="plan-benefits">
@@ -708,23 +805,20 @@
       </div>
       <div class="freq-options">
         <button class="freq-btn" onclick="selecionarFreq(event,'trimestral','1x','3x de R$377','R$94,25/aula')">
-          <span class="freq-label">1× por semana</span>
-          <span><span class="freq-price">3× de R$377</span><br><span class="freq-per">R$94,25/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">1× por semana</span></span><span class="freq-right"><span class="freq-price">3× de R$377</span><span class="freq-per">R$94,25/aula</span></span>
         </button>
         <button class="freq-btn" onclick="selecionarFreq(event,'trimestral','2x','3x de R$427','R$53,38/aula')">
-          <span class="freq-label">2× por semana</span>
-          <span><span class="freq-price">3× de R$427</span><br><span class="freq-per">R$53,38/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">2× por semana</span></span><span class="freq-right"><span class="freq-price">3× de R$427</span><span class="freq-per">R$53,38/aula</span></span>
         </button>
         <button class="freq-btn" onclick="selecionarFreq(event,'trimestral','3x','3x de R$477','R$39,75/aula')">
-          <span class="freq-label">3× por semana</span>
-          <span><span class="freq-price">3× de R$477</span><br><span class="freq-per">R$39,75/aula</span></span>
+          <span class="freq-left"><span class="freq-dot"></span><span class="freq-label">3× por semana</span></span><span class="freq-right"><span class="freq-price">3× de R$477</span><span class="freq-per">R$39,75/aula</span></span>
         </button>
       </div>
       <ul class="plan-benefits">
         <li class="no"><span>❌</span> Avental Baby Gym</li>
         <li class="yes"><span>✅</span> Trancamento 15 dias</li>
         <li class="no"><span>❌</span> Cancela no 1º mês</li>
-        <li class="no"><span>⚠️</span> Sujeito a reajuste</li>
+        <li class="warn"><span>⚠️</span> Sujeito a reajuste</li>
         <li class="no"><span>❌</span> 5% desconto hoje</li>
         <li class="yes"><span>✅</span> 5% desconto PIX</li>
       </ul>
