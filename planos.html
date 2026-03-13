@@ -1361,7 +1361,9 @@ function renderClient(data) {
   if (descontoAtivo) {
     // Substituir banner pelo desconto especial
     const banner = document.querySelector('.urgency-banner');
-    banner.style.background = 'linear-gradient(135deg, var(--purple), #6a3fc8)';
+    banner.style.background = 'linear-gradient(135deg, #433d99, #6a3fc8)';
+    banner.style.animation = 'none';
+    banner.style.boxShadow = '0 4px 20px rgba(67,61,153,0.35)';
     banner.querySelector('.urgency-icon').textContent = '🎁';
     banner.querySelector('strong').textContent = desc.pct + '% de desconto — ' + desc.motivo + '!';
     banner.querySelector('span').textContent = 'Não cumulativo com PIX · Válido até ' + new Date(desc.exp).toLocaleDateString('pt-BR');
