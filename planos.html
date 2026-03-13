@@ -1380,7 +1380,7 @@ function renderClient(data) {
   const _descontoEspecial = _desc && _desc.exp && Date.now() < _desc.exp && _desc.pct > 0;
 
   window._activeDiscount = _descontoEspecial
-    ? { pct: _desc.pct, motivo: _desc.motivo, exp: _desc.exp, tipo: 'especial' }
+    ? { pct: _desc.pct, motivo: _desc.motivo, exp: _desc.exp, tipo: 'especial', planos: _desc.planos }
     : _isHoje
       ? { pct: 5, motivo: 'Primeiro dia', exp: data.created + 86400000, tipo: 'hoje' }
       : null;
@@ -1500,6 +1500,14 @@ function setPagamento(tipo) {
 }
 
 // Calcula preço com desconto percentual a partir de string "Nx de R$YYY"
+function calcDescontoAula(porAulaStr, pct) {
+  const m = porAulaStr.match(/R\$([\d,.]+)/);
+  if (!m) return porAulaStr;
+  const val = parseFloat(m[1].replace('.','').replace(',','.'));
+  const novoVal = val * (1 - pct / 100);
+  return 'R$' + novoVal.toFixed(2).replace('.',',') + '/aula';
+}
+
 function calcDesconto(precoStr, pct) {
   const m = precoStr.match(/(\d+)x de R\$([\d,.]+)/);
   if (!m) return null;
@@ -1545,7 +1553,7 @@ function updateBtnDisplay(btn) {
     if (calc) {
       const icon = ad.tipo === 'hoje' ? '✦' : '🎁';
       priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${calc.preco} ${icon}</span>`;
-      perEl.textContent = btn.dataset.porAula + ' (' + calc.label + ')';
+      perEl.textContent = calcDescontoAula(btn.dataset.porAula, ad.pct) + ' (' + calc.label + ')';
     } else {
       priceEl.innerHTML = btn.dataset.preco;
       perEl.textContent = btn.dataset.porAula;
