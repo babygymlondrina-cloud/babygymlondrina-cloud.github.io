@@ -4,16 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Baby Gym Londrina</title>
-<!-- Google tag (gtag.js) - substitua G-XXXXXXXXXX pelo seu ID do GA4 -->
-<!--
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-</script>
--->
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-QPB21Y8RKP"></script>
 <script>
@@ -22,7 +12,7 @@
   gtag('js', new Date());
   gtag('config', 'G-QPB21Y8RKP');
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --pink: #fd80bd;
@@ -31,13 +21,15 @@
     --purple-dark: #433d99;
     --teal: #66d8d4;
     --teal-dark: #00bfb8;
-    --cream: #fdf6f0;
+    --cream: #fff7ee;
+    --orange: #ffa233;
+    --orange-light: #ffcc8f;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     min-height: 100vh;
     background: var(--cream);
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: 'Nunito', sans-serif;
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -96,13 +88,13 @@
     display: block;
   }
   .tagline {
-    font-size: 0.9rem; color: #666; font-weight: 600;
+    font-size: 0.9rem; color: #6b6b8a; font-weight: 600;
     text-align: center; line-height: 1.6; max-width: 280px;
   }
   .badge {
     background: linear-gradient(135deg, var(--pink-hot), var(--purple));
     color: #fff;
-    font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.83rem;
+    font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 0.83rem;
     padding: 7px 20px; border-radius: 100px;
     box-shadow: 0 4px 16px rgba(252,0,124,0.35);
     margin: 14px 0 0;
@@ -187,7 +179,7 @@
 
   .footer {
     margin-top: 32px;
-    font-size: 0.76rem; color: #bbb; font-weight: 600;
+    font-size: 0.76rem; color: #b0b0b0; font-weight: 600;
     text-align: center;
     animation: fadeUp 0.6s ease 0.6s both;
   }
@@ -260,9 +252,45 @@
 </div>
 
 <script>
+// ── GA4 Click Tracking ─────────────────────────────────────────
 function trackClick(btn) {
-  gtag('event', 'click', { event_category: 'link', event_label: btn });
+  const labels = {
+    whatsapp:    'Agendar 1ª Experiência',
+    localizacao: 'Ver localização',
+    youtube:     'YouTube Baby Gym'
+  };
+  gtag('event', 'clique_cta_landing', {
+    botao: btn,
+    label: labels[btn] || btn,
+    pagina: 'landing'
+  });
 }
+
+// ── Scroll Depth (25 / 50 / 75 / 100%) ────────────────────────
+(function() {
+  const marks = [25, 50, 75, 100];
+  const fired = new Set();
+  window.addEventListener('scroll', function() {
+    const pct = Math.round(
+      (window.scrollY / (document.body.scrollHeight - window.innerHeight || 1)) * 100
+    );
+    marks.forEach(function(m) {
+      if (pct >= m && !fired.has(m)) {
+        fired.add(m);
+        gtag('event', 'scroll_depth', { profundidade: m + '%', pagina: 'landing' });
+      }
+    });
+  }, { passive: true });
+})();
+
+// ── Tempo na página (30s / 60s / 120s) ────────────────────────
+(function() {
+  [30, 60, 120].forEach(function(s) {
+    setTimeout(function() {
+      gtag('event', 'tempo_na_pagina', { segundos: s, pagina: 'landing' });
+    }, s * 1000);
+  });
+})();
 </script>
 </body>
 </html>
