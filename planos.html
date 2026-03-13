@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby Gym Londrina — Planos</title>
+<meta property="og:title" content="Baby Gym Londrina — Planos e Valores">
+<meta property="og:description" content="Conheça nossos planos e garanta o desenvolvimento do seu bebê!">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #625fb7;
+    --purple-dark: #433d99;
+    --pink: #fd80bd;
+    --pink-hot: #fc007c;
+    --teal: #66d8d4;
+    --teal-dark: #00bfb8;
+    --cream: #fef8f5;
+    --white: #ffffff;
+    --text: #2d2d2d;
+    --text-light: #6b6b8a;
+    --shadow: 0 4px 24px rgba(98,95,183,0.13);
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(--text); }
+
+  /* ─── TEACHER FORM MODE ─── */
+  #form-mode {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 50%, #2d2b6b 100%);
+  }
+  .form-card {
+    background: white;
+    border-radius: 28px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .form-logo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .form-logo span {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--purple-dark);
+  }
+  .form-logo small {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--text-light);
+    text-transform: uppercase;
+    margin-top: -4px;
+  }
+  .form-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--purple-dark);
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .field { margin-bottom: 1.1rem; }
+  .field label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.4rem;
+  }
+  .field input, .field select {
+    width: 100%;
+    border: 2px solid #e8e8f0;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    background: #fafafa;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--purple); background: white; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+
+  .foto-area {
+    border: 2px dashed #ccc;
+    border-radius: 14px;
+    padding: 1.2rem;
+    text-align: center;
+    cursor: pointer;
+    background: #fafafa;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .foto-area:hover { border-color: var(--purple); background: #f3f2ff; }
+  .foto-area input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    border: none; width: 100%; height: 100%;
+  }
+  .foto-area .foto-icon { font-size: 2rem; display: block; margin-bottom: 0.3rem; }
+  .foto-area p { font-size: 0.85rem; color: var(--text-light); font-weight: 600; }
+  .foto-preview {
+    width: 80px; height: 80px; border-radius: 50%;
+    object-fit: cover; margin: 0 auto 0.5rem;
+    display: none; border: 3px solid var(--purple);
+  }
+
+  .btn-gerar {
+    width: 100%;
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 1rem;
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 16px rgba(67,61,153,0.35);
+  }
+  .btn-gerar:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(67,61,153,0.4); }
+  .btn-gerar:active { transform: translateY(0); }
+
+  .link-box {
+    margin-top: 1.5rem;
+    display: none;
+    background: #f0f0ff;
+    border-radius: 14px;
+    padding: 1rem;
+  }
+  .link-box p { font-size: 0.75rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+  .link-box .link-url {
+    font-size: 0.75rem; word-break: break-all;
+    color: var(--purple-dark); font-weight: 600;
+    background: white; border-radius: 8px;
+    padding: 0.6rem 0.8rem; margin-bottom: 0.7rem;
+    border: 1px solid #ddd;
+  }
+  .btn-copy {
+    width: 100%; background: var(--teal-dark); color: white;
+    border: none; border-radius: 10px; padding: 0.7rem;
+    font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; margin-bottom: 0.5rem;
+    transition: background 0.2s;
+  }
+  .btn-copy:hover { background: #009e98; }
+  .btn-wpp {
+    width: 100%; background: #25D366; color: white;
+    border: none; border-radius: 10px; padding: 0.7rem;
+    font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; text-decoration: none; display: block; text-align: center;
+    transition: background 0.2s;
+  }
+  .btn-wpp:hover { background: #1aa750; }
+
+  /* ─── CLIENT PRESENTATION MODE ─── */
+  #client-mode { display: none; }
+
+  .hero {
+    background: linear-gradient(160deg, var(--purple) 0%, var(--purple-dark) 60%, #2d2b6b 100%);
+    padding: 2.5rem 1.5rem 5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: rgba(253,128,189,0.18);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: 20px; left: -40px;
+    width: 140px; height: 140px;
+    background: rgba(102,216,212,0.15);
+    border-radius: 50%;
+  }
+  .hero-logo {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 1.8rem;
+    position: relative; z-index: 1;
+  }
+  .hero-logo small {
+    display: block; font-size: 0.6rem; letter-spacing: 3px;
+    text-transform: uppercase; color: rgba(255,255,255,0.55);
+    margin-top: -2px;
+  }
+  .hero-photo-wrap {
+    position: relative; z-index: 1;
+    width: 110px; height: 110px;
+    margin: 0 auto 1.2rem;
+    display: none;
+  }
+  .hero-photo-wrap img {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--pink);
+    box-shadow: 0 0 0 4px rgba(253,128,189,0.35);
+  }
+  .hero-photo-emoji {
+    font-size: 4rem;
+    margin-bottom: 0.8rem;
+    display: block;
+    position: relative; z-index: 1;
+  }
+  .hero-greeting {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.5rem;
+    position: relative; z-index: 1;
+    line-height: 1.2;
+  }
+  .hero-sub {
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.8);
+    font-weight: 600;
+    position: relative; z-index: 1;
+    line-height: 1.5;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .content {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+    transform: translateY(-40px);
+  }
+
+  /* Urgency banner */
+  .urgency-banner {
+    background: linear-gradient(135deg, var(--pink-hot), #e0006e);
+    border-radius: 16px;
+    padding: 0.9rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px rgba(252,0,124,0.3);
+    animation: pulse-banner 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-banner {
+    0%, 100% { box-shadow: 0 4px 20px rgba(252,0,124,0.3); }
+    50% { box-shadow: 0 4px 32px rgba(252,0,124,0.55); }
+  }
+  .urgency-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .urgency-text { color: white; }
+  .urgency-text strong { display: block; font-size: 0.95rem; font-weight: 800; }
+  .urgency-text span { font-size: 0.8rem; font-weight: 600; opacity: 0.9; }
+
+  /* Section title */
+  .section-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--purple-dark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Plan cards */
+  .plan-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.4rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+    border: 2px solid transparent;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .plan-card:active { transform: scale(0.99); }
+  .plan-card.destaque {
+    border-color: var(--purple);
+    box-shadow: 0 8px 32px rgba(98,95,183,0.22);
+  }
+  .plan-badge {
+    display: none;
+    position: absolute;
+    top: -12px; right: 16px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 10px rgba(67,61,153,0.4);
+  }
+  .plan-card.destaque .plan-badge { display: inline-block; }
+
+  .plan-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+  .plan-name { font-family: 'Baloo 2', cursive; font-size: 1.2rem; font-weight: 700; }
+  .plan-duration { font-size: 0.75rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .plan-economy {
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .plan-prices { margin-bottom: 1rem; }
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f5;
+  }
+  .price-row:last-child { border-bottom: none; }
+  .price-freq { font-size: 0.85rem; font-weight: 700; color: var(--text-light); }
+  .price-val { text-align: right; }
+  .price-main { font-size: 1rem; font-weight: 800; color: var(--text); }
+  .price-per { font-size: 0.7rem; color: var(--text-light); font-weight: 600; }
+
+  .plan-benefits {
+    list-style: none;
+    border-top: 1px solid #f0f0f5;
+    padding-top: 0.8rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem;
+  }
+  .plan-benefits li {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .plan-benefits li.yes { color: #2e7d32; }
+  .plan-benefits li.no { color: #b0b0b0; text-decoration: line-through; }
+  .plan-benefits li span { font-size: 0.9rem; }
+
+  /* Avulsa */
+  .avulsa-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.1rem 1.4rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .avulsa-label { font-size: 0.9rem; font-weight: 700; color: var(--text-light); }
+  .avulsa-price { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+
+  /* PIX note */
+  .pix-note {
+    background: linear-gradient(135deg, #e8f8f0, #d4f0e5);
+    border-radius: 14px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1a6b4a;
+  }
+  .pix-note span { font-size: 1.3rem; }
+
+  /* CTA */
+  .cta-section { text-align: center; margin-top: 1rem; }
+  .cta-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--purple-dark);
+    margin-bottom: 0.5rem;
+  }
+  .cta-sub { font-size: 0.85rem; color: var(--text-light); font-weight: 600; margin-bottom: 1.2rem; }
+  .btn-wpp-client {
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    background: #25D366; color: white;
+    border-radius: 16px; padding: 1rem 2rem;
+    font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(37,211,102,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-wpp-client:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(37,211,102,0.45); }
+  .btn-wpp-client svg { width: 22px; height: 22px; fill: white; flex-shrink: 0; }
+
+  .footer-note {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 2rem;
+    font-weight: 600;
+  }
+
+  /* Colors per plan */
+  .plan-anual .plan-name { color: var(--purple-dark); }
+  .plan-semestral .plan-name { color: #1565c0; }
+  .plan-trimestral .plan-name { color: #2e7d32; }
+
+  /* Expired screen */
+  #expired-screen {
+    display: none;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #433d99 0%, #2d2b6b 100%);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+  }
+  .expired-card {
+    background: white;
+    border-radius: 28px;
+    padding: 2.5rem 2rem;
+    max-width: 340px;
+    width: 100%;
+  }
+  .expired-icon { font-size: 3.5rem; margin-bottom: 1rem; display: block; }
+  .expired-title {
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--purple-dark);
+    margin-bottom: 0.6rem;
+  }
+  .expired-sub {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+  .btn-wpp-expired {
+    display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+    background: #25D366; color: white;
+    border-radius: 14px; padding: 0.9rem 1.5rem;
+    font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(37,211,102,0.3);
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate { animation: fadeUp 0.5s ease both; }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+  .delay-5 { animation-delay: 0.5s; }
+  .delay-6 { animation-delay: 0.6s; }
+</style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-QPB21Y8RKP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-QPB21Y8RKP', { send_page_view: false });
+  </script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ FORM MODE ══ -->
+<div id="form-mode">
+  <div class="form-card">
+    <div class="form-logo">
+      <span>baby GYM</span>
+      <small>Londrina</small>
+    </div>
+    <div class="form-title">🎟️ Gerar link de planos personalizado</div>
+
+    <div class="field">
+      <label>Nome do pai / mãe</label>
+      <input type="text" id="inp-mae" placeholder="Ex: Ana Paula" autocomplete="off">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Nome do bebê</label>
+        <input type="text" id="inp-filho" placeholder="Ex: Pedro" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Sexo</label>
+        <select id="inp-sexo">
+          <option value="m">Menino</option>
+          <option value="f">Menina</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Plano em destaque</label>
+      <select id="inp-destaque">
+        <option value="semestral">Semestral — O Mais Escolhido</option>
+        <option value="anual">Anual — Melhor Custo-Benefício</option>
+        <option value="trimestral">Trimestral</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Link válido por</label>
+      <select id="inp-expiry">
+        <option value="1">1 dia</option>
+        <option value="2" selected>2 dias</option>
+        <option value="3">3 dias</option>
+        <option value="5">5 dias</option>
+        <option value="7">7 dias</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Foto do bebê (opcional)</label>
+      <div class="foto-area" id="foto-area">
+        <input type="file" id="inp-foto" accept="image/*" capture="environment">
+        <img class="foto-preview" id="foto-preview" src="" alt="">
+        <span class="foto-icon" id="foto-icon">📷</span>
+        <p id="foto-txt">Toque para adicionar uma foto</p>
+      </div>
+    </div>
+
+
+
+    <button class="btn-gerar" onclick="gerarLink()">✨ Gerar link personalizado</button>
+
+    <div class="link-box" id="link-box">
+      <div id="link-expiry-label" style="font-size:0.75rem;color:var(--text-light);font-weight:700;margin-bottom:0.5rem;"></div>
+      <div id="link-loading" style="text-align:center;padding:0.5rem;font-size:0.85rem;color:var(--text-light);font-weight:700;display:none;">⏳ Encurtando link...</div>
+      <div id="link-short-wrap" style="display:none;">
+        <p>🔗 Link curto:</p>
+        <div class="link-url" id="link-short" style="font-size:0.95rem;color:var(--purple-dark);font-weight:800;"></div>
+        <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.5rem;font-weight:600;">link encurtado via is.gd</div>
+      </div>
+      <div id="link-full-wrap">
+        <p id="link-full-label">Link completo:</p>
+        <div class="link-url" id="link-url" style="font-size:0.7rem;"></div>
+      </div>
+      <button class="btn-copy" onclick="copiarLink()">📋 Copiar link</button>
+      <a class="btn-wpp" id="btn-wpp-share" href="#" target="_blank">📲 Abrir no WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ EXPIRED SCREEN ══ -->
+<div id="expired-screen">
+  <div class="expired-card">
+    <span class="expired-icon">⏰</span>
+    <div class="expired-title">Este link expirou</div>
+    <p class="expired-sub" id="expired-name-msg">
+      Mas a Baby Gym Londrina ainda tem a vaga do seu bebê!<br>
+      Entre em contato para receber um link atualizado com nossos planos.
+    </p>
+    <a class="btn-wpp-expired" href="https://wa.me/554396517182?text=Ol%C3%A1!%20Vi%20que%20o%20link%20dos%20planos%20expirou%20%E2%80%94%20pode%20me%20enviar%20um%20novo%3F%20%F0%9F%98%8A" target="_blank">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Falar com a Baby Gym
+    </a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ CLIENT MODE ══ -->
+<div id="client-mode">
+  <div class="hero">
+    <div class="hero-logo">baby GYM <small>Londrina</small></div>
+    <div class="hero-photo-wrap" id="hero-photo-wrap">
+      <img id="hero-photo" src="" alt="">
+    </div>
+    <span class="hero-photo-emoji" id="hero-emoji">👶</span>
+    <h1 class="hero-greeting" id="hero-greeting">Olá!</h1>
+    <p class="hero-sub" id="hero-sub">Ficamos felizes com a visita!</p>
+  </div>
+
+  <div class="content">
+    <div class="urgency-banner animate delay-1">
+      <span class="urgency-icon">⏳</span>
+      <div class="urgency-text">
+        <strong>5% de desconto — só hoje!</strong>
+        <span>Válido para planos Semestral e Anual fechados neste momento</span>
+      </div>
+    </div>
+
+    <div class="section-title animate delay-2">📋 Escolha o plano ideal</div>
+
+    <!-- ANUAL -->
+    <div class="plan-card plan-anual animate delay-2" id="card-anual">
+      <div class="plan-badge" id="badge-anual">⭐ Destaque</div>
+      <div class="plan-header">
+        <div>
+          <div class="plan-name">💜 Plano Anual</div>
+          <div class="plan-duration">12 meses · Melhor custo-benefício</div>
+        </div>
+        <div class="plan-economy">💰 Economia R$360</div>
+      </div>
+      <div class="freq-options">
+        <button class="freq-btn" onclick="selecionarFreq(event,'anual','2x','12x de R$367','R$45,88/aula')">
+          <span class="freq-label">2× por semana</span>
+          <span><span class="freq-price">12× de R$367</span><br><span class="freq-per">R$45,88/aula</span></span>
+        </button>
+        <button class="freq-btn" onclick="selecionarFreq(event,'anual','3x','12x de R$417','R$34,75/aula')">
+          <span class="freq-label">3× por semana</span>
+          <span><span class="freq-price">12× de R$417</span><br><span class="freq-per">R$34,75/aula</span></span>
+        </button>
+      </div>
+      <ul class="plan-benefits">
+        <li class="yes"><span>✅</span> Avental Baby Gym</li>
+        <li class="yes"><span>✅</span> Trancamento 30 dias</li>
+        <li class="yes"><span>✅</span> Cancela no 1º mês</li>
+        <li class="yes"><span>✅</span> Valor fixo 12 meses</li>
+        <li class="yes"><span>✅</span> 5% desconto hoje</li>
+        <li class="yes"><span>✅</span> 5% desconto PIX</li>
+      </ul>
+    </div>
+
+    <!-- SEMESTRAL -->
+    <div class="plan-card plan-semestral animate delay-3" id="card-semestral">
+      <div class="plan-badge" id="badge-semestral">⭐ Destaque</div>
+      <div class="plan-header">
+        <div>
+          <div class="plan-name">💙 Plano Semestral</div>
+          <div class="plan-duration">6 meses · O mais escolhido</div>
+        </div>
+        <div class="plan-economy">💰 Economia R$180</div>
+      </div>
+      <div class="freq-options">
+        <button class="freq-btn" onclick="selecionarFreq(event,'semestral','1x','6x de R$347','R$86,75/aula')">
+          <span class="freq-label">1× por semana</span>
+          <span><span class="freq-price">6× de R$347</span><br><span class="freq-per">R$86,75/aula</span></span>
+        </button>
+        <button class="freq-btn" onclick="selecionarFreq(event,'semestral','2x','6x de R$397','R$49,63/aula')">
+          <span class="freq-label">2× por semana</span>
+          <span><span class="freq-price">6× de R$397</span><br><span class="freq-per">R$49,63/aula</span></span>
+        </button>
+        <button class="freq-btn" onclick="selecionarFreq(event,'semestral','3x','6x de R$447','R$37,25/aula')">
+          <span class="freq-label">3× por semana</span>
+          <span><span class="freq-price">6× de R$447</span><br><span class="freq-per">R$37,25/aula</span></span>
+        </button>
+      </div>
+      <ul class="plan-benefits">
+        <li class="yes"><span>✅</span> Avental Baby Gym</li>
+        <li class="yes"><span>✅</span> Trancamento 25 dias</li>
+        <li class="yes"><span>✅</span> Cancela no 1º mês</li>
+        <li class="yes"><span>✅</span> Valor fixo 6 meses</li>
+        <li class="yes"><span>✅</span> 5% desconto hoje</li>
+        <li class="yes"><span>✅</span> 5% desconto PIX</li>
+      </ul>
+    </div>
+
+    <!-- TRIMESTRAL -->
+    <div class="plan-card plan-trimestral animate delay-4" id="card-trimestral">
+      <div class="plan-badge" id="badge-trimestral">⭐ Destaque</div>
+      <div class="plan-header">
+        <div>
+          <div class="plan-name">💚 Plano Trimestral</div>
+          <div class="plan-duration">3 meses · Compromisso mais curto</div>
+        </div>
+      </div>
+      <div class="freq-options">
+        <button class="freq-btn" onclick="selecionarFreq(event,'trimestral','1x','3x de R$377','R$94,25/aula')">
+          <span class="freq-label">1× por semana</span>
+          <span><span class="freq-price">3× de R$377</span><br><span class="freq-per">R$94,25/aula</span></span>
+        </button>
+        <button class="freq-btn" onclick="selecionarFreq(event,'trimestral','2x','3x de R$427','R$53,38/aula')">
+          <span class="freq-label">2× por semana</span>
+          <span><span class="freq-price">3× de R$427</span><br><span class="freq-per">R$53,38/aula</span></span>
+        </button>
+        <button class="freq-btn" onclick="selecionarFreq(event,'trimestral','3x','3x de R$477','R$39,75/aula')">
+          <span class="freq-label">3× por semana</span>
+          <span><span class="freq-price">3× de R$477</span><br><span class="freq-per">R$39,75/aula</span></span>
+        </button>
+      </div>
+      <ul class="plan-benefits">
+        <li class="no"><span>❌</span> Avental Baby Gym</li>
+        <li class="yes"><span>✅</span> Trancamento 15 dias</li>
+        <li class="no"><span>❌</span> Cancela no 1º mês</li>
+        <li class="no"><span>⚠️</span> Sujeito a reajuste</li>
+        <li class="no"><span>❌</span> 5% desconto hoje</li>
+        <li class="yes"><span>✅</span> 5% desconto PIX</li>
+      </ul>
+    </div>
+
+    <!-- AVULSA -->
+    <div class="avulsa-card animate delay-5" id="card-avulsa" onclick="selecionarAvulsa()">
+      <div>
+        <div class="avulsa-label">🎫 Aula avulsa</div>
+        <div style="font-size:0.75rem;color:var(--text-light);font-weight:600;">Por aula, sem compromisso</div>
+      </div>
+      <div class="avulsa-price">R$127</div>
+    </div>
+
+    <!-- PIX note -->
+    <div class="pix-note animate delay-5">
+      <span>💸</span>
+      <div>5% de desconto extra pagando à vista via PIX — não cumulativo com o desconto de hoje.</div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-section animate delay-6">
+      <div class="cta-hint" id="cta-hint">👆 Toque em uma frequência para escolher seu plano</div>
+      <div class="cta-title cta-selected" id="cta-title">Ótima escolha! 🎉</div>
+      <div class="cta-sub cta-selected" id="cta-sub" style="margin-bottom:1rem;"></div>
+      <a class="btn-wpp-client cta-selected" href="https://wa.me/554396517182" id="btn-fechar" target="_blank" style="margin-bottom:0.6rem;" onclick="gaCliqueFechamento()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Confirmar no WhatsApp
+      </a>
+      <button class="cta-selected" id="btn-trocar" onclick="trocarPlano()" style="width:100%;background:none;border:1.5px solid #ddd;border-radius:14px;padding:0.7rem;font-family:'Nunito',sans-serif;font-size:0.85rem;font-weight:700;color:var(--text-light);cursor:pointer;display:none;">↩ Trocar plano</button>
+    </div>
+
+    <div class="footer-note">
+      📍 Baby Gym Londrina · Rua Shangai, 42 – Jardim Cláudia<br>
+      @meubabygymlondrina
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PHOTO HANDLING ───────────────────────────────────────
+let fotoBase64 = '';
+document.getElementById('inp-foto').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX = 320;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+      else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // ── Baby GYM brand badge ──────────────────────────────
+      const bw = Math.round(w * 0.44);
+      const bh = Math.round(bw * 0.28);
+      const bx = w - bw - Math.round(w * 0.04);
+      const by = h - bh - Math.round(h * 0.04);
+      const rad = Math.round(bh * 0.38);
+
+      // Badge background
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(bx + rad, by);
+      ctx.lineTo(bx + bw - rad, by);
+      ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + rad);
+      ctx.lineTo(bx + bw, by + bh - rad);
+      ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - rad, by + bh);
+      ctx.lineTo(bx + rad, by + bh);
+      ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - rad);
+      ctx.lineTo(bx, by + rad);
+      ctx.quadraticCurveTo(bx, by, bx + rad, by);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(67,61,153,0.88)';
+      ctx.fill();
+
+      // "baby" text
+      const fontSize1 = Math.round(bh * 0.32);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.font = '500 ' + fontSize1 + 'px Nunito, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('baby', bx + bw/2, by + Math.round(bh * 0.08));
+
+      // "GYM" text
+      const fontSize2 = Math.round(bh * 0.5);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 ' + fontSize2 + 'px Nunito, sans-serif';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('GYM', bx + bw/2, by + bh - Math.round(bh * 0.1));
+      ctx.restore();
+      // ─────────────────────────────────────────────────────
+
+      fotoBase64 = canvas.toDataURL('image/jpeg', 0.72);
+      document.getElementById('foto-preview').src = fotoBase64;
+      document.getElementById('foto-preview').style.display = 'block';
+      document.getElementById('foto-icon').style.display = 'none';
+      document.getElementById('foto-txt').textContent = '✅ Foto adicionada';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ─── URL SHORTENER (is.gd — sem token, gratuito) ──────────
+async function encurtarUrl(longUrl) {
+  const api = 'https://is.gd/create.php?format=json&url=' + encodeURIComponent(longUrl);
+  const resp = await fetch(api);
+  const json = await resp.json();
+  if (json.shorturl) return json.shorturl;
+  throw new Error(json.errormessage || 'Erro ao encurtar');
+}
+
+// ─── GENERATE LINK ────────────────────────────────────────
+let _lastLongUrl = '';
+async function gerarLink() {
+  const mae = document.getElementById('inp-mae').value.trim();
+  const filho = document.getElementById('inp-filho').value.trim();
+  const sexo = document.getElementById('inp-sexo').value;
+  const destaque = document.getElementById('inp-destaque').value;
+  if (!mae || !filho) {
+    alert('Preencha o nome do pai/mãe e do bebê 😊');
+    return;
+  }
+  const days = parseInt(document.getElementById('inp-expiry').value);
+  const exp = Date.now() + days * 86400000;
+  const data = { mae, filho, sexo, destaque, exp };
+  if (fotoBase64) data.foto = fotoBase64;
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  const longUrl = window.location.origin + window.location.pathname + '#data=' + encoded;
+  _lastLongUrl = longUrl;
+
+  document.getElementById('link-url').textContent = longUrl;
+  document.getElementById('link-full-label').textContent = 'Link completo:';
+  document.getElementById('link-short-wrap').style.display = 'none';
+  document.getElementById('link-box').style.display = 'block';
+  const expDate = new Date(exp);
+  const expStr = expDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  document.getElementById('link-expiry-label').textContent = '⏱ Expira em: ' + expStr;
+
+  document.getElementById('link-loading').style.display = 'block';
+  try {
+    const shortUrl = await encurtarUrl(longUrl);
+    _lastLongUrl = shortUrl;
+    document.getElementById('link-short').textContent = shortUrl;
+    document.getElementById('link-short-wrap').style.display = 'block';
+    document.getElementById('link-full-label').textContent = 'Link completo (backup):';
+    document.getElementById('btn-wpp-share').href =
+      'https://wa.me/?text=' + encodeURIComponent('Olá! Aqui estão os planos da Baby Gym Londrina para você 🎉\n\n' + shortUrl);
+  } catch(e) {
+    document.getElementById('link-full-label').textContent = 'Link gerado:';
+    document.getElementById('btn-wpp-share').href =
+      'https://wa.me/?text=' + encodeURIComponent('Olá! Aqui estão os planos da Baby Gym Londrina para você 🎉\n\n' + longUrl);
+  }
+  document.getElementById('link-loading').style.display = 'none';
+  document.getElementById('link-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function copiarLink() {
+  const url = _lastLongUrl || document.getElementById('link-url').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    document.getElementById('btn-copy').textContent = '\u2705 Copiado!';
+    setTimeout(() => { document.getElementById('btn-copy').textContent = '\uD83D\uDCCB Copiar link'; }, 2000);
+  });
+}
+
+// ─── GA4 EVENTS ──────────────────────────────────────────
+function gaEvent(name, params) {
+  if (typeof gtag === 'function') {
+    gtag('event', name, params);
+  }
+}
+
+function gaId(mae, filho, sexo) {
+  // "Ana Paula" + "Sofia" + "f" → "AP-S-F"
+  const initials = (str) => str.trim().split(/\s+/).map(w => w[0].toUpperCase()).join('');
+  const maeId = initials(mae || '?');
+  const filhoId = (filho || '?').trim()[0].toUpperCase();
+  const sexoId = sexo === 'f' ? 'F' : 'M';
+  return maeId + '-' + filhoId + '-' + sexoId;
+}
+function gaCliqueFechamento() {
+  if (!_selectedPlan) return;
+  const d = window._bgData || {};
+  gaEvent('clique_whatsapp', {
+    id: gaId(d.mae, d.filho, d.sexo),
+    plano: _selectedPlan.plano,
+    frequencia: _selectedPlan.freq || 'avulsa',
+    preco: _selectedPlan.preco
+  });
+}
+
+// ─── RENDER CLIENT VIEW ───────────────────────────────────
+function renderClient(data) {
+  document.getElementById('form-mode').style.display = 'none';
+  document.getElementById('client-mode').style.display = 'block';
+
+  const sexoM = data.sexo === 'm';
+  const artigo = sexoM ? 'o' : 'a';
+  const filho = sexoM ? 'filho' : 'filha';
+  const dele = sexoM ? 'dele' : 'dela';
+  const emoji = sexoM ? '👦' : '👧';
+
+  // Hero
+  document.getElementById('hero-greeting').textContent = `Olá, ${data.mae}! 🎉`;
+  document.getElementById('hero-sub').textContent =
+    `Foi uma alegria conhecer ${artigo} ${data.filho} hoje!\nGuardamos esse momento com muito carinho. 💜`;
+  document.getElementById('hero-emoji').textContent = emoji;
+
+  if (data.foto) {
+    document.getElementById('hero-photo').src = data.foto;
+    document.getElementById('hero-photo-wrap').style.display = 'block';
+    document.getElementById('hero-emoji').style.display = 'none';
+  }
+
+  // Badges - only show on destaque card
+  ['anual','semestral','trimestral'].forEach(p => {
+    document.getElementById('badge-' + p).style.display = 'none';
+    document.getElementById('card-' + p).classList.remove('destaque');
+  });
+  if (data.destaque) {
+    document.getElementById('card-' + data.destaque).classList.add('destaque');
+    document.getElementById('badge-' + data.destaque).style.display = 'inline-block';
+  }
+
+  // CTA
+  document.getElementById('cta-title').textContent = `Vamos garantir a vaga d${artigo} ${data.filho}? 🎉`;
+  document.getElementById('cta-sub').textContent =
+    `Responda esse WhatsApp e feche hoje aproveitando o desconto exclusivo!`;
+
+  // Store data globally for plan selection
+  window._bgData = { artigo, filho: data.filho, mae: data.mae, sexo: data.sexo };
+
+  // GA: page view with context
+  const diasRestantes = data.exp
+    ? Math.ceil((data.exp - Date.now()) / 86400000)
+    : null;
+  gaEvent('page_view_planos', {
+    id: gaId(data.mae, data.filho, data.sexo),
+    plano_destaque: data.destaque || 'nenhum',
+    dias_restantes: diasRestantes
+  });
+}
+
+// ─── PLAN SELECTION ───────────────────────────────────────
+let _selectedPlan = null;
+
+const PLANO_NOMES = {
+  anual: 'Anual',
+  semestral: 'Semestral',
+  trimestral: 'Trimestral',
+  avulsa: 'Avulsa'
+};
+
+function selecionarFreq(e, plano, freq, preco, porAula) {
+  e.stopPropagation();
+  // deselect all freq btns across all cards
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
+  // deselect all cards
+  document.querySelectorAll('.plan-card, .avulsa-card').forEach(el => el.classList.remove('selected'));
+  document.getElementById('card-avulsa').classList.remove('selected');
+
+  // activate this button and its parent card
+  e.currentTarget.classList.add('active');
+  const card = e.currentTarget.closest('.plan-card');
+  if (card) card.classList.add('selected');
+
+  _selectedPlan = { plano, freq, preco, porAula };
+  atualizarCTA();
+}
+
+function selecionarAvulsa() {
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.plan-card, .avulsa-card').forEach(el => el.classList.remove('selected'));
+  document.getElementById('card-avulsa').classList.add('selected');
+  _selectedPlan = { plano: 'avulsa', freq: null, preco: 'R$127', porAula: null };
+  atualizarCTA();
+}
+
+function atualizarCTA() {
+  if (!_selectedPlan) return;
+  const d = window._bgData || { artigo: 'o', filho: 'seu bebê' };
+  const { plano, freq, preco } = _selectedPlan;
+  const nPlano = PLANO_NOMES[plano];
+
+  // Build message
+  let msgWpp, subText;
+  if (plano === 'avulsa') {
+    msgWpp = `Olá! Quero agendar uma aula avulsa para ${d.artigo} ${d.filho}! 😍`;
+    subText = `Aula Avulsa · ${preco}`;
+  } else {
+    const freqLabel = freq === '1x' ? '1× por semana' : freq === '2x' ? '2× por semana' : '3× por semana';
+    msgWpp = `Olá! Escolhi o Plano ${nPlano} (${freqLabel}) para ${d.artigo} ${d.filho}! Quero garantir a matrícula 😍`;
+    subText = `Plano ${nPlano} · ${freqLabel} · ${preco}`;
+  }
+
+  // Show CTA elements
+  document.getElementById('cta-hint').style.display = 'none';
+  document.querySelectorAll('.cta-selected').forEach(el => el.style.display = 'flex');
+  document.getElementById('btn-trocar').style.display = 'block';
+  document.getElementById('cta-title').style.display = 'block';
+  document.getElementById('cta-sub').style.display = 'block';
+
+  document.getElementById('cta-title').textContent = `Ótima escolha d${d.artigo === 'o' ? 'o' : 'a'} ${d.mae}! 🎉`;
+  document.getElementById('cta-sub').innerHTML = `<strong>${subText}</strong><br>Clique abaixo para confirmar no WhatsApp!`;
+  document.getElementById('btn-fechar').href =
+    'https://wa.me/554396517182?text=' + encodeURIComponent(msgWpp);
+
+  // GA: plan selected
+  const _d = window._bgData || {};
+  gaEvent('plano_selecionado', {
+    id: gaId(_d.mae, _d.filho, _d.sexo),
+    plano: plano,
+    frequencia: freq || 'avulsa',
+    preco: preco
+  });
+
+  // Scroll to CTA
+  setTimeout(() => {
+    document.querySelector('.cta-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 150);
+}
+
+function trocarPlano() {
+  _selectedPlan = null;
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.plan-card, .avulsa-card').forEach(el => el.classList.remove('selected'));
+  document.getElementById('cta-hint').style.display = 'block';
+  document.querySelectorAll('.cta-selected').forEach(el => el.style.display = 'none');
+  document.querySelector('.section-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+(function() {
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#data=')) {
+    try {
+      const encoded = hash.replace('#data=', '');
+      const json = decodeURIComponent(escape(atob(encoded)));
+      const data = JSON.parse(json);
+
+      if (data.exp && Date.now() > data.exp) {
+        // Link expirado
+        document.getElementById('form-mode').style.display = 'none';
+        const screen = document.getElementById('expired-screen');
+        screen.style.display = 'flex';
+        gaEvent('link_expirado', {
+          id: gaId(data.mae, data.filho, data.sexo)
+        });
+        if (data.mae) {
+          document.getElementById('expired-name-msg').innerHTML =
+            `Olá, <strong>${data.mae}</strong>! O link dos planos expirou,<br>mas a vaga do seu bebê ainda está aqui.<br>Entre em contato e enviamos um link atualizado!`;
+        }
+        // Pre-fill WPP message with name
+        const wppLink = screen.querySelector('a.btn-wpp-expired');
+        if (data.mae) {
+          const msg = `Olá! Sou ${data.mae} e vi que o link dos planos expirou — pode me enviar um novo? 😊`;
+          wppLink.href = 'https://wa.me/554396517182?text=' + encodeURIComponent(msg);
+        }
+      } else {
+        renderClient(data);
+      }
+    } catch(e) {
+      // hash inválido → mostra form
+    }
+  }
+})();
+</script>
+</body>
+</html>
