@@ -277,7 +277,6 @@
     gap: 0.8rem;
     margin-bottom: 1.5rem;
     box-shadow: 0 4px 20px rgba(252,0,124,0.3);
-    animation: pulse-banner 2.5s ease-in-out infinite;
   }
   @keyframes pulse-banner {
     0%, 100% { box-shadow: 0 4px 20px rgba(252,0,124,0.3); }
@@ -896,11 +895,18 @@
   </div>
 
   <div class="content">
-    <div class="urgency-banner animate delay-1">
+    <div class="urgency-banner animate delay-1" id="urgency-banner">
       <span class="urgency-icon">⏳</span>
       <div class="urgency-text">
         <strong>5% de desconto — só hoje!</strong>
         <span>Válido para planos Semestral e Anual fechados neste momento</span>
+      </div>
+    </div>
+    <div id="desconto-especial-banner" style="display:none;background:linear-gradient(135deg,#433d99,#6a3fc8);border-radius:16px;padding:0.9rem 1.2rem;display:none;align-items:center;gap:0.8rem;margin-bottom:1.5rem;box-shadow:0 4px 20px rgba(67,61,153,0.35);">
+      <span style="font-size:1.6rem;flex-shrink:0;">🎁</span>
+      <div style="color:white;">
+        <strong id="desc-banner-titulo" style="display:block;font-size:0.95rem;font-weight:800;"></strong>
+        <span id="desc-banner-sub" style="font-size:0.8rem;font-weight:600;opacity:0.9;"></span>
       </div>
     </div>
 
@@ -1349,49 +1355,62 @@ function renderClient(data) {
     document.getElementById('card-avulsa').style.display = 'flex';
   }
 
-  // 5% desconto hoje — só vale no dia da geração
-  const isHoje = data.created && (Date.now() - data.created < 86400000);
-  window._isHoje = isHoje;
+  // ── Resolve activeDiscount: desconto especial > isHoje (5%) > null ──
+  const _isHoje = data.created && (Date.now() - data.created < 86400000);
+  const _desc   = data.desconto;
+  const _descontoEspecial = _desc && _desc.exp && Date.now() < _desc.exp && _desc.pct > 0;
 
-  // Desconto especial
-  const desc = data.desconto;
-  const descontoAtivo = desc && desc.exp && Date.now() < desc.exp && desc.pct > 0;
-  window._desconto = descontoAtivo ? desc : null;
+  window._activeDiscount = _descontoEspecial
+    ? { pct: _desc.pct, motivo: _desc.motivo, exp: _desc.exp, tipo: 'especial' }
+    : _isHoje
+      ? { pct: 5, motivo: 'Primeiro dia', exp: data.created + 86400000, tipo: 'hoje' }
+      : null;
 
-  if (descontoAtivo) {
-    // Substituir banner pelo desconto especial
-    const banner = document.querySelector('.urgency-banner');
-    banner.style.background = 'linear-gradient(135deg, #433d99, #6a3fc8)';
-    banner.style.animation = 'none';
-    banner.style.boxShadow = '0 4px 20px rgba(67,61,153,0.35)';
-    banner.querySelector('.urgency-icon').textContent = '🎁';
-    banner.querySelector('strong').textContent = desc.pct + '% de desconto — ' + desc.motivo + '!';
-    banner.querySelector('span').textContent = 'Não cumulativo com PIX · Válido até ' + new Date(desc.exp).toLocaleDateString('pt-BR');
-  } else if (!isHoje) {
-    // Sem desconto de nenhum tipo
+  const ad = window._activeDiscount;
+
+  // Banner
+  if (ad) {
+    document.getElementById('urgency-banner').style.display = 'none';
+    const db = document.getElementById('desconto-especial-banner');
+    db.style.display = 'flex';
+    const isPrimeiroDia = ad.tipo === 'hoje';
+    db.style.background = isPrimeiroDia
+      ? 'linear-gradient(135deg, var(--pink-hot), #e0006e)'
+      : 'linear-gradient(135deg, #433d99, #6a3fc8)';
+    db.style.boxShadow = isPrimeiroDia
+      ? '0 4px 20px rgba(252,0,124,0.3)'
+      : '0 4px 20px rgba(67,61,153,0.35)';
+    if (isPrimeiroDia) db.style.animation = 'pulse-banner 2.5s ease-in-out infinite';
+    document.getElementById('desc-banner-titulo').textContent =
+      ad.pct + '% de desconto — ' + (isPrimeiroDia ? 'só hoje!' : ad.motivo + '!');
+    document.getElementById('desc-banner-sub').textContent = isPrimeiroDia
+      ? 'Válido para planos Semestral e Anual fechados neste momento'
+      : 'Não cumulativo com PIX · Válido até ' + new Date(ad.exp).toLocaleDateString('pt-BR');
+  } else {
+    document.getElementById('urgency-banner').style.display = 'none';
     document.querySelectorAll('.benefit-5pct-hoje').forEach(el => {
-      el.classList.remove('yes');
-      el.classList.add('no');
+      el.classList.remove('yes'); el.classList.add('no');
       el.querySelector('span').textContent = '❌';
     });
-    document.querySelector('.urgency-banner').style.display = 'none';
   }
 
-  // Init all btn displays based on isHoje + pagamento state
-  document.querySelectorAll('.freq-btn').forEach(btn => updateBtnDisplay(btn));
-
-  // Asterisk note for day-1 cartão discount
-  if (isHoje) {
+  // Nota de desconto nos cards Anual/Semestral
+  if (ad) {
     document.querySelectorAll('.plan-anual .freq-options, .plan-semestral .freq-options').forEach(el => {
       if (!el.nextElementSibling || !el.nextElementSibling.classList.contains('freq-day1-note')) {
         const note = document.createElement('div');
         note.className = 'freq-day1-note';
         note.style.cssText = 'font-size:0.7rem;color:var(--orange);font-weight:700;margin-top:6px;padding:0 2px;';
-        note.textContent = '✦ Preço com 5% de desconto no cartão — válido apenas hoje';
+        note.textContent = ad.tipo === 'hoje'
+          ? '✦ 5% de desconto no cartão — válido apenas hoje'
+          : '✦ ' + ad.pct + '% de desconto (' + ad.motivo + ') — no cartão';
         el.after(note);
       }
     });
   }
+
+  // Init btn displays
+  document.querySelectorAll('.freq-btn').forEach(btn => updateBtnDisplay(btn));
 
   // GA: page view with context
   const diasRestantes = data.exp
@@ -1431,8 +1450,9 @@ function setPagamento(tipo) {
   const note = document.getElementById('pag-note');
   if (tipo === 'pix') {
     note.style.display = 'block';
-    const msg = window._isHoje
-      ? '⚠️ 5% PIX não é cumulativo com o desconto de hoje — vale o maior desconto (ambos são 5%)'
+    const ad = window._activeDiscount;
+    const msg = ad
+      ? `⚠️ PIX (5% off no total) não é cumulativo com o desconto ativo de ${ad.pct}% — escolha o mais vantajoso`
       : '⚡ Desconto de 5% no valor total à vista via PIX';
     note.textContent = msg;
   } else {
@@ -1446,36 +1466,28 @@ function setPagamento(tipo) {
   if (window._selectedPlan) atualizarCTA();
 }
 
-function calcDescontoEspecial(precoStr, freqStr) {
-  // precoStr ex: "6x de R$397" ou "12x de R$367"
-  // Retorna string formatada com desconto aplicado
-  const desc = window._desconto;
-  if (!desc) return null;
+// Calcula preço com desconto percentual a partir de string "Nx de R$YYY"
+function calcDesconto(precoStr, pct) {
   const m = precoStr.match(/(\d+)x de R\$([\d,.]+)/);
   if (!m) return null;
   const parcelas = parseInt(m[1]);
   const valorParcela = parseFloat(m[2].replace('.','').replace(',','.'));
-  const novoValor = valorParcela * (1 - desc.pct/100);
+  const novoValor = valorParcela * (1 - pct / 100);
   const fmt = novoValor.toFixed(2).replace('.',',');
-  return { preco: parcelas + 'x de R$' + fmt, label: '-' + desc.pct + '%' };
+  return { preco: parcelas + 'x de R$' + fmt, label: '-' + pct + '%' };
 }
 
 function getPrecoEfetivo(btn) {
   const isPix = window._pagamento === 'pix';
   if (isPix) {
-    // PIX: total à vista com 5% — não cumulativo com descontos
     return btn.dataset.pix ? { preco: btn.dataset.pix, porAula: null, tipo: 'pix' } : null;
-  } else {
-    // Cartão: desconto especial > isHoje > normal
-    const desc = window._desconto;
-    if (desc && btn.dataset.preco) {
-      const calc = calcDescontoEspecial(btn.dataset.preco, btn.dataset.freq);
-      if (calc) return { preco: calc.preco, porAula: btn.dataset.porAula, tipo: 'desconto', label: calc.label };
-    }
-    const preco = (window._isHoje && btn.dataset.precoDesc) ? btn.dataset.precoDesc : btn.dataset.preco;
-    const porAula = (window._isHoje && btn.dataset.porAulaDesc) ? btn.dataset.porAulaDesc : btn.dataset.porAula;
-    return { preco, porAula, tipo: 'cartao' };
   }
+  const ad = window._activeDiscount;
+  if (ad && btn.dataset.preco) {
+    const calc = calcDesconto(btn.dataset.preco, ad.pct);
+    if (calc) return { preco: calc.preco, porAula: btn.dataset.porAula, tipo: 'desconto', label: calc.label };
+  }
+  return { preco: btn.dataset.preco, porAula: btn.dataset.porAula, tipo: 'cartao' };
 }
 
 function updateBtnDisplay(btn) {
@@ -1483,26 +1495,22 @@ function updateBtnDisplay(btn) {
   const perEl = btn.querySelector('.freq-per');
   if (!priceEl || !perEl) return;
 
-  const ef = getPrecoEfetivo(btn);
   const isPix = window._pagamento === 'pix';
-  const isHoje = window._isHoje;
+  const ad = window._activeDiscount;
 
-  const descEsp = window._desconto;
   if (isPix && btn.dataset.pix) {
     priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${btn.dataset.pix} à vista ⚡</span>`;
     perEl.textContent = '5% off no total';
-  } else if (!isPix && descEsp && btn.dataset.preco) {
-    const calc = calcDescontoEspecial(btn.dataset.preco);
+  } else if (!isPix && ad && btn.dataset.preco) {
+    const calc = calcDesconto(btn.dataset.preco, ad.pct);
     if (calc) {
-      priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${calc.preco} 🎁</span>`;
+      const icon = ad.tipo === 'hoje' ? '✦' : '🎁';
+      priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${calc.preco} ${icon}</span>`;
       perEl.textContent = btn.dataset.porAula + ' (' + calc.label + ')';
     } else {
       priceEl.innerHTML = btn.dataset.preco;
       perEl.textContent = btn.dataset.porAula;
     }
-  } else if (!isPix && isHoje && btn.dataset.precoDesc) {
-    priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${btn.dataset.precoDesc} ✦</span>`;
-    perEl.textContent = btn.dataset.porAulaDesc || btn.dataset.porAula;
   } else {
     priceEl.innerHTML = btn.dataset.preco;
     perEl.textContent = btn.dataset.porAula;
@@ -1562,12 +1570,14 @@ function atualizarCTA() {
   } else {
     const freqLabel = freq === '1x' ? '1× por semana' : freq === '2x' ? '2× por semana' : '3× por semana';
     const pagLabel = window._pagamento === 'pix' ? 'PIX à vista' : 'Cartão parcelado';
-    const descAtivo = window._desconto;
+    const _ad = window._activeDiscount;
     const diaLabel = window._pagamento === 'pix'
       ? '⚡ PIX à vista (5% off no total)'
-      : descAtivo
-        ? `🎁 Desconto ${descAtivo.pct}% — ${descAtivo.motivo}`
-        : (window._isHoje ? '🟢 Primeiro dia (5% de desconto — só hoje)' : '📅 Após o primeiro dia');
+      : _ad
+        ? (_ad.tipo === 'hoje'
+            ? '🟢 Primeiro dia (5% de desconto — só hoje)'
+            : `🎁 Desconto ${_ad.pct}% — ${_ad.motivo}`)
+        : '📅 Após o primeiro dia';
     msgWpp = `Olá! Quero garantir a matrícula d${d.artigo} ${d.filho} na Baby Gym! 😍
 
 📋 Plano: ${nPlano}
