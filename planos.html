@@ -565,7 +565,7 @@
       <div id="link-short-wrap" style="display:none;">
         <p>🔗 Link curto:</p>
         <div class="link-url" id="link-short" style="font-size:0.95rem;color:var(--purple-dark);font-weight:800;"></div>
-        <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.5rem;font-weight:600;">link encurtado via is.gd</div>
+        <div style="font-size:0.7rem;color:#aaa;margin-bottom:0.5rem;font-weight:600;">link encurtado via TinyURL</div>
       </div>
       <div id="link-full-wrap">
         <p id="link-full-label">Link completo:</p>
@@ -817,13 +817,14 @@ document.getElementById('inp-foto').addEventListener('change', function(e) {
   reader.readAsDataURL(file);
 });
 
-// ─── URL SHORTENER (is.gd — sem token, gratuito) ──────────
+// ─── URL SHORTENER (TinyURL — sem token, CORS ok) ─────────
 async function encurtarUrl(longUrl) {
-  const api = 'https://is.gd/create.php?format=json&url=' + encodeURIComponent(longUrl);
+  const api = 'https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl);
   const resp = await fetch(api);
-  const json = await resp.json();
-  if (json.shorturl) return json.shorturl;
-  throw new Error(json.errormessage || 'Erro ao encurtar');
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const short = await resp.text();
+  if (short.startsWith('https://tinyurl.com/')) return short.trim();
+  throw new Error('Resposta inesperada');
 }
 
 // ─── GENERATE LINK ────────────────────────────────────────
