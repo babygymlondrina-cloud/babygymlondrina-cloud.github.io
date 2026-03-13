@@ -814,7 +814,7 @@
         <input type="checkbox" id="chk-desconto" onchange="toggleDesconto()" style="width:18px;height:18px;accent-color:var(--pink-hot);cursor:pointer;flex-shrink:0;">
         <label for="chk-desconto" style="font-size:0.85rem;font-weight:700;color:var(--text-light);cursor:pointer;margin:0;">🎁 Desconto especial</label>
       </div>
-      <div id="desconto-fields" style="display:none;margin-top:0.75rem;background:#fff5fb;border:2px solid #ffd6ee;border-radius:12px;padding:0.9rem 1rem;">
+      <div id="desconto-fields" style="display:none;margin-top:0.75rem;background:var(--cream);border:2px solid var(--pink);border-radius:12px;padding:0.9rem 1rem;">
         <div style="display:flex;gap:0.6rem;margin-bottom:0.6rem;">
           <div style="flex:0 0 80px;">
             <label style="display:block;font-size:0.75rem;font-weight:700;color:#6b6b8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.3rem;">% Off</label>
@@ -1376,10 +1376,10 @@ function renderClient(data) {
     const isPrimeiroDia = ad.tipo === 'hoje';
     db.style.background = isPrimeiroDia
       ? 'linear-gradient(135deg, var(--pink-hot), #e0006e)'
-      : 'linear-gradient(135deg, #433d99, #6a3fc8)';
+      : 'linear-gradient(135deg, var(--pink-hot), #e0006e)';
     db.style.boxShadow = isPrimeiroDia
       ? '0 4px 20px rgba(252,0,124,0.3)'
-      : '0 4px 20px rgba(67,61,153,0.35)';
+      : '0 4px 20px rgba(252,0,124,0.3)';
     if (isPrimeiroDia) db.style.animation = 'pulse-banner 2.5s ease-in-out infinite';
     document.getElementById('desc-banner-titulo').textContent =
       ad.pct + '% de desconto — ' + (isPrimeiroDia ? 'só hoje!' : ad.motivo + '!');
