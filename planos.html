@@ -545,6 +545,23 @@
       </select>
     </div>
 
+    <div id="imgbb-configured" style="display:none;background:#f0fdf8;border-radius:12px;padding:0.7rem 1rem;margin-bottom:1rem;align-items:center;justify-content:space-between;gap:0.5rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span style="font-size:1rem;">🖼️</span>
+        <span style="font-size:0.82rem;font-weight:700;color:#0f6e56;">ImgBB configurado — fotos geram link curto</span>
+      </div>
+      <button onclick="mostrarCampoImgbb()" style="background:none;border:1px solid #9FE1CB;border-radius:8px;padding:0.3rem 0.6rem;font-size:0.75rem;font-weight:700;color:#0f6e56;cursor:pointer;font-family:Nunito,sans-serif;">Alterar</button>
+    </div>
+    <div id="imgbb-field" style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.8rem;font-weight:700;color:#6b6b8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:0.4rem;">🖼️ API Key ImgBB <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#aaa">— foto no link curto</span></label>
+      <div style="display:flex;gap:0.5rem;">
+        <input type="password" id="inp-imgbb" placeholder="Cole sua API Key aqui" autocomplete="off" style="flex:1;border:2px solid #e8e8f0;border-radius:12px;padding:0.75rem 1rem;font-family:Nunito,sans-serif;font-size:1rem;font-weight:600;color:#2d2d2d;background:#fafafa;outline:none;">
+        <button onclick="salvarImgbb()" style="flex-shrink:0;background:var(--teal-dark);color:white;border:none;border-radius:10px;padding:0.75rem 0.8rem;font-family:Nunito,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;">Salvar</button>
+      </div>
+      <div id="imgbb-status" style="font-size:0.75rem;margin-top:0.4rem;font-weight:700;color:var(--teal-dark);"></div>
+      <div style="font-size:0.72rem;color:#aaa;margin-top:0.3rem;font-weight:600;">Salvo no dispositivo. Sem ImgBB, foto funciona mas link não encurta.</div>
+    </div>
+
     <div class="field">
       <label>Foto do bebê (opcional)</label>
       <div class="foto-area" id="foto-area">
@@ -841,7 +858,21 @@ async function gerarLink() {
   const days = parseInt(document.getElementById('inp-expiry').value);
   const exp = Date.now() + days * 86400000;
   const data = { mae, filho, sexo, destaque, exp };
-  if (fotoBase64) data.foto = fotoBase64;
+
+  if (fotoBase64) {
+    document.getElementById('link-loading').style.display = 'block';
+    document.getElementById('link-loading').textContent = '⬆️ Enviando foto...';
+    document.getElementById('link-box').style.display = 'block';
+    try {
+      const fotoUrl = await uploadImgbb(fotoBase64);
+      data.fotoUrl = fotoUrl;           // URL curta do ImgBB
+    } catch(e) {
+      data.foto = fotoBase64;           // fallback: base64 no hash
+      document.getElementById('imgbb-status').textContent = '⚠️ ImgBB falhou, usando link longo';
+    }
+    document.getElementById('link-loading').style.display = 'none';
+    document.getElementById('link-loading').textContent = '⏳ Encurtando link...';
+  }
   const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
   const longUrl = window.location.origin + window.location.pathname + '#data=' + encoded;
   _lastLongUrl = longUrl;
@@ -854,21 +885,37 @@ async function gerarLink() {
   const expStr = expDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   document.getElementById('link-expiry-label').textContent = '⏱ Expira em: ' + expStr;
 
-  document.getElementById('link-loading').style.display = 'block';
-  try {
-    const shortUrl = await encurtarUrl(longUrl);
-    _lastLongUrl = shortUrl;
-    document.getElementById('link-short').textContent = shortUrl;
-    document.getElementById('link-short-wrap').style.display = 'block';
-    document.getElementById('link-full-label').textContent = 'Link completo (backup):';
-    document.getElementById('btn-wpp-share').href =
-      'https://wa.me/?text=' + encodeURIComponent('Olá! Aqui estão os planos da Baby Gym Londrina para você 🎉\n\n' + shortUrl);
-  } catch(e) {
-    document.getElementById('link-full-label').textContent = 'Link gerado:';
-    document.getElementById('btn-wpp-share').href =
-      'https://wa.me/?text=' + encodeURIComponent('Olá! Aqui estão os planos da Baby Gym Londrina para você 🎉\n\n' + longUrl);
+  const wppText = (url) => 'https://wa.me/?text=' + encodeURIComponent('Olá! Aqui estão os planos da Baby Gym Londrina para você 🎉\n\n' + url);
+
+  // Se ainda tem base64 no hash (ImgBB falhou), não tenta encurtar
+  const temFotoBase64 = !!data.foto;
+
+  if (temFotoBase64) {
+    _lastLongUrl = longUrl;
+    document.getElementById('link-full-label').textContent = 'Link gerado (com foto — não encurtado):';
+    document.getElementById('link-short-wrap').style.display = 'none';
+    document.getElementById('link-expiry-label').textContent += ' · 📷 com foto';
+    document.getElementById('btn-wpp-share').href = wppText(longUrl);
+  } else {
+    // Sem base64 no hash — encurta normalmente (foto vai via URL ImgBB ou sem foto)
+    document.getElementById('link-loading').style.display = 'block';
+    const fotoLabel = data.fotoUrl ? ' · 📷 com foto' : '';
+    try {
+      const shortUrl = await encurtarUrl(longUrl);
+      _lastLongUrl = shortUrl;
+      document.getElementById('link-short').textContent = shortUrl;
+      document.getElementById('link-short-wrap').style.display = 'block';
+      document.getElementById('link-full-label').textContent = 'Link completo (backup):';
+      document.getElementById('link-expiry-label').textContent += fotoLabel;
+      document.getElementById('btn-wpp-share').href = wppText(shortUrl);
+    } catch(e) {
+      _lastLongUrl = longUrl;
+      document.getElementById('link-full-label').textContent = 'Link gerado:';
+      document.getElementById('link-expiry-label').textContent += fotoLabel;
+      document.getElementById('btn-wpp-share').href = wppText(longUrl);
+    }
+    document.getElementById('link-loading').style.display = 'none';
   }
-  document.getElementById('link-loading').style.display = 'none';
   document.getElementById('link-box').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -878,6 +925,53 @@ function copiarLink() {
     document.getElementById('btn-copy').textContent = '\u2705 Copiado!';
     setTimeout(() => { document.getElementById('btn-copy').textContent = '\uD83D\uDCCB Copiar link'; }, 2000);
   });
+}
+
+// ─── IMGBB ────────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('imgbb_key');
+  if (saved) {
+    document.getElementById('inp-imgbb').value = saved;
+    mostrarImgbbConfigurado();
+  }
+})();
+
+function mostrarImgbbConfigurado() {
+  document.getElementById('imgbb-field').style.display = 'none';
+  const badge = document.getElementById('imgbb-configured');
+  badge.style.display = 'flex';
+}
+
+function mostrarCampoImgbb() {
+  document.getElementById('imgbb-configured').style.display = 'none';
+  document.getElementById('imgbb-field').style.display = 'block';
+  document.getElementById('inp-imgbb').focus();
+}
+
+function salvarImgbb() {
+  const k = document.getElementById('inp-imgbb').value.trim();
+  if (!k) { alert('Cole a API Key antes de salvar.'); return; }
+  localStorage.setItem('imgbb_key', k);
+  document.getElementById('imgbb-status').textContent = '✅ Salvo!';
+  setTimeout(() => mostrarImgbbConfigurado(), 800);
+}
+
+function getImgbbKey() {
+  return localStorage.getItem('imgbb_key') || document.getElementById('inp-imgbb').value.trim();
+}
+
+async function uploadImgbb(base64) {
+  const key = getImgbbKey();
+  if (!key) return null;
+  // Remove data:image/...;base64, prefix
+  const b64 = base64.split(',')[1] || base64;
+  const form = new FormData();
+  form.append('key', key);
+  form.append('image', b64);
+  const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
+  const json = await resp.json();
+  if (json.success) return json.data.url;
+  throw new Error(json.error?.message || 'Erro ImgBB');
 }
 
 // ─── GA4 EVENTS ──────────────────────────────────────────
@@ -923,8 +1017,9 @@ function renderClient(data) {
     `Foi uma alegria conhecer ${artigo} ${data.filho} hoje!\nGuardamos esse momento com muito carinho. 💜`;
   document.getElementById('hero-emoji').textContent = emoji;
 
-  if (data.foto) {
-    document.getElementById('hero-photo').src = data.foto;
+  const fotoSrc = data.fotoUrl || data.foto || null;
+  if (fotoSrc) {
+    document.getElementById('hero-photo').src = fotoSrc;
     document.getElementById('hero-photo-wrap').style.display = 'block';
     document.getElementById('hero-emoji').style.display = 'none';
   }
