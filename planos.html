@@ -1320,15 +1320,7 @@ function renderClient(data) {
       el.classList.add('no');
       el.querySelector('span').textContent = '❌';
     });
-    const banner = document.querySelector('.urgency-banner');
-    banner.style.background = '#e8e8f0';
-    banner.style.boxShadow = 'none';
-    banner.style.animation = 'none';
-    banner.querySelector('strong').style.color = '#888';
-    banner.querySelector('strong').textContent = '5% de desconto — apenas no dia da visita';
-    banner.querySelector('span').style.color = '#aaa';
-    banner.querySelector('span').textContent = 'Este desconto foi válido no dia da sua Primeira Experiência';
-    banner.querySelector('.urgency-icon').textContent = 'ℹ️';
+    document.querySelector('.urgency-banner').style.display = 'none';
   }
 
   // Init all btn displays based on isHoje + pagamento state
