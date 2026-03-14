@@ -416,7 +416,39 @@
     border-radius: 20px;
     white-space: nowrap;
     flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
   }
+  .eco-tooltip {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 7px);
+    background: #fff;
+    border: 1.5px solid var(--teal-dark);
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.7rem;
+    color: var(--text);
+    font-weight: 600;
+    white-space: normal;
+    width: 210px;
+    z-index: 200;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+    line-height: 1.6;
+    cursor: default;
+  }
+  .eco-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: 12px;
+    border: 6px solid transparent;
+    border-bottom-color: var(--teal-dark);
+    border-top: none;
+  }
+  .eco-tooltip.visible { display: block; }
 
   .plan-prices { margin-bottom: 1rem; }
   .price-row {
@@ -955,7 +987,9 @@
           <div class="plan-name">💜 Plano Anual</div>
           <div class="plan-duration">12 meses · Melhor custo-benefício</div>
         </div>
-        <div class="plan-economy">💰 Economia R$360</div>
+        <div class="plan-economy" onclick="toggleEcoTooltip(event,this)">💰 Economia R$360
+          <div class="eco-tooltip"><strong>Como calculamos?</strong><br>Anual 2×/sem: 12 × R$367 = <strong>R$4.404</strong><br>2× Semestral 2×/sem: 2 × R$2.382 = <strong>R$4.764</strong><br>Diferença: R$4.764 − R$4.404 = <strong>R$360</strong></div>
+        </div>
       </div>
       <div class="freq-options">
         <button class="freq-btn" onclick="selecionarFreqBtn(event,this)" data-plano="anual" data-freq="2x" data-pix="R$4.183,80" data-preco="12x de R$367" data-por-aula="R$45,88/aula" data-preco-desc="12x de R$348,65" data-por-aula-desc="R$43,58/aula">
@@ -971,7 +1005,7 @@
         <li class="yes"><span>✅</span> Cancela no 1º mês</li>
         <li class="yes"><span>✅</span> Valor fixo 12 meses</li>
         <li class="yes benefit-5pct-hoje"><span>✅</span> 5% desconto hoje</li>
-        <li class="yes"><span>✅</span> 5% desconto PIX</li>
+        <li class="yes benefit-pix-pct"><span>✅</span><span class="pix-pct-text"> 5% desconto PIX</span></li>
       </ul>
     </div>
 
@@ -983,7 +1017,9 @@
           <div class="plan-name">💗 Plano Semestral</div>
           <div class="plan-duration">6 meses · O mais escolhido</div>
         </div>
-        <div class="plan-economy">💰 Economia R$180</div>
+        <div class="plan-economy" onclick="toggleEcoTooltip(event,this)">💰 Economia R$180
+          <div class="eco-tooltip"><strong>Como calculamos?</strong><br>Semestral 2×/sem: 6 × R$397 = <strong>R$2.382</strong><br>2× Trimestral 2×/sem: 2 × R$1.281 = <strong>R$2.562</strong><br>Diferença: R$2.562 − R$2.382 = <strong>R$180</strong></div>
+        </div>
       </div>
       <div class="freq-options">
         <button class="freq-btn" onclick="selecionarFreqBtn(event,this)" data-plano="semestral" data-freq="1x" data-pix="R$1.977,90" data-preco="6x de R$347" data-por-aula="R$86,75/aula" data-preco-desc="6x de R$329,65" data-por-aula-desc="R$82,41/aula">
@@ -1002,7 +1038,7 @@
         <li class="yes"><span>✅</span> Cancela no 1º mês</li>
         <li class="yes"><span>✅</span> Valor fixo 6 meses</li>
         <li class="yes benefit-5pct-hoje"><span>✅</span> 5% desconto hoje</li>
-        <li class="yes"><span>✅</span> 5% desconto PIX</li>
+        <li class="yes benefit-pix-pct"><span>✅</span><span class="pix-pct-text"> 5% desconto PIX</span></li>
       </ul>
     </div>
 
@@ -1032,7 +1068,7 @@
         <li class="no"><span>❌</span> Cancela no 1º mês</li>
         <li class="warn"><span>⚠️</span> Sujeito a reajuste</li>
         <li class="no benefit-5pct-hoje"><span>❌</span> 5% desconto hoje</li>
-        <li class="yes"><span>✅</span> 5% desconto PIX</li>
+        <li class="yes benefit-pix-pct"><span>✅</span><span class="pix-pct-text"> 5% desconto PIX</span></li>
       </ul>
     </div>
 
@@ -1050,7 +1086,7 @@
     <!-- PIX note -->
     <div class="pix-note animate delay-5">
       <span>💸</span>
-      <div>5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.</div>
+      <div id="pix-note-text">5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.</div>
     </div>
 
     <!-- CTA -->
@@ -1449,6 +1485,28 @@ function renderClient(data) {
     });
   }
 
+  // Atualiza textos de PIX nos benefits e na nota
+  const adPix = window._activeDiscount;
+  const PLANOS_PIX = [
+    { plano: 'anual',      sel: '.plan-anual' },
+    { plano: 'semestral',  sel: '.plan-semestral' },
+    { plano: 'trimestral', sel: '.plan-trimestral' },
+  ];
+  PLANOS_PIX.forEach(({ plano, sel }) => {
+    const pixPct = (adPix && adPix.tipo === 'especial' && adPix.pct > 5 && descontoAplicaAoPlano(adPix, plano))
+      ? adPix.pct : 5;
+    const el = document.querySelector(sel + ' .benefit-pix-pct .pix-pct-text');
+    if (el) el.textContent = ' ' + pixPct + '% desconto PIX';
+  });
+  const pixNoteTxt = document.getElementById('pix-note-text');
+  if (pixNoteTxt) {
+    if (adPix && adPix.tipo === 'especial' && adPix.pct > 5) {
+      pixNoteTxt.textContent = adPix.pct + '% de desconto pagando à vista via PIX (enquanto desconto especial ativo) — não cumulativo com desconto no cartão.';
+    } else {
+      pixNoteTxt.textContent = '5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.';
+    }
+  }
+
   // Init btn displays
   document.querySelectorAll('.freq-btn').forEach(btn => updateBtnDisplay(btn));
 
@@ -1491,8 +1549,9 @@ function setPagamento(tipo) {
   if (tipo === 'pix') {
     note.style.display = 'block';
     const ad = window._activeDiscount;
+    const pixPct = (ad && ad.tipo === 'especial' && ad.pct > 5) ? ad.pct : 5;
     const msg = ad
-      ? `⚠️ PIX (5% off no total) não é cumulativo com o desconto ativo de ${ad.pct}% — escolha o mais vantajoso`
+      ? `⚠️ PIX (${pixPct}% off) não é cumulativo com desconto no cartão — use o mais vantajoso`
       : '⚡ Desconto de 5% no valor total à vista via PIX';
     note.textContent = msg;
   } else {
@@ -1512,6 +1571,19 @@ function setPagamento(tipo) {
 }
 
 // Calcula preço com desconto percentual a partir de string "Nx de R$YYY"
+function toggleEcoTooltip(e, el) {
+  e.stopPropagation();
+  const tip = el.querySelector('.eco-tooltip');
+  if (!tip) return;
+  const wasVisible = tip.classList.contains('visible');
+  // Fecha todos os outros
+  document.querySelectorAll('.eco-tooltip.visible').forEach(t => t.classList.remove('visible'));
+  if (!wasVisible) tip.classList.add('visible');
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.eco-tooltip.visible').forEach(t => t.classList.remove('visible'));
+});
+
 function calcDescontoAula(porAulaStr, pct) {
   const m = porAulaStr.match(/R\$([\d,.]+)/);
   if (!m) return porAulaStr;
@@ -1528,6 +1600,22 @@ function calcDesconto(precoStr, pct) {
   const novoValor = valorParcela * (1 - pct / 100);
   const fmt = novoValor.toFixed(2).replace('.',',');
   return { preco: parcelas + 'x de R$' + fmt, label: '-' + pct + '%' };
+}
+
+// Calcula total PIX efetivo: usa desconto especial se > 5% e se aplica ao plano, senão usa data-pix (5%)
+function calcPixEfetivo(btn) {
+  const ad = window._activeDiscount;
+  if (ad && ad.tipo === 'especial' && ad.pct > 5 && descontoAplicaAoPlano(ad, btn.dataset.plano)) {
+    // Calcula total a partir do data-preco
+    const m = btn.dataset.preco.match(/(\d+)x de R\$([\d,.]+)/);
+    if (m) {
+      const total = parseInt(m[1]) * parseFloat(m[2].replace('.','').replace(',','.'));
+      const novoTotal = total * (1 - ad.pct / 100);
+      const fmt = 'R$' + novoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+      return { valor: fmt, pct: ad.pct, especial: true };
+    }
+  }
+  return { valor: btn.dataset.pix, pct: 5, especial: false };
 }
 
 function descontoAplicaAoPlano(ad, plano) {
@@ -1558,8 +1646,10 @@ function updateBtnDisplay(btn) {
   const ad = window._activeDiscount;
 
   if (isPix && btn.dataset.pix) {
-    priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${btn.dataset.pix} à vista ⚡</span>`;
-    perEl.textContent = '5% off no total';
+    const pix = calcPixEfetivo(btn);
+    const icon = pix.especial ? '🎁' : '⚡';
+    priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pix.valor} à vista ${icon}</span>`;
+    perEl.textContent = pix.pct + '% off no total';
   } else if (!isPix && ad && btn.dataset.preco && descontoAplicaAoPlano(ad, btn.dataset.plano)) {
     const calc = calcDesconto(btn.dataset.preco, ad.pct);
     if (calc) {
