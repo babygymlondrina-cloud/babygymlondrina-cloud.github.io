@@ -810,7 +810,7 @@
 
 
     <div style="margin-bottom:1.1rem;">
-      <div style="display:flex;align-items:center;gap:0.7rem;padding:0.75rem 1rem;background:#fafafa;border:2px solid #e8e8f0;border-radius:12px;cursor:pointer;" onclick="document.getElementById('chk-desconto').click()">
+      <div style="display:flex;align-items:center;gap:0.7rem;padding:0.75rem 1rem;background:#fafafa;border:2px solid #e8e8f0;border-radius:12px;cursor:pointer;">
         <input type="checkbox" id="chk-desconto" onchange="toggleDesconto()" style="width:18px;height:18px;accent-color:var(--pink-hot);cursor:pointer;flex-shrink:0;">
         <label for="chk-desconto" style="font-size:0.85rem;font-weight:700;color:var(--text-light);cursor:pointer;margin:0;">🎁 Desconto especial</label>
       </div>
@@ -909,7 +909,7 @@
   </div>
 
   <div class="content">
-    <div class="urgency-banner animate delay-1" id="urgency-banner">
+    <div class="urgency-banner animate delay-1" id="urgency-banner" style="display:none;">
       <span class="urgency-icon">⏳</span>
       <div class="urgency-text">
         <strong>5% de desconto — só hoje!</strong>
@@ -1171,14 +1171,26 @@ async function gerarLink() {
     const pct = parseInt(document.getElementById('inp-desc-pct').value);
     const motivo = document.getElementById('inp-desc-motivo').value.trim();
     const descDias = parseInt(document.getElementById('inp-desc-dias').value);
-    if (pct > 0 && motivo) {
-      const planos = [];
-      if (document.getElementById('chk-desc-anual').checked) planos.push('anual');
-      if (document.getElementById('chk-desc-semestral').checked) planos.push('semestral');
-      if (document.getElementById('chk-desc-trimestral').checked) planos.push('trimestral');
-      if (planos.length === 0) { alert('Selecione ao menos um plano para o desconto 😊'); return; }
-      descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000, planos };
+    const pctOk = pct > 0 && !isNaN(pct);
+    const motivoOk = motivo.length > 0;
+    if (!pctOk && !motivoOk) {
+      alert('Preencha o % de desconto e o Código / Motivo para continuar 😊');
+      return;
     }
+    if (!pctOk) {
+      alert('Preencha o % de desconto (deve ser maior que 0) 😊');
+      return;
+    }
+    if (!motivoOk) {
+      alert('Preencha o Código / Motivo do desconto 😊');
+      return;
+    }
+    const planos = [];
+    if (document.getElementById('chk-desc-anual').checked) planos.push('anual');
+    if (document.getElementById('chk-desc-semestral').checked) planos.push('semestral');
+    if (document.getElementById('chk-desc-trimestral').checked) planos.push('trimestral');
+    if (planos.length === 0) { alert('Selecione ao menos um plano para o desconto 😊'); return; }
+    descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000, planos };
   }
   const data = { mae, filho, sexo, destaque, exp, created: Date.now(), avulsa: mostrarAvulsa || undefined, desconto: descontoObj || undefined };
 
