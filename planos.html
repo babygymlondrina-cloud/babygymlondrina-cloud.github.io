@@ -802,7 +802,7 @@
 
     <div class="field">
       <label>Link válido por</label>
-      <select id="inp-expiry">
+      <select id="inp-expiry" onchange="sincronizarDescDias()">
         <option value="1">1 dia</option>
         <option value="5">5 dias</option>
         <option value="7">7 dias</option>
@@ -1189,6 +1189,24 @@ async function encurtarUrl(longUrl) {
 
 // ─── GENERATE LINK ────────────────────────────────────────
 let _lastLongUrl = '';
+function sincronizarDescDias() {
+  const linkDias = parseInt(document.getElementById('inp-expiry').value);
+  const sel = document.getElementById('inp-desc-dias');
+  const atualVal = parseInt(sel.value);
+  Array.from(sel.options).forEach(opt => {
+    opt.disabled = parseInt(opt.value) > linkDias;
+  });
+  // Se o valor atual ficou inválido, ajusta para o maior permitido
+  if (atualVal > linkDias) {
+    sel.value = String(linkDias);
+    // Se não há option exata, pega o maior valor disponível <= linkDias
+    if (parseInt(sel.value) !== linkDias) {
+      const opts = Array.from(sel.options).filter(o => !o.disabled);
+      if (opts.length) sel.value = opts[opts.length - 1].value;
+    }
+  }
+}
+
 async function gerarLink() {
   const mae = document.getElementById('inp-mae').value.trim();
   const filho = document.getElementById('inp-filho').value.trim();
@@ -1206,7 +1224,8 @@ async function gerarLink() {
   if (document.getElementById('chk-desconto').checked) {
     const pct = parseInt(document.getElementById('inp-desc-pct').value);
     const motivo = document.getElementById('inp-desc-motivo').value.trim();
-    const descDias = parseInt(document.getElementById('inp-desc-dias').value);
+    const descDiasRaw = parseInt(document.getElementById('inp-desc-dias').value);
+    const descDias = Math.min(descDiasRaw, days); // nunca maior que o link
     const pctOk = pct > 0 && !isNaN(pct);
     const motivoOk = motivo.length > 0;
     if (!pctOk && !motivoOk) {
@@ -1301,6 +1320,7 @@ function copiarLink() {
 
 // ─── IMGBB ────────────────────────────────────────────────
 (function() {
+  sincronizarDescDias(); // garante consistência ao carregar
   const saved = localStorage.getItem('imgbb_key');
   if (saved) {
     document.getElementById('inp-imgbb').value = saved;
@@ -1450,9 +1470,22 @@ function renderClient(data) {
     if (isPrimeiroDia) db.style.animation = 'pulse-banner 2.5s ease-in-out infinite';
     document.getElementById('desc-banner-titulo').textContent =
       ad.pct + '% de desconto — ' + (isPrimeiroDia ? 'só hoje!' : ad.motivo + '!');
+    // Monta label dos planos para o banner
+    let planosLabel;
+    if (isPrimeiroDia) {
+      planosLabel = 'Anual e Semestral';
+    } else {
+      const p = ad.planos || [];
+      const nomes = { anual: 'Anual', semestral: 'Semestral', trimestral: 'Trimestral' };
+      if (p.length === 3 || p.length === 0) {
+        planosLabel = 'Em todos os planos';
+      } else {
+        planosLabel = p.map(x => nomes[x] || x).join(' e ');
+      }
+    }
     document.getElementById('desc-banner-sub').textContent = isPrimeiroDia
-      ? 'Válido para planos Semestral e Anual fechados neste momento'
-      : 'Não cumulativo com PIX · Válido até ' + new Date(ad.exp).toLocaleDateString('pt-BR');
+      ? 'Válido para planos ' + planosLabel + ' fechados neste momento'
+      : planosLabel + ' · Válido até ' + new Date(ad.exp).toLocaleDateString('pt-BR');
   } else {
     document.getElementById('urgency-banner').style.display = 'none';
     document.querySelectorAll('.benefit-5pct-hoje').forEach(el => {
@@ -1463,9 +1496,10 @@ function renderClient(data) {
 
   // Nota de desconto nos cards (todos os planos)
   if (ad) {
+    const sufixoCartao = ad.pct >= 5 ? '' : ' — no cartão';
     const noteText = ad.tipo === 'hoje'
-      ? '✦ 5% de desconto no cartão — válido apenas hoje'
-      : '✦ ' + ad.pct + '% de desconto (' + ad.motivo + ') — no cartão';
+      ? '✦ 5% de desconto' + sufixoCartao + ' — válido apenas hoje'
+      : '✦ ' + ad.pct + '% de desconto (' + ad.motivo + ')' + sufixoCartao;
     const planosComDesconto = {
       anual: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('anual'),
       semestral: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('semestral'),
