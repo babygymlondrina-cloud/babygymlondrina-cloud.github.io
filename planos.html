@@ -1507,6 +1507,10 @@ function renderClient(data) {
     }
   }
 
+  // Atualiza label do botão PIX conforme desconto ativo
+  const pixBtn = document.getElementById('pag-pix');
+  if (pixBtn) pixBtn.innerHTML = ad ? '<span>⚡</span> PIX' : '<span>⚡</span> PIX — 5% off';
+
   // Init btn displays
   document.querySelectorAll('.freq-btn').forEach(btn => updateBtnDisplay(btn));
 
@@ -1545,15 +1549,22 @@ function setPagamento(tipo) {
   document.getElementById('pag-cartao').classList.toggle('active', tipo === 'cartao');
   document.getElementById('pag-pix').classList.toggle('active', tipo === 'pix');
 
+  // Atualiza label do botão PIX
+  const ad = window._activeDiscount;
+  const pixBtnLabel = document.querySelector('#pag-pix');
+  if (pixBtnLabel) {
+    pixBtnLabel.innerHTML = ad ? '<span>⚡</span> PIX' : '<span>⚡</span> PIX — 5% off';
+  }
+
   const note = document.getElementById('pag-note');
   if (tipo === 'pix') {
-    note.style.display = 'block';
-    const ad = window._activeDiscount;
-    const pixPct = (ad && ad.tipo === 'especial' && ad.pct > 5) ? ad.pct : 5;
-    const msg = ad
-      ? `⚠️ PIX (${pixPct}% off) não é cumulativo com desconto no cartão — use o mais vantajoso`
-      : '⚡ Desconto de 5% no valor total à vista via PIX';
-    note.textContent = msg;
+    // Esconde a nota quando existe desconto ativo (PIX já é igual ou maior que o desconto especial)
+    if (ad) {
+      note.style.display = 'none';
+    } else {
+      note.style.display = 'block';
+      note.textContent = '⚡ Desconto de 5% no valor total à vista via PIX';
+    }
   } else {
     note.style.display = 'none';
   }
@@ -1720,13 +1731,19 @@ function atualizarCTA() {
     const freqLabel = freq === '1x' ? '1× por semana' : freq === '2x' ? '2× por semana' : '3× por semana';
     const pagLabel = window._pagamento === 'pix' ? 'PIX à vista' : 'Cartão parcelado';
     const _ad = window._activeDiscount;
-    const diaLabel = window._pagamento === 'pix'
-      ? '⚡ PIX à vista (5% off no total)'
-      : _ad
-        ? (_ad.tipo === 'hoje'
-            ? '🟢 Primeiro dia (5% de desconto — só hoje)'
-            : `🎁 Desconto ${_ad.pct}% — ${_ad.motivo}`)
-        : '📅 Após o primeiro dia';
+    const activeBtn = document.querySelector(`.freq-btn[data-plano="${plano}"][data-freq="${freq}"]`);
+    let diaLabel;
+    if (window._pagamento === 'pix') {
+      const pix = activeBtn ? calcPixEfetivo(activeBtn) : { valor: preco, pct: 5 };
+      diaLabel = `⚡ PIX à vista (${pix.pct}% off no total)`;
+      preco = pix.valor; // corrige o valor exibido no WA também
+    } else if (_ad) {
+      diaLabel = _ad.tipo === 'hoje'
+        ? '🟢 Primeiro dia (5% de desconto — só hoje)'
+        : `🎁 Desconto ${_ad.pct}% — ${_ad.motivo}`;
+    } else {
+      diaLabel = '📅 Após o primeiro dia';
+    }
     msgWpp = `Olá! Quero garantir a matrícula d${d.artigo} ${d.filho} na Baby Gym! 😍
 
 📋 Plano: ${nPlano}
