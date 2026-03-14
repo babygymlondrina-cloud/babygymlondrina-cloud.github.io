@@ -1781,7 +1781,7 @@ function atualizarCTA() {
       const pix = activeBtn ? calcPixEfetivo(activeBtn) : { valor: preco, pct: 5 };
       diaLabel = `⚡ PIX à vista (${pix.pct}% off no total)`;
       preco = pix.valor; // corrige o valor exibido no WA também
-    } else if (_ad) {
+    } else if (_ad && descontoAplicaAoPlano(_ad, plano)) {
       diaLabel = _ad.tipo === 'hoje'
         ? '🟢 Primeiro dia (5% de desconto — só hoje)'
         : `🎁 Desconto ${_ad.pct}% — ${_ad.motivo}`;
