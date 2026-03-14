@@ -1414,7 +1414,12 @@ function renderClient(data) {
 
   const fotoSrc = data.fotoUrl || data.foto || null;
   if (fotoSrc) {
-    document.getElementById('hero-photo').src = fotoSrc;
+    const photoEl = document.getElementById('hero-photo');
+    photoEl.onerror = function() {
+      document.getElementById('hero-photo-wrap').style.display = 'none';
+      document.getElementById('hero-emoji').style.display = 'flex';
+    };
+    photoEl.src = fotoSrc;
     document.getElementById('hero-photo-wrap').style.display = 'block';
     document.getElementById('hero-emoji').style.display = 'none';
   }
@@ -1537,7 +1542,9 @@ function renderClient(data) {
     if (adPix && adPix.tipo === 'especial' && adPix.pct > 5) {
       pixNoteTxt.textContent = adPix.pct + '% de desconto pagando à vista via PIX (enquanto desconto especial ativo) — não cumulativo com desconto no cartão.';
     } else {
-      pixNoteTxt.textContent = '5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.';
+      pixNoteTxt.textContent = adPix
+        ? '5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.'
+        : '5% de desconto pagando à vista via PIX.';
     }
   }
 
