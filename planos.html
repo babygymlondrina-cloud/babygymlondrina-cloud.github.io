@@ -1511,6 +1511,10 @@ function renderClient(data) {
   const pixBtn = document.getElementById('pag-pix');
   if (pixBtn) pixBtn.innerHTML = ad ? '<span>⚡</span> PIX' : '<span>⚡</span> PIX — 5% off';
 
+  // Esconde pix-note quando desconto >= 5%
+  const pixNoteInit = document.querySelector('.pix-note');
+  if (pixNoteInit) pixNoteInit.style.display = (ad && ad.pct >= 5) ? 'none' : 'block';
+
   // Init btn displays
   document.querySelectorAll('.freq-btn').forEach(btn => updateBtnDisplay(btn));
 
@@ -1569,10 +1573,16 @@ function setPagamento(tipo) {
     note.style.display = 'none';
   }
 
-  // Mostrar nota de desconto só no cartão
+  // Mostrar nota de desconto em ambos os modos quando desconto >= PIX (5%)
+  const _adNote = window._activeDiscount;
+  const _descontoSuperavelPix = _adNote && _adNote.pct >= 5;
   document.querySelectorAll('.freq-day1-note').forEach(n => {
-    n.style.display = tipo === 'pix' ? 'none' : 'block';
+    n.style.display = (_descontoSuperavelPix || tipo === 'cartao') ? 'block' : 'none';
   });
+
+  // Esconde pix-note quando desconto ativo já cobre ou supera o PIX
+  const pixNoteEl = document.querySelector('.pix-note');
+  if (pixNoteEl) pixNoteEl.style.display = _descontoSuperavelPix ? 'none' : 'block';
 
   // Update all freq-btn displayed prices
   document.querySelectorAll('.freq-btn').forEach(btn => updateBtnDisplay(btn));
