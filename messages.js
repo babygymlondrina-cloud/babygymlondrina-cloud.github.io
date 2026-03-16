@@ -26,16 +26,16 @@ const BGL_MESSAGES = {
   heroSaudacao: 'Olá, [mae]! 🎉',
 
   heroSubPrimeira:
-    'Foi uma alegria conhecer [artigo] [filho] hoje!\nGuardamos esse momento com muito carinho. 💜',
+    'Foi uma alegria conhecer [artigo] [filho] hoje!\n\nGuardamos esse momento com muito carinho. 💜',
 
   heroSubPrimeiraComTurma:
-    'Foi uma alegria conhecer [artigo] [apelido] [filho] hoje!\nGuardamos esse momento com muito carinho. 💜',
+    'Foi uma alegria conhecer [artigo] [apelido] [filho] hoje!\n\nGuardamos esse momento com muito carinho. 💜',
 
   heroSubRenovacao:
-    'Que alegria ter [artigo] [filho] com a gente! 🎉\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
+    'É uma alegria ter [artigo] [filho] com a gente! 🎉\n\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
 
   heroSubRenovacaoComTurma:
-    'Que alegria ter [artigo] [apelido] [filho] com a gente! 🎉\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
+    'É uma alegria ter [artigo] [apelido] [filho] com a gente! 🎉\n\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
 
   // ── Banner de desconto ───────────────────────────────────────────────────────
   /** Banner isHoje e desconto especial — "[pct]% de desconto — só hoje!" ou "[pct]% de desconto — [motivo]!" */
