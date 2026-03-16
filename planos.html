@@ -142,6 +142,7 @@
         z-index: 1;
         line-height: 1.5;
         max-width: 320px;
+        white-space: pre-line;
         margin: 0 auto;
       }
       .content {
@@ -1781,17 +1782,17 @@
               el.querySelector('span').textContent = '\u274C';
             });
           }
+          if (isRenovacao) {
+            document.querySelectorAll('.benefit-5pct-hoje').forEach((el) => {
+              el.style.display = 'none';
+            });
+          }
           // Nota de desconto nos cards
           if (ad) {
             const noteText =
               ad.tipo === 'hoje'
                 ? BGL_MESSAGES.freqNoteIsHoje
-                : msg(
-                    ad.pct >= 5
-                      ? BGL_MESSAGES.freqNoteEspecialComPix
-                      : BGL_MESSAGES.freqNoteEspecialSoPix,
-                    { pct: ad.pct, motivo: ad.motivo },
-                  );
+                : msg(BGL_MESSAGES.freqNoteEspecial, { pct: ad.pct, motivo: ad.motivo });
             const planosComDesconto = {
               anual: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('anual'),
               semestral: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('semestral'),
@@ -1828,18 +1829,14 @@
             const pixPct = DiscountStrategy.getPixPct(ad, plano);
             const el = document.querySelector(sel + ' .benefit-pix-pct .pix-pct-text');
             if (el) el.textContent = ' ' + pixPct + '% desconto PIX';
+            const pixBenefitEl = document.querySelector(sel + ' .benefit-pix-pct');
+            if (pixBenefitEl)
+              pixBenefitEl.style.display =
+                ad && DiscountStrategy.appliesTo(ad, plano) ? 'none' : '';
           });
           // Nota de PIX
           const pixNoteTxt = document.getElementById('pix-note-text');
-          if (pixNoteTxt) {
-            if (ad && ad.tipo === 'especial' && ad.pct > 5) {
-              pixNoteTxt.textContent = msg(BGL_MESSAGES.pixNoteEspecial, { pct: ad.pct });
-            } else {
-              pixNoteTxt.textContent = ad
-                ? BGL_MESSAGES.pixNoteComDesc
-                : BGL_MESSAGES.pixNoteSemDesc;
-            }
-          }
+          if (pixNoteTxt) pixNoteTxt.textContent = BGL_MESSAGES.pixNote;
           // Label do botão PIX
           const pixBtn = document.getElementById('pag-pix');
           if (pixBtn)
@@ -1990,7 +1987,7 @@
                 ? BGL_MESSAGES.wppDiaIsHoje
                 : msg(BGL_MESSAGES.wppDiaEspecial, { pct: _ad.pct, motivo: _ad.motivo });
           } else {
-            diaLabel = BGL_MESSAGES.wppDiaNormal;
+            diaLabel = null;
           }
           const abertura = msg(
             d.tipo === 'renovacao'
@@ -2005,7 +2002,7 @@
             msg(BGL_MESSAGES.wppLinhaFreq, { freq: freqLabel }),
             msg(BGL_MESSAGES.wppLinhaPag, { pag: pagLabel }),
             msg(BGL_MESSAGES.wppLinhaValor, { valor: preco }),
-            diaLabel,
+            ...(diaLabel ? [diaLabel] : []),
           );
           const msgWpp = linhas.join('\n');
           const subText = `${nPlano} \u00b7 ${freqLabel} \u00b7 ${pagLabel} \u00b7 ${preco}`;
@@ -2131,7 +2128,7 @@
             elOut.href = waBase + '?text=' + encodeURIComponent(BGL_MESSAGES.outdatedWppMsg);
           var elExp = document.querySelector('#expired-screen .btn-wpp-expired');
           if (elExp)
-            elExp.href = waBase + '?text=' + encodeURIComponent(BGL_MESSAGES.expiredWppMsgSemNome);
+            elExp.href = waBase + '?text=' + encodeURIComponent(BGL_MESSAGES.expiredWppMsg);
           var btnFechar = document.getElementById('btn-fechar');
           if (btnFechar) btnFechar.href = waBase;
           var footerNote = document.querySelector('.footer-note');
@@ -2163,12 +2160,6 @@
                   BGL_MESSAGES.expiredMsgPersonalizado,
                   { mae: data.mae },
                 ).replace(/\n/g, '<br>');
-              }
-              const wppLink = screen.querySelector('a.btn-wpp-expired');
-              if (data.mae) {
-                const wppMsg = msg(BGL_MESSAGES.expiredWppMsg, { mae: data.mae });
-                wppLink.href =
-                  'https://wa.me/' + BGL_CONFIG.whatsapp + '?text=' + encodeURIComponent(wppMsg);
               }
             } else {
               UIRenderer.renderClient(data);
