@@ -26,16 +26,16 @@ const BGL_MESSAGES = {
   heroSaudacao: 'Olá, [mae]! 🎉',
 
   heroSubPrimeira:
-    'Foi uma alegria conhecer [artigo] [filho] hoje!\n\nGuardamos esse momento com muito carinho. 💜',
+    'Foi uma alegria conhecer [artigo] [filho] hoje!\nGuardamos esse momento com muito carinho. 💜',
 
   heroSubPrimeiraComTurma:
-    'Foi uma alegria conhecer [artigo] [apelido] [filho] hoje!\n\nGuardamos esse momento com muito carinho. 💜',
+    'Foi uma alegria conhecer [artigo] [apelido] [filho] hoje!\nGuardamos esse momento com muito carinho. 💜',
 
   heroSubRenovacao:
-    'É uma alegria ter [artigo] [filho] com a gente! 🎉\n\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
+    'É uma alegria ter [artigo] [filho] com a gente! 🎉\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
 
   heroSubRenovacaoComTurma:
-    'É uma alegria ter [artigo] [apelido] [filho] com a gente! 🎉</br>Chegou2 a hora de garantir mais um ciclo na Baby Gym! 💜',
+    'É uma alegria ter [artigo] [apelido] [filho] com a gente! 🎉\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
 
   // ── Banner de desconto ───────────────────────────────────────────────────────
   /** Banner isHoje e desconto especial — "[pct]% de desconto — só hoje!" ou "[pct]% de desconto — [motivo]!" */
@@ -48,14 +48,10 @@ const BGL_MESSAGES = {
 
   // ── Nota de desconto nos cards (freq-day1-note) ──────────────────────────────
   freqNoteIsHoje: '✦ 5% de desconto — válido apenas hoje',
-  freqNoteEspecialComPix: '✦ [pct]% de desconto ([motivo])',
-  freqNoteEspecialSoPix: '✦ [pct]% de desconto ([motivo]) — no cartão',
+  freqNoteEspecial: '✦ [pct]% de desconto ([motivo])',
 
   // ── Nota de PIX (pix-note-text) ──────────────────────────────────────────────
-  pixNoteSemDesc: '5% de desconto pagando à vista via PIX.',
-  pixNoteComDesc: '5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.',
-  pixNoteEspecial:
-    '[pct]% de desconto pagando à vista via PIX (enquanto desconto especial ativo) — não cumulativo com desconto no cartão.',
+  pixNote: '5% de desconto pagando à vista via PIX.',
 
   // ── Botão PIX ────────────────────────────────────────────────────────────────
   pagPixComOff: '⚡ PIX — 5% off',
@@ -74,7 +70,7 @@ const BGL_MESSAGES = {
   ctaSubInicialRenovacao: 'Confirme no WhatsApp e a gente cuida do resto!',
 
   // ── CTA — após selecionar um plano ──────────────────────────────────────────
-  ctaTituloPrimeira: 'Ótima escolha d[artigo] [mae]! 🎉',
+  ctaTituloPrimeira: 'Ótima escolha para [artigo] [filho]! 🎉',
   ctaSubPrimeira: 'Clique abaixo para confirmar no WhatsApp!',
 
   ctaTituloRenovacao: 'Renovar o plano d[artigo] [filho]? 🎉',
@@ -94,7 +90,7 @@ const BGL_MESSAGES = {
   wppDiaPix: '⚡ PIX à vista ([pct]% off no total)',
   wppDiaIsHoje: '🟢 Primeiro dia (5% de desconto — só hoje)',
   wppDiaEspecial: '🎁 Desconto [pct]% — [motivo]',
-  wppDiaNormal: '📅 Após o primeiro dia',
+
 
   /** Rótulos de frequência usados na mensagem WA */
   wppFreqLabel: { '1x': '1× por semana', '2x': '2× por semana', '3x': '3× por semana' },
@@ -115,16 +111,10 @@ const BGL_MESSAGES = {
     'Preparamos este link com as opções de renovação — qualquer dúvida, é só chamar. 💜',
 
   // ── Tela de link expirado ────────────────────────────────────────────────────
-  expiredMsgDefault:
-    'Mas a Baby Gym Londrina ainda tem a vaga do seu bebê!\nEntre em contato para receber um link atualizado com nossos planos.',
-
   expiredMsgPersonalizado:
     'Olá, [mae]! O link dos planos expirou,\nmas a vaga do seu bebê ainda está aqui.\nEntre em contato e enviamos um link atualizado!',
 
-  expiredWppMsg:
-    'Olá! Sou [mae] e vi que o link dos planos expirou — pode me enviar um novo? 😊',
-
-  expiredWppMsgSemNome: 'Olá! Vi que o link dos planos expirou — pode me enviar um novo? 😊',
+  expiredWppMsg: 'Olá! Vi que o link dos planos expirou — pode me enviar um novo? 😊',
 
   // ── Tela de link desatualizado ────────────────────────────────────────────────
   outdatedWppMsg: 'Olá! Preciso de um novo link dos planos 😊',
