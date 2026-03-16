@@ -4,13 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Baby Gym Londrina</title>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-QPB21Y8RKP"></script>
+<!-- Configuração centralizada -->
+<script src="config.js"></script>
+<!-- Google tag (gtag.js) — ID carregado via config.js -->
 <script>
+  (function () {
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + BGL_CONFIG.gaId;
+    document.head.appendChild(s);
+  })();
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
+  function gtag() { dataLayer.push(arguments); }
   gtag('js', new Date());
-  gtag('config', 'G-QPB21Y8RKP');
+  gtag('config', BGL_CONFIG.gaId);
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
