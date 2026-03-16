@@ -35,7 +35,7 @@ const BGL_MESSAGES = {
     'É uma alegria ter [artigo] [filho] com a gente! 🎉\n\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
 
   heroSubRenovacaoComTurma:
-    'É uma alegria ter [artigo] [apelido] [filho] com a gente! 🎉\n\nChegou a hora de garantir mais um ciclo na Baby Gym! 💜',
+    'É uma alegria ter [artigo] [apelido] [filho] com a gente! 🎉</br>Chegou2 a hora de garantir mais um ciclo na Baby Gym! 💜',
 
   // ── Banner de desconto ───────────────────────────────────────────────────────
   /** Banner isHoje e desconto especial — "[pct]% de desconto — só hoje!" ou "[pct]% de desconto — [motivo]!" */
