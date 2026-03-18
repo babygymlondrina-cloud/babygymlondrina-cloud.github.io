@@ -1599,8 +1599,9 @@
             })
             .catch((err) => {
               setLoginBtn(false);
+              console.error('[BGL Auth] Erro no login:', err.code, err.message, err);
               if (err.code !== 'auth/cancelled-by-user' && err.code !== 'auth/popup-closed-by-user') {
-                showError('Erro ao fazer login. Tente novamente.');
+                showError('Erro ao fazer login. Tente novamente. (código: ' + (err.code || err.message) + ')');
               }
             });
         }
