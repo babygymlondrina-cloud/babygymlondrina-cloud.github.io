@@ -13,6 +13,20 @@ const BGL_CONFIG = {
   linkVersion: 3, // versão embutida em cada link novo
   linkMinVersion: 3, // incrementar aqui invalida links mais antigos
 
+  // Google Sign-In (proposta.html)
+  googleClientId: '349452027389-0n5v6sr986h5rjm36pu4v8kmhqdak2fj.apps.googleusercontent.com',
+  allowedEmails: ['michelmenega@gmail.com', 'babygymlondrina@gmail.com', 'recepcaobglondrina@gmail.com'],
+
+  // Firebase
+  firebaseConfig: {
+    apiKey: 'AIzaSyALIChAmNFTu_xRmLjIDSh07ojJE18NlhM',
+    authDomain: 'baby-gym-londrina-b1ad9.firebaseapp.com',
+    projectId: 'baby-gym-londrina-b1ad9',
+    storageBucket: 'baby-gym-londrina-b1ad9.firebasestorage.app',
+    messagingSenderId: '975011039458',
+    appId: '1:975011039458:web:561996934bd610bef0f6bb',
+  },
+
   // APIs externas
   isgdApi: 'https://is.gd/create.php?format=json&url=',
   imgbbApi: 'https://api.imgbb.com/1/upload',
@@ -34,14 +48,14 @@ const BGL_CONFIG = {
     {
       id: 'exploradores',
       label: 'Exploradores',
-      idade: '12 a 18 meses',
+      idade: '12 meses a 1 ano e 6 meses',
       apelidoM: 'explorador',
       apelidoF: 'exploradora',
     },
     {
       id: 'artistas',
       label: 'Artistas',
-      idade: '18 meses a 2 anos',
+      idade: '1 ano e 6 meses a 2 anos',
       apelidoM: 'artista',
       apelidoF: 'artista',
     },

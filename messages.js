@@ -118,4 +118,7 @@ const BGL_MESSAGES = {
 
   // ── Tela de link desatualizado ────────────────────────────────────────────────
   outdatedWppMsg: 'Olá! Preciso de um novo link dos planos 😊',
+
+  // ── Linha de horários selecionados na mensagem WA ────────────────────────────
+  wppLinhaHorarios: '🕐 Horários: [horarios]',
 };

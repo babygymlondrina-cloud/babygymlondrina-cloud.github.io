@@ -912,11 +912,309 @@
         display: block;
         margin: 0 auto;
       }
+      /* ─── TAB BAR ─── */
+      .tab-bar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--white);
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        margin: 0 -1rem 1.2rem;
+        box-shadow: 0 2px 8px rgba(98, 95, 183, 0.1);
+      }
+      .tab-btn {
+        padding: 0.85rem 0.4rem;
+        border: none;
+        border-bottom: 3px solid transparent;
+        background: none;
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-light);
+        cursor: pointer;
+        transition:
+          color 0.15s,
+          border-color 0.15s;
+        white-space: nowrap;
+      }
+      .tab-btn.active {
+        color: var(--purple);
+        border-bottom-color: var(--purple);
+      }
+      /* ─── PANEL SLIDER ─── */
+      .panels-overflow {
+        overflow: hidden;
+      }
+      .panels-track {
+        display: flex;
+        transition: transform 0.3s ease;
+        will-change: transform;
+      }
+      .panel {
+        flex-shrink: 0;
+        width: 100%; /* sobrescrito via JS com largura em px */
+        min-width: 0;
+      }
+      /* ─── PANEL DOTS ─── */
+      .panel-dots {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 1.2rem;
+      }
+      .panel-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ddd;
+        transition:
+          background 0.2s,
+          width 0.2s,
+          border-radius 0.2s;
+      }
+      .panel-dot.active {
+        background: var(--purple);
+        width: 20px;
+        border-radius: 3px;
+      }
+      /* ─── HORÁRIOS CARD ─── */
+      .card-horarios {
+        background: var(--white);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 1rem;
+      }
+      .horarios-header {
+        background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+        padding: 1rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+      .horarios-header-icon {
+        font-size: 1.6rem;
+      }
+      .horarios-turma-nome {
+        font-family: 'Baloo 2', cursive;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--white);
+        line-height: 1.2;
+      }
+      .horarios-turma-idade {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.75);
+      }
+      .horarios-body {
+        padding: 1rem 1.2rem 0.6rem;
+      }
+      .horarios-grupo {
+        margin-bottom: 0.9rem;
+      }
+      .horarios-dias {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.35rem;
+      }
+      .horarios-slots {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .horarios-slot {
+        background: rgba(98, 95, 183, 0.08);
+        color: var(--purple-dark);
+        font-size: 0.88rem;
+        font-weight: 700;
+        padding: 0.3rem 0.75rem;
+        border-radius: 20px;
+        border: 1.5px solid rgba(98, 95, 183, 0.18);
+      }
+      .horarios-aviso {
+        font-size: 0.72rem;
+        color: var(--text-light);
+        font-weight: 600;
+        padding: 0.5rem 1.2rem 0.9rem;
+        border-top: 1px solid #f0f0f5;
+      }
+      /* ─── FAQ CARD ─── */
+      .card-faq {
+        background: var(--white);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        margin-bottom: 1rem;
+      }
+      .faq-titulo {
+        font-family: 'Baloo 2', cursive;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--text);
+        padding: 1rem 1.2rem 0.7rem;
+        border-bottom: 1px solid #f0f0f5;
+      }
+      .faq-item {
+        border-bottom: 1px solid #f0f0f5;
+      }
+      .faq-item:last-child {
+        border-bottom: none;
+      }
+      .faq-pergunta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1.2rem;
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text);
+        gap: 0.5rem;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .faq-pergunta:hover {
+        background: rgba(98, 95, 183, 0.04);
+      }
+      .faq-chevron {
+        font-size: 0.7rem;
+        color: var(--text-light);
+        transition: transform 0.2s;
+        flex-shrink: 0;
+      }
+      .faq-item.open .faq-chevron {
+        transform: rotate(180deg);
+      }
+      .faq-resposta {
+        display: none;
+        padding: 0 1.2rem 0.9rem;
+        font-size: 0.85rem;
+        color: var(--text-light);
+        font-weight: 600;
+        line-height: 1.55;
+      }
+      .faq-item.open .faq-resposta {
+        display: block;
+      }
+
+      /* ── Schedule Picker ──────────────────────────────────────────────────────── */
+      .schedule-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: flex-end;
+        animation: fadeIn 0.2s ease;
+      }
+      .schedule-sheet {
+        width: 100%;
+        background: var(--white);
+        border-radius: 20px 20px 0 0;
+        padding: 1.4rem 1.2rem 2rem;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: slideUp 0.25s ease;
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(40px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      .schedule-title {
+        font-family: 'Baloo 2', cursive;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+      }
+      .schedule-sub {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 1rem;
+      }
+      .schedule-slots {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.2rem;
+      }
+      .schedule-slot {
+        padding: 0.45rem 0.9rem;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.88rem;
+        font-weight: 700;
+        border: 1.5px solid rgba(98, 95, 183, 0.25);
+        background: rgba(98, 95, 183, 0.06);
+        color: var(--purple-dark);
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          opacity 0.15s;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .schedule-slot.selected {
+        background: var(--purple);
+        color: #fff;
+        border-color: var(--purple);
+      }
+      .schedule-slot.slot-disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+      .schedule-btn-confirm {
+        width: 100%;
+        padding: 0.9rem;
+        border: none;
+        border-radius: 14px;
+        background: var(--purple);
+        color: #fff;
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 800;
+        cursor: pointer;
+        margin-bottom: 0.55rem;
+        transition: opacity 0.15s;
+      }
+      .schedule-btn-confirm:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .schedule-btn-skip {
+        width: 100%;
+        padding: 0.65rem;
+        border: 1.5px solid #ddd;
+        border-radius: 14px;
+        background: none;
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-light);
+        cursor: pointer;
+      }
     </style>
     <!-- Configuração do app -->
     <script src="config.js"></script>
     <!-- Mensagens configuráveis -->
     <script src="messages.js"></script>
+    <!-- Horários de aula por turma -->
+    <script src="horarios.js"></script>
+    <!-- Perguntas frequentes -->
+    <script src="faq.js"></script>
     <!-- Google Analytics -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -1025,394 +1323,484 @@
         <p class="hero-sub" id="hero-sub">Ficamos felizes com a visita!</p>
       </div>
       <div class="content">
-        <div class="urgency-banner animate delay-1" id="urgency-banner" style="display: none">
-          <span class="urgency-icon">⏳</span>
-          <div class="urgency-text">
-            <strong>5% de desconto — só hoje!</strong>
-            <span>Válido para planos Semestral e Anual fechados neste momento</span>
-          </div>
-        </div>
-        <div
-          id="desconto-especial-banner"
-          style="
-            display: none;
-            background: linear-gradient(135deg, #433d99, #6a3fc8);
-            border-radius: 16px;
-            padding: 0.9rem 1.2rem;
-            display: none;
-            align-items: center;
-            gap: 0.8rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 20px rgba(67, 61, 153, 0.35);
-          "
-        >
-          <span style="font-size: 1.6rem; flex-shrink: 0">🎁</span>
-          <div style="color: white">
-            <strong
-              id="desc-banner-titulo"
-              style="display: block; font-size: 0.95rem; font-weight: 800"
-            ></strong>
-            <span
-              id="desc-banner-sub"
-              style="font-size: 0.8rem; font-weight: 600; opacity: 0.9"
-            ></span>
-          </div>
-        </div>
-        <div class="pagamento-toggle animate delay-2">
-          <div class="pag-label">💳 Forma de pagamento</div>
-          <div class="pag-options">
-            <button class="pag-btn active" id="pag-cartao" onclick="setPagamento('cartao')">
-              <span>💳</span>
-              Cartão
-            </button>
-            <button class="pag-btn" id="pag-pix" onclick="setPagamento('pix')">
-              <span>⚡</span>
-              PIX — 5% off
-            </button>
-          </div>
-          <div class="pag-note" id="pag-note" style="display: none"></div>
-        </div>
-        <div class="garanta-vaga animate delay-2">
-          <span>🔒</span>
-          <div>
-            <strong>Garanta a vaga do seu bebê!</strong>
-            <span>As turmas têm vagas limitadas — a matrícula confirma seu lugar</span>
-          </div>
-        </div>
-        <div class="section-title animate delay-2">📋 Escolha o plano ideal</div>
-        <!-- ANUAL -->
-        <div class="plan-card plan-anual animate delay-2" id="card-anual">
-          <div class="plan-badge" id="badge-anual">⭐ Destaque</div>
-          <div class="plan-header">
-            <div>
-              <div class="plan-name">💜 Plano Anual</div>
-              <div class="plan-duration">12 meses · Melhor custo-benefício</div>
-            </div>
-            <div class="plan-economy" onclick="toggleEcoTooltip(event, this)">
-              💰 Economia R$360
-              <div class="eco-tooltip">
-                <strong>Como calculamos?</strong>
-                <br />
-                Anual 2×/sem: 12 × R$367 =
-                <strong>R$4.404</strong>
-                <br />
-                2× Semestral 2×/sem: 2 × R$2.382 =
-                <strong>R$4.764</strong>
-                <br />
-                Diferença: R$4.764 − R$4.404 =
-                <strong>R$360</strong>
-              </div>
-            </div>
-          </div>
-          <div class="freq-options">
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="anual"
-              data-freq="2x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">2× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">12× de R$367</span>
-                <span class="freq-per">R$45,88/aula</span>
-              </span>
-            </button>
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="anual"
-              data-freq="3x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">3× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">12× de R$417</span>
-                <span class="freq-per">R$34,75/aula</span>
-              </span>
-            </button>
-          </div>
-          <ul class="plan-benefits">
-            <li class="yes">
-              <span>✅</span>
-              Avental Baby Gym
-            </li>
-            <li class="yes">
-              <span>✅</span>
-              Trancamento 30 dias
-            </li>
-            <li class="yes">
-              <span>✅</span>
-              Cancela no 1º mês
-            </li>
-            <li class="yes">
-              <span>✅</span>
-              Valor fixo 12 meses
-            </li>
-            <li class="yes benefit-5pct-hoje">
-              <span>✅</span>
-              5% desconto hoje
-            </li>
-            <li class="yes benefit-pix-pct">
-              <span>✅</span>
-              <span class="pix-pct-text">5% desconto PIX</span>
-            </li>
-          </ul>
-        </div>
-        <!-- SEMESTRAL -->
-        <div class="plan-card plan-semestral animate delay-3" id="card-semestral">
-          <div class="plan-badge" id="badge-semestral">⭐ Destaque</div>
-          <div class="plan-header">
-            <div>
-              <div class="plan-name">💗 Plano Semestral</div>
-              <div class="plan-duration">6 meses · O mais escolhido</div>
-            </div>
-            <div class="plan-economy" onclick="toggleEcoTooltip(event, this)">
-              💰 Economia R$180
-              <div class="eco-tooltip">
-                <strong>Como calculamos?</strong>
-                <br />
-                Semestral 2×/sem: 6 × R$397 =
-                <strong>R$2.382</strong>
-                <br />
-                2× Trimestral 2×/sem: 2 × R$1.281 =
-                <strong>R$2.562</strong>
-                <br />
-                Diferença: R$2.562 − R$2.382 =
-                <strong>R$180</strong>
-              </div>
-            </div>
-          </div>
-          <div class="freq-options">
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="semestral"
-              data-freq="1x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">1× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">6× de R$347</span>
-                <span class="freq-per">R$86,75/aula</span>
-              </span>
-            </button>
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="semestral"
-              data-freq="2x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">2× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">6× de R$397</span>
-                <span class="freq-per">R$49,63/aula</span>
-              </span>
-            </button>
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="semestral"
-              data-freq="3x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">3× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">6× de R$447</span>
-                <span class="freq-per">R$37,25/aula</span>
-              </span>
-            </button>
-          </div>
-          <ul class="plan-benefits">
-            <li class="yes">
-              <span>✅</span>
-              Avental Baby Gym
-            </li>
-            <li class="yes">
-              <span>✅</span>
-              Trancamento 25 dias
-            </li>
-            <li class="yes">
-              <span>✅</span>
-              Cancela no 1º mês
-            </li>
-            <li class="yes">
-              <span>✅</span>
-              Valor fixo 6 meses
-            </li>
-            <li class="yes benefit-5pct-hoje">
-              <span>✅</span>
-              5% desconto hoje
-            </li>
-            <li class="yes benefit-pix-pct">
-              <span>✅</span>
-              <span class="pix-pct-text">5% desconto PIX</span>
-            </li>
-          </ul>
-        </div>
-        <!-- TRIMESTRAL -->
-        <div class="plan-card plan-trimestral animate delay-4" id="card-trimestral">
-          <div class="plan-badge" id="badge-trimestral">⭐ Destaque</div>
-          <div class="plan-header">
-            <div>
-              <div class="plan-name">💎 Plano Trimestral</div>
-              <div class="plan-duration">3 meses · Compromisso mais curto</div>
-            </div>
-          </div>
-          <div class="freq-options">
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="trimestral"
-              data-freq="1x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">1× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">3× de R$377</span>
-                <span class="freq-per">R$94,25/aula</span>
-              </span>
-            </button>
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="trimestral"
-              data-freq="2x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">2× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">3× de R$427</span>
-                <span class="freq-per">R$53,38/aula</span>
-              </span>
-            </button>
-            <button
-              class="freq-btn"
-              onclick="selecionarFreqBtn(event, this)"
-              data-plano="trimestral"
-              data-freq="3x"
-            >
-              <span class="freq-left">
-                <span class="freq-dot"></span>
-                <span class="freq-label">3× por semana</span>
-              </span>
-              <span class="freq-right">
-                <span class="freq-price">3× de R$477</span>
-                <span class="freq-per">R$39,75/aula</span>
-              </span>
-            </button>
-          </div>
-          <ul class="plan-benefits">
-            <li class="no">
-              <span>❌</span>
-              Avental Baby Gym
-            </li>
-            <li class="yes">
-              <span>✅</span>
-              Trancamento 15 dias
-            </li>
-            <li class="no">
-              <span>❌</span>
-              Cancela no 1º mês
-            </li>
-            <li class="warn">
-              <span>⚠️</span>
-              Sujeito a reajuste
-            </li>
-            <li class="no benefit-5pct-hoje">
-              <span>❌</span>
-              5% desconto hoje
-            </li>
-            <li class="yes benefit-pix-pct">
-              <span>✅</span>
-              <span class="pix-pct-text">5% desconto PIX</span>
-            </li>
-          </ul>
-        </div>
-        <!-- AVULSA -->
-        <div
-          class="avulsa-card animate delay-5"
-          id="card-avulsa"
-          onclick="selecionarAvulsa()"
-          style="display: none"
-        >
-          <div>
-            <div class="avulsa-label">🎫 Aula avulsa</div>
-            <div style="font-size: 0.75rem; color: var(--text-light); font-weight: 600">
-              Por aula, sem compromisso
-            </div>
-          </div>
-          <div class="avulsa-price">R$127</div>
-        </div>
-        <!-- PIX note -->
-        <div class="pix-note animate delay-5">
-          <span>💸</span>
-          <div id="pix-note-text">
-            5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.
-          </div>
-        </div>
-        <!-- CTA -->
-        <div class="cta-section animate delay-6">
-          <div class="cta-hint" id="cta-hint">
-            👆 Toque em uma frequência para escolher seu plano
-          </div>
-          <div class="cta-title cta-selected" id="cta-title">Ótima escolha! 🎉</div>
-          <div class="cta-sub cta-selected" id="cta-sub" style="margin-bottom: 1rem"></div>
-          <a
-            class="btn-wpp-client cta-selected"
-            href="https://wa.me/554396517182"
-            id="btn-fechar"
-            target="_blank"
-            style="margin-bottom: 0.6rem"
-            onclick="gaCliqueFechamento()"
-          >
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
-              />
-            </svg>
-            Confirmar no WhatsApp
-          </a>
+        <!-- TAB BAR -->
+        <nav class="tab-bar" id="tab-bar" role="tablist">
           <button
-            class="cta-selected"
-            id="btn-trocar"
-            onclick="trocarPlano()"
-            style="
-              width: 100%;
-              background: none;
-              border: 1.5px solid #ddd;
-              border-radius: 14px;
-              padding: 0.7rem;
-              font-family: 'Nunito', sans-serif;
-              font-size: 0.85rem;
-              font-weight: 700;
-              color: var(--text-light);
-              cursor: pointer;
-              display: none;
-            "
+            class="tab-btn active"
+            id="tab-planos"
+            role="tab"
+            aria-selected="true"
+            onclick="goToPanel(0)"
           >
-            ↩ Trocar plano
+            📋 Planos
           </button>
+          <button
+            class="tab-btn"
+            id="tab-horarios"
+            role="tab"
+            aria-selected="false"
+            onclick="goToPanel(1)"
+          >
+            🕐 Horários
+          </button>
+          <button
+            class="tab-btn"
+            id="tab-faq"
+            role="tab"
+            aria-selected="false"
+            onclick="goToPanel(2)"
+          >
+            ❓ FAQ
+          </button>
+        </nav>
+        <!-- PANEL SLIDER -->
+        <div class="panels-overflow">
+          <div class="panels-track" id="panels-track">
+            <!-- PANEL 0: PLANOS -->
+            <div class="panel" id="panel-planos" role="tabpanel">
+              <div class="urgency-banner animate delay-1" id="urgency-banner" style="display: none">
+                <span class="urgency-icon">⏳</span>
+                <div class="urgency-text">
+                  <strong>5% de desconto — só hoje!</strong>
+                  <span>Válido para planos Semestral e Anual fechados neste momento</span>
+                </div>
+              </div>
+              <div
+                id="desconto-especial-banner"
+                style="
+                  display: none;
+                  background: linear-gradient(135deg, #433d99, #6a3fc8);
+                  border-radius: 16px;
+                  padding: 0.9rem 1.2rem;
+                  display: none;
+                  align-items: center;
+                  gap: 0.8rem;
+                  margin-bottom: 1.5rem;
+                  box-shadow: 0 4px 20px rgba(67, 61, 153, 0.35);
+                "
+              >
+                <span style="font-size: 1.6rem; flex-shrink: 0">🎁</span>
+                <div style="color: white">
+                  <strong
+                    id="desc-banner-titulo"
+                    style="display: block; font-size: 0.95rem; font-weight: 800"
+                  ></strong>
+                  <span
+                    id="desc-banner-sub"
+                    style="font-size: 0.8rem; font-weight: 600; opacity: 0.9"
+                  ></span>
+                </div>
+              </div>
+              <div class="pagamento-toggle animate delay-2">
+                <div class="pag-label">💳 Forma de pagamento</div>
+                <div class="pag-options">
+                  <button class="pag-btn active" id="pag-cartao" onclick="setPagamento('cartao')">
+                    <span>💳</span>
+                    Cartão
+                  </button>
+                  <button class="pag-btn" id="pag-pix" onclick="setPagamento('pix')">
+                    <span>⚡</span>
+                    PIX — 5% off
+                  </button>
+                </div>
+                <div class="pag-note" id="pag-note" style="display: none"></div>
+              </div>
+              <div class="garanta-vaga animate delay-2">
+                <span>🔒</span>
+                <div>
+                  <strong>Garanta a vaga do seu bebê!</strong>
+                  <span>As turmas têm vagas limitadas — a matrícula confirma seu lugar</span>
+                </div>
+              </div>
+              <div class="section-title animate delay-2">📋 Escolha o plano ideal</div>
+              <!-- ANUAL -->
+              <div class="plan-card plan-anual animate delay-2" id="card-anual">
+                <div class="plan-badge" id="badge-anual">⭐ Destaque</div>
+                <div class="plan-header">
+                  <div>
+                    <div class="plan-name">💜 Plano Anual</div>
+                    <div class="plan-duration">12 meses · Melhor custo-benefício</div>
+                  </div>
+                  <div class="plan-economy" onclick="toggleEcoTooltip(event, this)">
+                    💰 Economia R$360
+                    <div class="eco-tooltip">
+                      <strong>Como calculamos?</strong>
+                      <br />
+                      Anual 2×/sem: 12 × R$367 =
+                      <strong>R$4.404</strong>
+                      <br />
+                      2× Semestral 2×/sem: 2 × R$2.382 =
+                      <strong>R$4.764</strong>
+                      <br />
+                      Diferença: R$4.764 − R$4.404 =
+                      <strong>R$360</strong>
+                    </div>
+                  </div>
+                </div>
+                <div class="freq-options">
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="anual"
+                    data-freq="2x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">2× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">12× de R$367</span>
+                      <span class="freq-per">R$45,88/aula</span>
+                    </span>
+                  </button>
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="anual"
+                    data-freq="3x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">3× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">12× de R$417</span>
+                      <span class="freq-per">R$34,75/aula</span>
+                    </span>
+                  </button>
+                </div>
+                <ul class="plan-benefits">
+                  <li class="yes">
+                    <span>✅</span>
+                    Avental Baby Gym
+                  </li>
+                  <li class="yes">
+                    <span>✅</span>
+                    Trancamento 30 dias
+                  </li>
+                  <li class="yes">
+                    <span>✅</span>
+                    Cancela no 1º mês
+                  </li>
+                  <li class="yes">
+                    <span>✅</span>
+                    Valor fixo 12 meses
+                  </li>
+                  <li class="yes benefit-5pct-hoje">
+                    <span>✅</span>
+                    5% desconto hoje
+                  </li>
+                  <li class="yes benefit-pix-pct">
+                    <span>✅</span>
+                    <span class="pix-pct-text">5% desconto PIX</span>
+                  </li>
+                </ul>
+              </div>
+              <!-- SEMESTRAL -->
+              <div class="plan-card plan-semestral animate delay-3" id="card-semestral">
+                <div class="plan-badge" id="badge-semestral">⭐ Destaque</div>
+                <div class="plan-header">
+                  <div>
+                    <div class="plan-name">💗 Plano Semestral</div>
+                    <div class="plan-duration">6 meses · O mais escolhido</div>
+                  </div>
+                  <div class="plan-economy" onclick="toggleEcoTooltip(event, this)">
+                    💰 Economia R$180
+                    <div class="eco-tooltip">
+                      <strong>Como calculamos?</strong>
+                      <br />
+                      Semestral 2×/sem: 6 × R$397 =
+                      <strong>R$2.382</strong>
+                      <br />
+                      2× Trimestral 2×/sem: 2 × R$1.281 =
+                      <strong>R$2.562</strong>
+                      <br />
+                      Diferença: R$2.562 − R$2.382 =
+                      <strong>R$180</strong>
+                    </div>
+                  </div>
+                </div>
+                <div class="freq-options">
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="semestral"
+                    data-freq="1x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">1× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">6× de R$347</span>
+                      <span class="freq-per">R$86,75/aula</span>
+                    </span>
+                  </button>
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="semestral"
+                    data-freq="2x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">2× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">6× de R$397</span>
+                      <span class="freq-per">R$49,63/aula</span>
+                    </span>
+                  </button>
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="semestral"
+                    data-freq="3x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">3× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">6× de R$447</span>
+                      <span class="freq-per">R$37,25/aula</span>
+                    </span>
+                  </button>
+                </div>
+                <ul class="plan-benefits">
+                  <li class="yes">
+                    <span>✅</span>
+                    Avental Baby Gym
+                  </li>
+                  <li class="yes">
+                    <span>✅</span>
+                    Trancamento 25 dias
+                  </li>
+                  <li class="yes">
+                    <span>✅</span>
+                    Cancela no 1º mês
+                  </li>
+                  <li class="yes">
+                    <span>✅</span>
+                    Valor fixo 6 meses
+                  </li>
+                  <li class="yes benefit-5pct-hoje">
+                    <span>✅</span>
+                    5% desconto hoje
+                  </li>
+                  <li class="yes benefit-pix-pct">
+                    <span>✅</span>
+                    <span class="pix-pct-text">5% desconto PIX</span>
+                  </li>
+                </ul>
+              </div>
+              <!-- TRIMESTRAL -->
+              <div class="plan-card plan-trimestral animate delay-4" id="card-trimestral">
+                <div class="plan-badge" id="badge-trimestral">⭐ Destaque</div>
+                <div class="plan-header">
+                  <div>
+                    <div class="plan-name">💎 Plano Trimestral</div>
+                    <div class="plan-duration">3 meses · Compromisso mais curto</div>
+                  </div>
+                </div>
+                <div class="freq-options">
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="trimestral"
+                    data-freq="1x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">1× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">3× de R$377</span>
+                      <span class="freq-per">R$94,25/aula</span>
+                    </span>
+                  </button>
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="trimestral"
+                    data-freq="2x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">2× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">3× de R$427</span>
+                      <span class="freq-per">R$53,38/aula</span>
+                    </span>
+                  </button>
+                  <button
+                    class="freq-btn"
+                    onclick="selecionarFreqBtn(event, this)"
+                    data-plano="trimestral"
+                    data-freq="3x"
+                  >
+                    <span class="freq-left">
+                      <span class="freq-dot"></span>
+                      <span class="freq-label">3× por semana</span>
+                    </span>
+                    <span class="freq-right">
+                      <span class="freq-price">3× de R$477</span>
+                      <span class="freq-per">R$39,75/aula</span>
+                    </span>
+                  </button>
+                </div>
+                <ul class="plan-benefits">
+                  <li class="no">
+                    <span>❌</span>
+                    Avental Baby Gym
+                  </li>
+                  <li class="yes">
+                    <span>✅</span>
+                    Trancamento 15 dias
+                  </li>
+                  <li class="no">
+                    <span>❌</span>
+                    Cancela no 1º mês
+                  </li>
+                  <li class="warn">
+                    <span>⚠️</span>
+                    Sujeito a reajuste
+                  </li>
+                  <li class="no benefit-5pct-hoje">
+                    <span>❌</span>
+                    5% desconto hoje
+                  </li>
+                  <li class="yes benefit-pix-pct">
+                    <span>✅</span>
+                    <span class="pix-pct-text">5% desconto PIX</span>
+                  </li>
+                </ul>
+              </div>
+              <!-- AVULSA -->
+              <div
+                class="avulsa-card animate delay-5"
+                id="card-avulsa"
+                onclick="selecionarAvulsa()"
+                style="display: none"
+              >
+                <div>
+                  <div class="avulsa-label">🎫 Aula avulsa</div>
+                  <div style="font-size: 0.75rem; color: var(--text-light); font-weight: 600">
+                    Por aula, sem compromisso
+                  </div>
+                </div>
+                <div class="avulsa-price">R$127</div>
+              </div>
+              <!-- PIX note -->
+              <div class="pix-note animate delay-5">
+                <span>💸</span>
+                <div id="pix-note-text">
+                  5% de desconto pagando à vista via PIX — não cumulativo com o desconto de hoje.
+                </div>
+              </div>
+              <!-- CTA -->
+              <div class="cta-section animate delay-6">
+                <div class="cta-hint" id="cta-hint">
+                  👆 Toque em uma frequência para escolher seu plano
+                </div>
+                <div class="cta-title cta-selected" id="cta-title">Ótima escolha! 🎉</div>
+                <div class="cta-sub cta-selected" id="cta-sub" style="margin-bottom: 1rem"></div>
+                <a
+                  class="btn-wpp-client cta-selected"
+                  href="https://wa.me/554396517182"
+                  id="btn-fechar"
+                  target="_blank"
+                  style="margin-bottom: 0.6rem"
+                >
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+                    />
+                  </svg>
+                  Confirmar no WhatsApp
+                </a>
+                <button
+                  class="cta-selected"
+                  id="btn-trocar"
+                  onclick="trocarPlano()"
+                  style="
+                    width: 100%;
+                    background: none;
+                    border: 1.5px solid #ddd;
+                    border-radius: 14px;
+                    padding: 0.7rem;
+                    font-family: 'Nunito', sans-serif;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    color: var(--text-light);
+                    cursor: pointer;
+                    display: none;
+                  "
+                >
+                  ↩ Trocar plano
+                </button>
+              </div>
+            </div>
+            <!-- PANEL 1: HORÁRIOS -->
+            <div class="panel" id="panel-horarios" role="tabpanel">
+              <div class="card-horarios animate" id="card-horarios">
+                <div class="horarios-header">
+                  <span class="horarios-header-icon">🕐</span>
+                  <div>
+                    <div class="horarios-turma-nome" id="horarios-turma-nome">Turma</div>
+                    <div class="horarios-turma-idade" id="horarios-turma-idade"></div>
+                  </div>
+                </div>
+                <div class="horarios-body" id="horarios-body"></div>
+                <div class="horarios-aviso">
+                  ⚠️ Horários sujeitos a alteração. Confirme pelo WhatsApp.
+                </div>
+              </div>
+            </div>
+            <!-- PANEL 2: FAQ -->
+            <div class="panel" id="panel-faq" role="tabpanel">
+              <div class="card-faq animate">
+                <div class="faq-titulo">❓ Perguntas Frequentes</div>
+                <div id="faq-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- PANEL DOTS -->
+        <div class="panel-dots" id="panel-dots">
+          <span class="panel-dot active" data-panel="0"></span>
+          <span class="panel-dot" data-panel="1"></span>
+          <span class="panel-dot" data-panel="2"></span>
         </div>
         <div class="footer-note">
           📍 Baby Gym Londrina · Rua Shangai, 42 – Jardim Cláudia
           <br />
           @meubabygymlondrina
+        </div>
+
+        <!-- SCHEDULE PICKER MODAL -->
+        <div class="schedule-overlay" id="schedule-overlay" style="display: none">
+          <div class="schedule-sheet" id="schedule-sheet">
+            <div class="schedule-header">
+              <div class="schedule-title" id="schedule-title">Quer já escolher os horários?</div>
+              <div class="schedule-sub" id="schedule-sub">Escolha 2 horários — um por dia</div>
+            </div>
+            <div class="schedule-slots" id="schedule-slots"></div>
+            <div class="schedule-actions">
+              <button
+                class="schedule-btn-confirm"
+                id="schedule-btn-confirm"
+                onclick="confirmarHorarios()"
+                disabled
+              >
+                ✓ Confirmar horários
+              </button>
+              <button class="schedule-btn-skip" id="schedule-btn-skip" onclick="pularHorarios()">
+                Pular →
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1689,6 +2077,7 @@
             sexo: data.sexo,
             tipo: data.tipo || 'primeira',
             turma: turmaConf ? turmaConf.label : null,
+            turmaId: turmaConf ? turmaConf.id : null,
             apelido,
           });
           // Hero
@@ -1854,6 +2243,8 @@
             turma: data.turma || 'nenhuma',
             tipo: data.tipo === 'renovacao' ? 'renovacao' : 'primeira_vez',
           });
+          // Inicializa abas, horários e FAQ
+          TabsController.init(data);
         }
         function updateBtnDisplay(btn) {
           const priceEl = btn.querySelector('.freq-price');
@@ -2047,7 +2438,48 @@
               .querySelector('.cta-section')
               .scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 150);
+          _attachScheduleInterceptor();
         }
+
+        function _attachScheduleInterceptor() {
+          const btn = document.getElementById('btn-fechar');
+          if (!btn || btn._scheduleAttached) return;
+          btn._scheduleAttached = true;
+
+          btn.addEventListener('click', function (e) {
+            Analytics.trackFechamento();
+
+            const d = AppState.getBgData() || {};
+            const sp = AppState.getSelectedPlan();
+            const freqMap = { '1x': 1, '2x': 2, '3x': 3 };
+            const n = sp && sp.freq ? freqMap[sp.freq] : null;
+
+            if (!n || !d.turmaId) return;
+
+            e.preventDefault();
+
+            const waHref = btn.href;
+
+            SchedulePicker.show(
+              d.turmaId,
+              n,
+              function (slots) {
+                const linhaHorarios = slots
+                  .map(function (s) {
+                    return s.dia + ' ' + s.hora;
+                  })
+                  .join(', ');
+                const extra = encodeURIComponent('\n🕐 Horários: ' + linhaHorarios);
+                window.open(waHref + extra, '_blank');
+              },
+              function () {
+                const extra = encodeURIComponent('\n🕐 Horários: a definir');
+                window.open(waHref + extra, '_blank');
+              },
+            );
+          });
+        }
+
         return { update };
       })();
 
@@ -2092,6 +2524,305 @@
             .scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         return { clearSelection, select, selectAvulsa, swap };
+      })();
+
+      // ─── SchedulePicker ───────────────────────────────────────────────────────
+      // Bottom-sheet para seleção de horários antes de abrir o WhatsApp.
+      const SchedulePicker = (function () {
+        let _slots = []; // [{dia, hora}] para a turma atual
+        let _selected = []; // [{dia, hora}] selecionados
+        let _freq = 1; // quantos slots o usuário deve escolher
+        let _onConfirm = null; // callback(selectedSlots)
+        let _onSkip = null; // callback()
+
+        // Converte BGL_HORARIOS[turma].turmas → [{dia, hora}]
+        function _buildSlots(turmaId) {
+          if (typeof BGL_HORARIOS === 'undefined') return [];
+          const t = BGL_HORARIOS[turmaId];
+          if (!t) return [];
+          const result = [];
+          t.turmas.forEach(function (grupo) {
+            grupo.horarios.forEach(function (h) {
+              result.push({ dia: grupo.dias, hora: h });
+            });
+          });
+          return result;
+        }
+
+        function _slotKey(s) {
+          return s.dia + '|' + s.hora;
+        }
+
+        function _isSelected(s) {
+          return _selected.some(function (x) {
+            return _slotKey(x) === _slotKey(s);
+          });
+        }
+
+        function _selectedDays() {
+          return _selected.map(function (s) {
+            return s.dia;
+          });
+        }
+
+        function _render() {
+          const container = document.getElementById('schedule-slots');
+          if (!container) return;
+          const selDays = _selectedDays();
+          container.innerHTML = _slots
+            .map(function (s, i) {
+              const sel = _isSelected(s);
+              const disabled = !sel && selDays.includes(s.dia);
+              return (
+                '<button class="schedule-slot' +
+                (sel ? ' selected' : '') +
+                (disabled ? ' slot-disabled' : '') +
+                '" data-idx="' +
+                i +
+                '" onclick="SchedulePicker.toggle(' +
+                i +
+                ')">' +
+                s.dia +
+                ' ' +
+                s.hora +
+                '</button>'
+              );
+            })
+            .join('');
+          const btn = document.getElementById('schedule-btn-confirm');
+          if (btn) btn.disabled = _selected.length !== _freq;
+        }
+
+        function toggle(idx) {
+          const slot = _slots[idx];
+          if (!slot) return;
+          if (_isSelected(slot)) {
+            _selected = _selected.filter(function (x) {
+              return _slotKey(x) !== _slotKey(slot);
+            });
+          } else {
+            if (_selected.length >= _freq) return;
+            if (_selectedDays().includes(slot.dia)) return;
+            _selected.push(slot);
+          }
+          _render();
+        }
+
+        function show(turmaId, freq, onConfirm, onSkip) {
+          _slots = _buildSlots(turmaId);
+          if (_slots.length === 0) {
+            onSkip();
+            return;
+          }
+          _selected = [];
+          _freq = freq;
+          _onConfirm = onConfirm;
+          _onSkip = onSkip;
+
+          const sub = document.getElementById('schedule-sub');
+          if (sub)
+            sub.textContent =
+              'Escolha ' + freq + ' horário' + (freq > 1 ? 's' : '') + ' — um por dia';
+
+          _render();
+          const overlay = document.getElementById('schedule-overlay');
+          if (overlay) overlay.style.display = 'flex';
+        }
+
+        function hide() {
+          const overlay = document.getElementById('schedule-overlay');
+          if (overlay) overlay.style.display = 'none';
+          _selected = [];
+        }
+
+        function confirm() {
+          if (_selected.length !== _freq) return;
+          const slots = _selected.slice();
+          hide();
+          if (_onConfirm) _onConfirm(slots);
+        }
+
+        function skip() {
+          hide();
+          if (_onSkip) _onSkip();
+        }
+
+        return { show, hide, confirm, skip, toggle };
+      })();
+
+      // ─── TabsController ───────────────────────────────────────────────────────
+      // Gerencia navegação por abas e swipe entre os painéis.
+      const TabsController = (function () {
+        // Índices reais no panels-track (0=Planos, 1=Horários, 2=FAQ)
+        // Quando não há turma, Horários é removido e mapeamos [0,2]→[0,1].
+        let _panelMap = [0, 1, 2]; // índice lógico → índice físico
+        let _current = 0; // índice lógico atual
+        const _tabs = ['tab-planos', 'tab-horarios', 'tab-faq'];
+        const _dotEls = () => document.querySelectorAll('.panel-dot');
+
+        function _panelWidth() {
+          const overflow = document.querySelector('.panels-overflow');
+          return overflow ? overflow.offsetWidth : 0;
+        }
+
+        function _setSizes() {
+          const w = _panelWidth();
+          document.querySelectorAll('.panel').forEach(function (p) {
+            p.style.width = w + 'px';
+          });
+        }
+
+        function _updateUI() {
+          const physicalIdx = _panelMap[_current];
+          const track = document.getElementById('panels-track');
+          if (track) track.style.transform = 'translateX(-' + physicalIdx * _panelWidth() + 'px)';
+          // Atualiza tabs
+          _tabs.forEach((id, logicalIdx) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const active = logicalIdx === _current;
+            el.classList.toggle('active', active);
+            el.setAttribute('aria-selected', active ? 'true' : 'false');
+          });
+          // Atualiza dots (só dots visíveis)
+          const dots = Array.from(_dotEls()).filter(function (d) {
+            return d.style.display !== 'none';
+          });
+          dots.forEach(function (dot, i) {
+            dot.classList.toggle('active', i === _current);
+          });
+        }
+
+        function goTo(logicalIdx) {
+          const max = _panelMap.length - 1;
+          _current = Math.max(0, Math.min(logicalIdx, max));
+          _updateUI();
+        }
+
+        function renderHorarios(data) {
+          const turmaConf = data.turma
+            ? (BGL_CONFIG.turmas || []).find((t) => t.id === data.turma) || null
+            : null;
+          const horData = data.turma ? (BGL_HORARIOS || {})[data.turma] || null : null;
+
+          if (!turmaConf || !horData) {
+            // Sem turma — esconde tab e dot de Horários, ajusta mapa de painéis
+            const tabHor = document.getElementById('tab-horarios');
+            if (tabHor) tabHor.style.display = 'none';
+            const tabBar = document.getElementById('tab-bar');
+            if (tabBar) tabBar.style.gridTemplateColumns = '1fr 1fr';
+            const dots = _dotEls();
+            if (dots[1]) dots[1].style.display = 'none';
+            _panelMap = [0, 2]; // lógico: 0=Planos, 1=FAQ (físico 2)
+            return;
+          }
+
+          document.getElementById('horarios-turma-nome').textContent = 'Turma ' + turmaConf.label;
+          document.getElementById('horarios-turma-idade').textContent = turmaConf.idade;
+
+          const body = document.getElementById('horarios-body');
+          body.innerHTML = horData.turmas
+            .map(function (grupo) {
+              const slots = grupo.horarios
+                .map(function (h) {
+                  return '<span class="horarios-slot">' + h + '</span>';
+                })
+                .join('');
+              return (
+                '<div class="horarios-grupo">' +
+                '<div class="horarios-dias">' +
+                grupo.dias +
+                '</div>' +
+                '<div class="horarios-slots">' +
+                slots +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+        }
+
+        function renderFaq() {
+          const list = document.getElementById('faq-list');
+          if (!list || typeof BGL_FAQ === 'undefined') return;
+          list.innerHTML = BGL_FAQ.map(function (item, i) {
+            return (
+              '<div class="faq-item" id="faq-item-' +
+              i +
+              '">' +
+              '<div class="faq-pergunta" onclick="toggleFaqItem(' +
+              i +
+              ')">' +
+              '<span>' +
+              item.pergunta +
+              '</span>' +
+              '<span class="faq-chevron">▼</span>' +
+              '</div>' +
+              '<div class="faq-resposta">' +
+              item.resposta +
+              '</div>' +
+              '</div>'
+            );
+          }).join('');
+        }
+
+        function toggleFaq(idx) {
+          const item = document.getElementById('faq-item-' + idx);
+          if (!item) return;
+          const wasOpen = item.classList.contains('open');
+          document.querySelectorAll('.faq-item.open').forEach(function (el) {
+            el.classList.remove('open');
+          });
+          if (!wasOpen) item.classList.add('open');
+        }
+
+        function initSwipe() {
+          const overflow = document.querySelector('.panels-overflow');
+          if (!overflow) return;
+          let startX = 0;
+          let startY = 0;
+          let dragging = false;
+
+          overflow.addEventListener('touchstart', function (e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            dragging = true;
+          });
+
+          overflow.addEventListener(
+            'touchmove',
+            function (e) {
+              if (!dragging) return;
+              const dx = e.touches[0].clientX - startX;
+              const dy = e.touches[0].clientY - startY;
+              if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+            },
+            { passive: false },
+          );
+
+          overflow.addEventListener('touchend', function (e) {
+            if (!dragging) return;
+            dragging = false;
+            const dx = e.changedTouches[0].clientX - startX;
+            if (Math.abs(dx) > 50) {
+              goTo(dx < 0 ? _current + 1 : _current - 1);
+            }
+          });
+        }
+
+        function init(data) {
+          renderHorarios(data);
+          renderFaq();
+          _setSizes();
+          initSwipe();
+          _updateUI();
+          window.addEventListener('resize', function () {
+            _setSizes();
+            _updateUI();
+          });
+        }
+
+        return { init, goTo, toggleFaq };
       })();
 
       // ─── INIT ─────────────────────────────────────────────────────────────────
@@ -2177,6 +2908,11 @@
       window.setPagamento = (t) => UIRenderer.setPagamento(t);
       window.gaCliqueFechamento = () => Analytics.trackFechamento();
       window.toggleEcoTooltip = (e, el) => UIRenderer.toggleEcoTooltip(e, el);
+      window.goToPanel = (i) => TabsController.goTo(i);
+      window.toggleFaqItem = (i) => TabsController.toggleFaq(i);
+      window.SchedulePicker = SchedulePicker;
+      window.confirmarHorarios = () => SchedulePicker.confirm();
+      window.pularHorarios = () => SchedulePicker.skip();
     </script>
   </body>
 </html>
