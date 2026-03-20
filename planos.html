@@ -1207,14 +1207,15 @@
         cursor: pointer;
       }
     </style>
-    <!-- Configuração do app -->
+    <!-- Configuração do app (inlined — sem dependência de arquivo externo) -->
     <script src="config.js"></script>
-    <!-- Mensagens configuráveis -->
-    <script src="messages.js"></script>
-    <!-- Horários de aula por turma -->
-    <script src="horarios.js"></script>
-    <!-- Perguntas frequentes -->
-    <script src="faq.js"></script>
+    <!-- Stubs: preenchidos pelo RemoteConfig (Firestore) antes do render -->
+    <script>
+      window.BGL_MESSAGES = window.BGL_MESSAGES || {};
+      window.BGL_PLANOS = window.BGL_PLANOS || {};
+      window.BGL_HORARIOS = window.BGL_HORARIOS || {};
+      window.BGL_FAQ = window.BGL_FAQ || [];
+    </script>
     <!-- Google Analytics -->
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -1230,6 +1231,48 @@
     </script>
   </head>
   <body>
+    <!-- ══════════════════════════════════════ LOADING SCREEN ══ -->
+    <div
+      id="bgl-loading"
+      style="
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--cream);
+        z-index: 9999;
+      "
+    >
+      <div style="text-align: center; font-family: 'Nunito', sans-serif; padding: 2rem">
+        <div id="bgl-loading-icon" style="font-size: 2.5rem; margin-bottom: 0.75rem">💜</div>
+        <div
+          id="bgl-loading-msg"
+          style="font-weight: 700; color: var(--purple-dark); font-size: 1.1rem"
+        >
+          Carregando...
+        </div>
+        <button
+          id="bgl-loading-retry"
+          onclick="location.reload()"
+          style="
+            display: none;
+            margin-top: 1.5rem;
+            padding: 0.75rem 2rem;
+            background: var(--purple);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+          "
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </div>
     <!-- ══════════════════════════════════════════ OUTDATED SCREEN ══ -->
     <div id="outdated-screen" style="display: none">
       <div class="expired-card">
@@ -1701,9 +1744,7 @@
               </div>
               <!-- CTA -->
               <div class="cta-section animate delay-6">
-                <div class="cta-hint" id="cta-hint">
-                  👆 Toque em uma frequência para escolher seu plano
-                </div>
+                <div class="cta-hint" id="cta-hint"></div>
                 <div class="cta-title cta-selected" id="cta-title">Ótima escolha! 🎉</div>
                 <div class="cta-sub cta-selected" id="cta-sub" style="margin-bottom: 1rem"></div>
                 <a
@@ -1804,7 +1845,6 @@
         </div>
       </div>
     </div>
-    <script src="planos.js"></script>
     <script>
       /**
        * Substitui [chave] no template pelo valor de params.chave.
@@ -2119,6 +2159,10 @@
             document.getElementById('badge-' + data.destaque).style.display = 'inline-block';
           }
           // CTA initial text
+          document.getElementById('cta-hint').textContent = msg(BGL_MESSAGES.ctaHint, {
+            artigo,
+            filho: data.filho,
+          });
           document.getElementById('cta-title').textContent = msg(
             isRenovacao
               ? BGL_MESSAGES.ctaTituloInicialRenovacao
@@ -2234,6 +2278,12 @@
           _updatePixNoteVisibility(ad);
           // Init btn displays
           document.querySelectorAll('.freq-btn').forEach((btn) => updateBtnDisplay(btn));
+          // Oculta freq-btns não suportados pela turma
+          if (turmaConf && turmaConf.freqs) {
+            document.querySelectorAll('.freq-btn').forEach((btn) => {
+              btn.style.display = turmaConf.freqs.includes(btn.dataset.freq) ? '' : 'none';
+            });
+          }
           // GA: page view with context
           const diasRestantes = data.exp ? Math.ceil((data.exp - Date.now()) / 86400000) : null;
           Analytics.gaEvent('page_view_planos', {
@@ -2469,11 +2519,15 @@
                     return s.dia + ' ' + s.hora;
                   })
                   .join(', ');
-                const extra = encodeURIComponent('\n🕐 Horários: ' + linhaHorarios);
+                const extra = encodeURIComponent(
+                  '\n' + msg(BGL_MESSAGES.wppLinhaHorarios, { horarios: linhaHorarios }),
+                );
                 window.open(waHref + extra, '_blank');
               },
               function () {
-                const extra = encodeURIComponent('\n🕐 Horários: a definir');
+                const extra = encodeURIComponent(
+                  '\n' + msg(BGL_MESSAGES.wppLinhaHorarios, { horarios: 'a definir' }),
+                );
                 window.open(waHref + extra, '_blank');
               },
             );
@@ -2826,7 +2880,9 @@
       })();
 
       // ─── INIT ─────────────────────────────────────────────────────────────────
-      (function () {
+      function _bglDoInit() {
+        var _ls = document.getElementById('bgl-loading');
+        if (_ls) _ls.style.display = 'none';
         // ── Inicializa preços e configurações a partir de BGL_PLANOS / BGL_CONFIG ──
         function _initPlanData() {
           function fmtBRL(n) {
@@ -2887,9 +2943,11 @@
                 id: Analytics.gaId(data.mae, data.filho, data.sexo),
               });
               if (data.mae) {
+                const _artigo = data.sexo === 'm' ? 'o' : 'a';
+                const _filho = data.sexo === 'm' ? 'filho' : 'filha';
                 document.getElementById('expired-name-msg').innerHTML = msg(
                   BGL_MESSAGES.expiredMsgPersonalizado,
-                  { mae: data.mae },
+                  { mae: data.mae, artigo: _artigo, filho: _filho },
                 ).replace(/\n/g, '<br>');
               }
             } else {
@@ -2899,7 +2957,8 @@
             // hash inv\u00e1lido \u2192 mostra form
           }
         }
-      })();
+      }
+      window._bglInitCallback = _bglDoInit;
 
       // ─── GLOBAL WRAPPERS (compatibilidade com onclick= no HTML) ───────────────
       window.selecionarFreqBtn = (e, btn) => PlanSelector.select(e, btn);
@@ -2913,6 +2972,105 @@
       window.SchedulePicker = SchedulePicker;
       window.confirmarHorarios = () => SchedulePicker.confirm();
       window.pularHorarios = () => SchedulePicker.skip();
+    </script>
+
+    <!-- ══════════════════════════════ REMOTE CONFIG (Firestore) ══ -->
+    <script type="module">
+      const CACHE_KEY = 'bgl_rc_v1';
+      const CACHE_TTL = 60 * 60 * 1000; // 1h
+
+      function applyRemoteConfig(remote) {
+        if (remote.messages) Object.assign(BGL_MESSAGES, remote.messages);
+        if (remote.planos) {
+          ['anual', 'semestral', 'trimestral'].forEach(function (p) {
+            if (remote.planos[p]) {
+              BGL_PLANOS[p] = BGL_PLANOS[p] || {};
+              Object.assign(BGL_PLANOS[p], remote.planos[p]);
+            }
+          });
+          if (remote.planos.avulsa) {
+            BGL_PLANOS.avulsa = BGL_PLANOS.avulsa || {};
+            Object.assign(BGL_PLANOS.avulsa, remote.planos.avulsa);
+          }
+        }
+        if (remote.horarios) Object.assign(BGL_HORARIOS, remote.horarios);
+        if (remote.faq && Array.isArray(remote.faq.items)) {
+          BGL_FAQ.splice(0, BGL_FAQ.length, ...remote.faq.items);
+        }
+        if (remote.meta) {
+          ['address', 'instagram'].forEach(function (k) {
+            if (remote.meta[k] !== undefined) BGL_CONFIG[k] = remote.meta[k];
+          });
+          if (remote.meta.turmas) BGL_CONFIG.turmas = remote.meta.turmas;
+        }
+      }
+
+      // Usa import() dinâmico para que falha de rede não quebre o módulo inteiro
+      async function loadRemoteConfig() {
+        if (window.BGL_SKIP_REMOTE_CONFIG) return true;
+
+        // Verificar cache no sessionStorage
+        try {
+          var raw = sessionStorage.getItem(CACHE_KEY);
+          if (raw) {
+            var cached = JSON.parse(raw);
+            if (Date.now() - cached.ts < CACHE_TTL) {
+              applyRemoteConfig(cached.data);
+              return true;
+            }
+          }
+        } catch (_) {}
+
+        // Buscar no Firestore com timeout de 3s
+        try {
+          var fbApp = await import('https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js');
+          var fbFs =
+            await import('https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js');
+          var existingApp = fbApp.getApps().find(function (a) {
+            return a.name === 'bgl-rc';
+          });
+          var app = existingApp || fbApp.initializeApp(BGL_CONFIG.firebaseConfig, 'bgl-rc');
+          var db = fbFs.getFirestore(app);
+          var docIds = ['messages', 'planos', 'horarios', 'faq', 'meta'];
+          var timeout = new Promise(function (_, rej) {
+            return setTimeout(function () {
+              return rej(new Error('timeout'));
+            }, 3000);
+          });
+          var snaps = await Promise.race([
+            Promise.all(
+              docIds.map(function (id) {
+                return fbFs.getDoc(fbFs.doc(db, 'config', id));
+              }),
+            ),
+            timeout,
+          ]);
+          var data = {};
+          snaps.forEach(function (snap, i) {
+            if (snap.exists()) data[docIds[i]] = snap.data();
+          });
+          applyRemoteConfig(data);
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data }));
+          } catch (_) {}
+          return true; // sucesso
+        } catch (e) {
+          console.warn('[RemoteConfig] erro ao buscar Firestore:', e.message);
+          return false; // falha
+        }
+      }
+
+      loadRemoteConfig().then(function (ok) {
+        if (ok === false && BGL_CONFIG.remoteConfigMode === 'required') {
+          // Modo produção: exibe erro e não inicializa a página
+          document.getElementById('bgl-loading-icon').textContent = '⚠️';
+          document.getElementById('bgl-loading-msg').textContent =
+            'Não foi possível carregar as informações. Verifique sua conexão e tente novamente.';
+          document.getElementById('bgl-loading-retry').style.display = 'inline-block';
+        } else {
+          window._bglInitCallback();
+        }
+      });
     </script>
   </body>
 </html>
