@@ -836,6 +836,8 @@
       window.BGL_PLANOS = window.BGL_PLANOS || {};
       window.BGL_HORARIOS = window.BGL_HORARIOS || {};
       window.BGL_FAQ = window.BGL_FAQ || [];
+      // Testes: aplica mock de config/meta (whatsapp, address, instagram, turmas)
+      if (window._BGL_META_MOCK) Object.assign(BGL_CONFIG, window._BGL_META_MOCK);
     </script>
     <!-- Google Analytics -->
     <script>
@@ -925,17 +927,25 @@
       if (!window.BGL_SKIP_REMOTE_CONFIG) {
         (async () => {
           try {
-            const [mSnap, pSnap, hSnap, fSnap] = await Promise.all([
+            const [mSnap, pSnap, hSnap, fSnap, metaSnap] = await Promise.all([
               getDoc(doc(db, 'config', 'messages')),
               getDoc(doc(db, 'config', 'planos')),
               getDoc(doc(db, 'config', 'horarios')),
               getDoc(doc(db, 'config', 'faq')),
+              getDoc(doc(db, 'config', 'meta')),
             ]);
             if (mSnap.exists()) Object.assign(window.BGL_MESSAGES, mSnap.data());
             if (pSnap.exists()) Object.assign(window.BGL_PLANOS, pSnap.data());
             if (hSnap.exists()) Object.assign(window.BGL_HORARIOS, hSnap.data());
             if (fSnap.exists() && Array.isArray(fSnap.data().items)) {
               window.BGL_FAQ.splice(0, window.BGL_FAQ.length, ...fSnap.data().items);
+            }
+            if (metaSnap.exists()) {
+              const m = metaSnap.data();
+              ['whatsapp', 'address', 'instagram'].forEach((k) => {
+                if (m[k] !== undefined) window.BGL_CONFIG[k] = m[k];
+              });
+              if (m.turmas) window.BGL_CONFIG.turmas = m.turmas;
             }
           } catch (e) {
             console.warn('[proposta] RemoteConfig falhou:', e.message);

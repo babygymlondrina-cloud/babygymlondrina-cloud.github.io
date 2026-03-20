@@ -1215,6 +1215,8 @@
       window.BGL_PLANOS = window.BGL_PLANOS || {};
       window.BGL_HORARIOS = window.BGL_HORARIOS || {};
       window.BGL_FAQ = window.BGL_FAQ || [];
+      // Testes: aplica mock de config/meta (whatsapp, address, instagram, turmas)
+      if (window._BGL_META_MOCK) Object.assign(BGL_CONFIG, window._BGL_META_MOCK);
     </script>
     <!-- Google Analytics -->
     <script>
@@ -2998,7 +3000,7 @@
           BGL_FAQ.splice(0, BGL_FAQ.length, ...remote.faq.items);
         }
         if (remote.meta) {
-          ['address', 'instagram'].forEach(function (k) {
+          ['whatsapp', 'address', 'instagram'].forEach(function (k) {
             if (remote.meta[k] !== undefined) BGL_CONFIG[k] = remote.meta[k];
           });
           if (remote.meta.turmas) BGL_CONFIG.turmas = remote.meta.turmas;
