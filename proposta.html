@@ -953,6 +953,7 @@
             }
             if (tSnap.exists() && Array.isArray(tSnap.data().items)) {
               BGL_CONFIG.turmas = tSnap.data().items;
+              if (window.FormController) window.FormController.populateTurmas();
             }
           } catch (e) {
             console.warn('[proposta] RemoteConfig falhou:', e.message);
@@ -2110,11 +2111,10 @@
           const on = document.getElementById('chk-desconto').checked;
           document.getElementById('desconto-fields').style.display = on ? 'block' : 'none';
         }
-        function init() {
-          PhotoHandler.init();
-          PhotoHandler.initImgbbState();
-          sincronizarDescDias();
+        function populateTurmas() {
           const turmaSel = document.getElementById('inp-turma');
+          // remove opções antigas (exceto a primeira — "Sem turma")
+          while (turmaSel.options.length > 1) turmaSel.remove(1);
           (BGL_CONFIG.turmas || []).forEach((t) => {
             const opt = document.createElement('option');
             opt.value = t.id;
@@ -2122,12 +2122,19 @@
             turmaSel.appendChild(opt);
           });
         }
+        function init() {
+          PhotoHandler.init();
+          PhotoHandler.initImgbbState();
+          sincronizarDescDias();
+          populateTurmas();
+        }
         return {
           gerarLink,
           copiarLink,
           toggleDesconto,
           sincronizarDescDias,
           limparFormulario,
+          populateTurmas,
           init,
         };
       })();
@@ -2619,6 +2626,7 @@
       window.AuthController = AuthController;
       window.ConfigEditor = ConfigEditor;
       window.HistoricoController = HistoricoController;
+      window.FormController = FormController;
       window.gerarLink = () => FormController.gerarLink();
       window.toggleDesconto = () => FormController.toggleDesconto();
       window.copiarLink = () => FormController.copiarLink();
