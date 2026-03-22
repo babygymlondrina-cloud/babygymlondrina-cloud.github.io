@@ -2057,9 +2057,12 @@
         function copiarLink() {
           const url = AppState.getLastLongUrl() || document.getElementById('link-url').textContent;
           navigator.clipboard.writeText(url).then(() => {
-            document.getElementById('btn-copy').textContent = '\u2705 Copiado!';
+            const btn = document.getElementById('btn-copy');
+            if (!btn) return;
+            btn.textContent = '\u2705 Copiado!';
             setTimeout(() => {
-              document.getElementById('btn-copy').textContent = '\uD83D\uDCCB Copiar link';
+              const b = document.getElementById('btn-copy');
+              if (b) b.textContent = '\uD83D\uDCCB Copiar link';
             }, 2000);
           });
         }
