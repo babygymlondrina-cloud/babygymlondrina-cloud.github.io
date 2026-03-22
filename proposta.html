@@ -878,6 +878,11 @@
         limit,
       } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js';
 
+      if (window.BGL_SKIP_FIREBASE) {
+        if (Array.isArray(window._fbReadyCb)) window._fbReadyCb.forEach((cb) => cb());
+        else if (window._fbReadyCb) window._fbReadyCb();
+        window._fbReady = true;
+      } else {
       const app = initializeApp(BGL_CONFIG.firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
@@ -982,8 +987,10 @@
         setDoc,
         limit,
       };
-      if (window._fbReadyCb) window._fbReadyCb();
-      else window._fbReady = true;
+      if (Array.isArray(window._fbReadyCb)) window._fbReadyCb.forEach((cb) => cb());
+      else if (window._fbReadyCb) window._fbReadyCb();
+      window._fbReady = true;
+      } // end else (!BGL_SKIP_FIREBASE)
     </script>
   </head>
   <body>
@@ -1110,100 +1117,32 @@
             padding: 0.7rem 1rem;
             margin-bottom: 1rem;
             align-items: center;
-            justify-content: space-between;
             gap: 0.5rem;
           "
         >
-          <div style="display: flex; align-items: center; gap: 0.5rem">
-            <span style="font-size: 1rem">🖼️</span>
-            <span style="font-size: 0.82rem; font-weight: 700; color: var(--teal-dark)">
-              ImgBB configurado — fotos geram link curto
-            </span>
-          </div>
-          <button
-            onclick="mostrarCampoImgbb()"
-            style="
-              background: none;
-              border: 1px solid var(--teal);
-              border-radius: 8px;
-              padding: 0.3rem 0.6rem;
-              font-size: 0.75rem;
-              font-weight: 700;
-              color: var(--teal-dark);
-              cursor: pointer;
-              font-family: Nunito, sans-serif;
-            "
-          >
-            Alterar
-          </button>
+          <span style="font-size: 1rem">🖼️</span>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--teal-dark)">
+            ImgBB configurado — fotos geram link curto
+          </span>
         </div>
-        <div id="imgbb-field" style="margin-bottom: 1rem">
-          <label
+        <div id="imgbb-field" style="margin-bottom: 1rem; display: none">
+          <div
             style="
-              display: block;
+              background: #fff8e1;
+              border-radius: 12px;
+              padding: 0.7rem 1rem;
               font-size: 0.8rem;
               font-weight: 700;
-              color: #6b6b8a;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-              margin-bottom: 0.4rem;
+              color: #7a6000;
             "
           >
-            🖼️ API Key ImgBB
-            <span style="font-weight: 400; text-transform: none; letter-spacing: 0; color: #aaa">
-              — foto no link curto
-            </span>
-          </label>
-          <div style="display: flex; gap: 0.5rem">
-            <input
-              type="password"
-              id="inp-imgbb"
-              placeholder="Cole sua API Key aqui"
-              autocomplete="off"
-              style="
-                flex: 1;
-                border: 2px solid #e8e8f0;
-                border-radius: 12px;
-                padding: 0.75rem 1rem;
-                font-family: Nunito, sans-serif;
-                font-size: 1rem;
-                font-weight: 600;
-                color: #2d2d2d;
-                background: #fafafa;
-                outline: none;
-              "
-            />
-            <button
-              onclick="salvarImgbb()"
-              style="
-                flex-shrink: 0;
-                background: var(--teal-dark);
-                color: white;
-                border: none;
-                border-radius: 10px;
-                padding: 0.75rem 0.8rem;
-                font-family: Nunito, sans-serif;
-                font-size: 0.85rem;
-                font-weight: 700;
-                cursor: pointer;
-              "
-            >
-              Salvar
-            </button>
-          </div>
-          <div
-            id="imgbb-status"
-            style="
-              font-size: 0.75rem;
-              margin-top: 0.4rem;
-              font-weight: 700;
-              color: var(--teal-dark);
-            "
-          ></div>
-          <div style="font-size: 0.72rem; color: #aaa; margin-top: 0.3rem; font-weight: 600">
-            Salvo no dispositivo. Sem ImgBB, foto funciona mas link não encurta.
+            🖼️ ImgBB não configurado — fotos ficam no link longo
           </div>
         </div>
+        <div
+          id="imgbb-status"
+          style="font-size: 0.75rem; margin-bottom: 0.5rem; font-weight: 700; color: var(--teal-dark)"
+        ></div>
         <div class="field">
           <label>Foto do bebê (opcional)</label>
           <div class="foto-area" id="foto-area">
@@ -1736,10 +1675,26 @@
         return { LINK_VERSION, LINK_MIN_VERSION, encode, decode, buildUrl, shorten };
       })();
 
+      // ─── Obfuscação de chave (XOR + base64) ──────────────────────────────────
+      const _OBF_SEED = 'BGL_LONDRINA_IMGS';
+      function _xorObf(str) {
+        const r = [];
+        for (let i = 0; i < str.length; i++)
+          r.push(str.charCodeAt(i) ^ _OBF_SEED.charCodeAt(i % _OBF_SEED.length));
+        return btoa(String.fromCharCode(...r));
+      }
+      function _xorDeobf(enc) {
+        const b = atob(enc)
+          .split('')
+          .map((c) => c.charCodeAt(0));
+        return b.map((x, i) => String.fromCharCode(x ^ _OBF_SEED.charCodeAt(i % _OBF_SEED.length))).join('');
+      }
+
       // ─── PhotoHandler ─────────────────────────────────────────────────────────
-      // Facade sobre File API (canvas badge) + ImgBB API + localStorage.
+      // Facade sobre File API (canvas badge) + ImgBB API + Firestore (chave).
       const PhotoHandler = (function () {
         let _fotoBase64 = '';
+        let _imgbbKey = null;
         function init() {
           document.getElementById('inp-foto').addEventListener('change', function (e) {
             const file = e.target.files[0];
@@ -1815,9 +1770,7 @@
           return _fotoBase64;
         }
         function getImgbbKey() {
-          return (
-            localStorage.getItem('imgbb_key') || document.getElementById('inp-imgbb').value.trim()
-          );
+          return _imgbbKey;
         }
         async function uploadImgbb(base64, expirySeconds) {
           const key = getImgbbKey();
@@ -1835,31 +1788,36 @@
           if (json.success) return json.data.url;
           throw new Error((json.error && json.error.message) || 'Erro ImgBB');
         }
-        function _mostrarImgbbConfigurado() {
-          document.getElementById('imgbb-field').style.display = 'none';
-          document.getElementById('imgbb-configured').style.display = 'flex';
-        }
-        function saveKey() {
-          const k = document.getElementById('inp-imgbb').value.trim();
-          if (!k) {
-            alert('Cole a API Key antes de salvar.');
-            return;
+        function _updateImgbbUI() {
+          const cfg = document.getElementById('imgbb-configured');
+          const field = document.getElementById('imgbb-field');
+          if (_imgbbKey) {
+            if (cfg) cfg.style.display = 'flex';
+            if (field) field.style.display = 'none';
+          } else {
+            if (cfg) cfg.style.display = 'none';
+            if (field) field.style.display = 'block';
           }
-          localStorage.setItem('imgbb_key', k);
-          document.getElementById('imgbb-status').textContent = '\u2705 Salvo!';
-          setTimeout(() => _mostrarImgbbConfigurado(), 800);
         }
-        function showField() {
-          document.getElementById('imgbb-configured').style.display = 'none';
-          document.getElementById('imgbb-field').style.display = 'block';
-          document.getElementById('inp-imgbb').focus();
-        }
-        function initImgbbState() {
-          const saved = localStorage.getItem('imgbb_key');
-          if (saved) {
-            document.getElementById('inp-imgbb').value = saved;
-            _mostrarImgbbConfigurado();
+        async function loadKeyFromFirestore() {
+          if (!window._fb && !window._fbReady) {
+            await new Promise((resolve) => {
+              if (!Array.isArray(window._fbReadyCb)) window._fbReadyCb = [];
+              window._fbReadyCb.push(resolve);
+              setTimeout(resolve, 8000);
+            });
           }
+          const fb = window._fb;
+          if (!fb) return;
+          try {
+            const snap = await fb.getDoc(fb.doc(fb.db, 'config', 'secrets'));
+            if (snap.exists() && snap.data().imgbbKey) {
+              _imgbbKey = _xorDeobf(snap.data().imgbbKey);
+            }
+          } catch (e) {
+            console.warn('[ImgBB] Falha ao carregar chave:', e.message);
+          }
+          _updateImgbbUI();
         }
         function clear() {
           _fotoBase64 = '';
@@ -1880,9 +1838,7 @@
           getBase64,
           getImgbbKey,
           uploadImgbb,
-          saveKey,
-          showField,
-          initImgbbState,
+          loadKeyFromFirestore,
           clear,
         };
       })();
@@ -2124,7 +2080,6 @@
         }
         function init() {
           PhotoHandler.init();
-          PhotoHandler.initImgbbState();
           sincronizarDescDias();
           populateTurmas();
         }
@@ -2153,6 +2108,14 @@
           if (!_email) return;
           const el = document.getElementById('historico-lista');
           el.innerHTML = '<div class="historico-status">Carregando...</div>';
+          if (!window._fb) {
+            await new Promise((resolve) => {
+              if (window._fbReady) return resolve();
+              if (!Array.isArray(window._fbReadyCb)) window._fbReadyCb = [];
+              window._fbReadyCb.push(resolve);
+              setTimeout(resolve, 8000);
+            });
+          }
           const fb = window._fb;
           if (!fb) {
             el.innerHTML = '<div class="historico-status">Firebase indisponível.</div>';
@@ -2308,6 +2271,7 @@
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('form-mode').style.display = 'flex';
           HistoricoController.init(session.email);
+          PhotoHandler.loadKeyFromFirestore();
         }
 
         function showLogin() {
@@ -2632,8 +2596,6 @@
       window.copiarLink = () => FormController.copiarLink();
       window.sincronizarDescDias = () => FormController.sincronizarDescDias();
       window.limparFormulario = () => FormController.limparFormulario();
-      window.salvarImgbb = () => PhotoHandler.saveKey();
-      window.mostrarCampoImgbb = () => PhotoHandler.showField();
     </script>
     <!-- ─── Config Editor Modal ───────────────────────────────────────────────── -->
     <div id="cfg-modal" role="dialog" aria-modal="true" aria-label="Configurações do App">
