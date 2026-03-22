@@ -1215,7 +1215,7 @@
       window.BGL_PLANOS = window.BGL_PLANOS || {};
       window.BGL_HORARIOS = window.BGL_HORARIOS || {};
       window.BGL_FAQ = window.BGL_FAQ || [];
-      // Testes: aplica mock de config/meta (whatsapp, address, instagram, turmas)
+      // Testes: aplica mock de config/dadosUnidade e config/turmas (whatsapp, address, instagram, turmas)
       if (window._BGL_META_MOCK) Object.assign(BGL_CONFIG, window._BGL_META_MOCK);
     </script>
     <!-- Google Analytics -->
@@ -1279,8 +1279,8 @@
     <div id="outdated-screen" style="display: none">
       <div class="expired-card">
         <span class="expired-icon">🔒</span>
-        <div class="expired-title">Link não disponível</div>
-        <p class="expired-sub">
+        <div class="expired-title" id="outdated-titulo">Link não disponível</div>
+        <p class="expired-sub" id="outdated-sub">
           Este link foi gerado em uma versão anterior
           <br />
           e não está mais disponível.
@@ -1304,7 +1304,7 @@
               d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
             />
           </svg>
-          Solicitar novo link
+          <span id="outdated-botao-label">Solicitar novo link</span>
         </a>
       </div>
     </div>
@@ -1316,7 +1316,7 @@
           src="data:image/png;base64,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"
           alt=""
         />
-        <div class="expired-title">Este link expirou</div>
+        <div class="expired-title" id="expired-titulo">Este link expirou</div>
         <p class="expired-sub" id="expired-name-msg">
           Mas a Baby Gym Londrina ainda tem a vaga do seu bebê!
           <br />
@@ -1338,7 +1338,7 @@
               d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
             />
           </svg>
-          Falar com a Baby Gym
+          <span id="expired-botao-label">Falar com a Baby Gym</span>
         </a>
       </div>
     </div>
@@ -1453,8 +1453,10 @@
               <div class="garanta-vaga animate delay-2">
                 <span>🔒</span>
                 <div>
-                  <strong>Garanta a vaga do seu bebê!</strong>
-                  <span>As turmas têm vagas limitadas — a matrícula confirma seu lugar</span>
+                  <strong id="garanta-vaga-titulo">Garanta a vaga do seu bebê!</strong>
+                  <span id="garanta-vaga-sub">
+                    As turmas têm vagas limitadas — a matrícula confirma seu lugar
+                  </span>
                 </div>
               </div>
               <div class="section-title animate delay-2">📋 Escolha o plano ideal</div>
@@ -1796,7 +1798,7 @@
                   </div>
                 </div>
                 <div class="horarios-body" id="horarios-body"></div>
-                <div class="horarios-aviso">
+                <div class="horarios-aviso" id="horario-aviso">
                   ⚠️ Horários sujeitos a alteração. Confirme pelo WhatsApp.
                 </div>
               </div>
@@ -1804,7 +1806,7 @@
             <!-- PANEL 2: FAQ -->
             <div class="panel" id="panel-faq" role="tabpanel">
               <div class="card-faq animate">
-                <div class="faq-titulo">❓ Perguntas Frequentes</div>
+                <div class="faq-titulo" id="faq-titulo">❓ Perguntas Frequentes</div>
                 <div id="faq-list"></div>
               </div>
             </div>
@@ -2924,6 +2926,22 @@
           if (footerNote)
             footerNote.innerHTML =
               '📍 Baby Gym Londrina · ' + BGL_CONFIG.address + '<br>' + BGL_CONFIG.instagram;
+          // ── Textos de UI via BGL_MESSAGES ──────────────────────────────────────
+          function _setEl(id, text) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = text;
+          }
+          _setEl('outdated-titulo', BGL_MESSAGES.outdatedTitulo);
+          _setEl('outdated-sub', BGL_MESSAGES.outdatedSub);
+          _setEl('outdated-botao-label', BGL_MESSAGES.outdatedBotao);
+          _setEl('expired-titulo', BGL_MESSAGES.expiradoTitulo);
+          _setEl('expired-name-msg', BGL_MESSAGES.expiradoSub);
+          _setEl('expired-botao-label', BGL_MESSAGES.expiradoBotao);
+          _setEl('garanta-vaga-titulo', BGL_MESSAGES.garantaVagaTitulo);
+          _setEl('garanta-vaga-sub', BGL_MESSAGES.garantaVagaSub);
+          _setEl('horario-aviso', BGL_MESSAGES.horarioAviso);
+          _setEl('schedule-title', BGL_MESSAGES.schedulePickerTitulo);
+          _setEl('faq-titulo', BGL_MESSAGES.faqTitulo);
         }
         _initPlanData();
 
@@ -2999,11 +3017,13 @@
         if (remote.faq && Array.isArray(remote.faq.items)) {
           BGL_FAQ.splice(0, BGL_FAQ.length, ...remote.faq.items);
         }
-        if (remote.meta) {
+        if (remote.dadosUnidade) {
           ['whatsapp', 'address', 'instagram'].forEach(function (k) {
-            if (remote.meta[k] !== undefined) BGL_CONFIG[k] = remote.meta[k];
+            if (remote.dadosUnidade[k] !== undefined) BGL_CONFIG[k] = remote.dadosUnidade[k];
           });
-          if (remote.meta.turmas) BGL_CONFIG.turmas = remote.meta.turmas;
+        }
+        if (remote.turmas && Array.isArray(remote.turmas.items)) {
+          BGL_CONFIG.turmas = remote.turmas.items;
         }
       }
 
@@ -3033,7 +3053,7 @@
           });
           var app = existingApp || fbApp.initializeApp(BGL_CONFIG.firebaseConfig, 'bgl-rc');
           var db = fbFs.getFirestore(app);
-          var docIds = ['messages', 'planos', 'horarios', 'faq', 'meta'];
+          var docIds = ['messages', 'planos', 'horarios', 'faq', 'dadosUnidade', 'turmas'];
           var timeout = new Promise(function (_, rej) {
             return setTimeout(function () {
               return rej(new Error('timeout'));

@@ -836,7 +836,7 @@
       window.BGL_PLANOS = window.BGL_PLANOS || {};
       window.BGL_HORARIOS = window.BGL_HORARIOS || {};
       window.BGL_FAQ = window.BGL_FAQ || [];
-      // Testes: aplica mock de config/meta (whatsapp, address, instagram, turmas)
+      // Testes: aplica mock de config/dadosUnidade e config/turmas (whatsapp, address, instagram, turmas)
       if (window._BGL_META_MOCK) Object.assign(BGL_CONFIG, window._BGL_META_MOCK);
     </script>
     <!-- Google Analytics -->
@@ -904,12 +904,16 @@
             ['horarios', BGL_HORARIOS],
             ['faq', { items: BGL_FAQ }],
             [
-              'meta',
+              'dadosUnidade',
               {
+                whatsapp: BGL_CONFIG.whatsapp,
                 address: BGL_CONFIG.address,
                 instagram: BGL_CONFIG.instagram,
-                turmas: BGL_CONFIG.turmas,
               },
+            ],
+            [
+              'turmas',
+              { items: BGL_CONFIG.turmas },
             ],
           ];
           await Promise.all(seeds.map(([id, data]) => setDoc(doc(db, 'config', id), data)));
@@ -927,12 +931,13 @@
       if (!window.BGL_SKIP_REMOTE_CONFIG) {
         (async () => {
           try {
-            const [mSnap, pSnap, hSnap, fSnap, metaSnap] = await Promise.all([
+            const [mSnap, pSnap, hSnap, fSnap, duSnap, tSnap] = await Promise.all([
               getDoc(doc(db, 'config', 'messages')),
               getDoc(doc(db, 'config', 'planos')),
               getDoc(doc(db, 'config', 'horarios')),
               getDoc(doc(db, 'config', 'faq')),
-              getDoc(doc(db, 'config', 'meta')),
+              getDoc(doc(db, 'config', 'dadosUnidade')),
+              getDoc(doc(db, 'config', 'turmas')),
             ]);
             if (mSnap.exists()) Object.assign(window.BGL_MESSAGES, mSnap.data());
             if (pSnap.exists()) Object.assign(window.BGL_PLANOS, pSnap.data());
@@ -940,12 +945,14 @@
             if (fSnap.exists() && Array.isArray(fSnap.data().items)) {
               window.BGL_FAQ.splice(0, window.BGL_FAQ.length, ...fSnap.data().items);
             }
-            if (metaSnap.exists()) {
-              const m = metaSnap.data();
+            if (duSnap.exists()) {
+              const du = duSnap.data();
               ['whatsapp', 'address', 'instagram'].forEach((k) => {
-                if (m[k] !== undefined) BGL_CONFIG[k] = m[k];
+                if (du[k] !== undefined) BGL_CONFIG[k] = du[k];
               });
-              if (m.turmas) BGL_CONFIG.turmas = m.turmas;
+            }
+            if (tSnap.exists() && Array.isArray(tSnap.data().items)) {
+              BGL_CONFIG.turmas = tSnap.data().items;
             }
           } catch (e) {
             console.warn('[proposta] RemoteConfig falhou:', e.message);
@@ -2407,7 +2414,8 @@
           { id: 'planos', label: 'Planos' },
           { id: 'horarios', label: 'Horários' },
           { id: 'faq', label: 'FAQ' },
-          { id: 'meta', label: 'Meta' },
+          { id: 'dadosUnidade', label: 'Dados da Unidade' },
+          { id: 'turmas', label: 'Turmas' },
         ];
 
         let _current = null;
@@ -2661,10 +2669,17 @@
             </button>
             <button
               class="cfg-section-btn"
-              data-section="meta"
-              onclick="ConfigEditor.selectSection('meta')"
+              data-section="dadosUnidade"
+              onclick="ConfigEditor.selectSection('dadosUnidade')"
             >
-              Meta
+              Dados da Unidade
+            </button>
+            <button
+              class="cfg-section-btn"
+              data-section="turmas"
+              onclick="ConfigEditor.selectSection('turmas')"
+            >
+              Turmas
             </button>
           </div>
           <div id="cfg-content">
