@@ -943,9 +943,9 @@
             if (metaSnap.exists()) {
               const m = metaSnap.data();
               ['whatsapp', 'address', 'instagram'].forEach((k) => {
-                if (m[k] !== undefined) window.BGL_CONFIG[k] = m[k];
+                if (m[k] !== undefined) BGL_CONFIG[k] = m[k];
               });
-              if (m.turmas) window.BGL_CONFIG.turmas = m.turmas;
+              if (m.turmas) BGL_CONFIG.turmas = m.turmas;
             }
           } catch (e) {
             console.warn('[proposta] RemoteConfig falhou:', e.message);
