@@ -567,6 +567,148 @@
         background: var(--teal-dark);
         color: white;
       }
+      .btn-help {
+        background: none;
+        border: 1.5px solid var(--teal-dark);
+        border-radius: 6px;
+        padding: 0.2rem 0.55rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        margin-right: 0.4rem;
+      }
+      .btn-help:hover {
+        background: var(--teal-dark);
+        color: white;
+      }
+      #help-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      #help-modal.open {
+        display: flex;
+      }
+      #help-panel {
+        background: white;
+        width: 100%;
+        max-width: 720px;
+        max-height: calc(100vh - 3rem);
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+      }
+      #help-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.4rem;
+        background: var(--purple-dark);
+        color: white;
+        flex-shrink: 0;
+      }
+      #help-header h2 {
+        font-family: 'Baloo 2', cursive;
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin: 0;
+      }
+      #help-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.4rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 0.2rem;
+      }
+      #help-body {
+        overflow-y: auto;
+        padding: 1.4rem 1.6rem 2rem;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--text);
+      }
+      #help-body h2 {
+        font-family: 'Baloo 2', cursive;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--purple-dark);
+        margin: 1.6rem 0 0.5rem;
+        padding-bottom: 0.2rem;
+        border-bottom: 2px solid #ede9ff;
+      }
+      #help-body h3 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+        margin: 1.2rem 0 0.35rem;
+      }
+      #help-body p {
+        margin: 0.4rem 0;
+      }
+      #help-body ul,
+      #help-body ol {
+        margin: 0.4rem 0 0.4rem 1.3rem;
+        padding: 0;
+      }
+      #help-body li {
+        margin-bottom: 0.25rem;
+      }
+      #help-body table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+        margin: 0.6rem 0 1rem;
+      }
+      #help-body th {
+        background: #f5f3ff;
+        color: var(--purple-dark);
+        font-weight: 700;
+        text-align: left;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid #e4e1f7;
+      }
+      #help-body td {
+        padding: 0.4rem 0.7rem;
+        border: 1px solid #e9e7f5;
+        vertical-align: top;
+      }
+      #help-body tr:nth-child(even) td {
+        background: #faf9ff;
+      }
+      #help-body code {
+        background: #f0eeff;
+        border-radius: 4px;
+        padding: 0.1rem 0.35rem;
+        font-size: 0.82rem;
+        font-family: monospace;
+      }
+      #help-body strong {
+        font-weight: 700;
+      }
+      #help-body blockquote {
+        border-left: 3px solid var(--teal-dark);
+        margin: 0.5rem 0;
+        padding: 0.3rem 0.8rem;
+        background: #f5fffe;
+        color: var(--text-light);
+        font-size: 0.85rem;
+      }
       #cfg-modal {
         position: fixed;
         inset: 0;
@@ -1051,6 +1193,7 @@
       <div class="form-card">
         <div class="user-bar">
           <span class="user-bar-email" id="user-email"></span>
+          <button class="btn-help" onclick="HelpModal.open()">❓ Ajuda</button>
           <button class="btn-cfg" onclick="ConfigEditor.open()">⚙️ Config</button>
           <button class="btn-logout" onclick="AuthController.logout()">Sair</button>
         </div>
@@ -2015,7 +2158,7 @@
           }
           const fb = window._fb;
           if (fb) {
-            fb.addDoc(fb.collection(fb.db, 'propostas'), {
+            fb.addDoc(fb.collection(fb.db, BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas'), {
               proposalId,
               operatorEmail,
               criadoEm: fb.serverTimestamp(),
@@ -2140,7 +2283,7 @@
               const fimDate = new Date(fim + 'T23:59:59');
               constraints.push(fb.where('criadoEm', '<=', fb.Timestamp.fromDate(fimDate)));
             }
-            const q = fb.query(fb.collection(fb.db, 'propostas'), ...constraints);
+            const q = fb.query(fb.collection(fb.db, BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas'), ...constraints);
             const snap = await fb.getDocs(q);
             const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
             _renderLista(docs);
@@ -2301,8 +2444,9 @@
           }
           setLoginBtn(true);
           if (isSafari()) {
-            // Safari bloqueia sessionStorage no popup (ITP) — usa redirect flow
-            sessionStorage.setItem('bgl_auth_redirect', '1');
+            // Safari ITP pode limpar sessionStorage durante redirect cross-origin
+            // (firebaseapp.com → Google → app) — usa localStorage para a flag sobreviver
+            localStorage.setItem('bgl_auth_redirect', '1');
             fb.signInWithRedirect(fb.auth, fb.provider);
             return;
           }
@@ -2345,8 +2489,8 @@
           }
           showLogin();
           // Após redirect do Safari, captura o resultado do login
-          if (!sessionStorage.getItem('bgl_auth_redirect')) return;
-          sessionStorage.removeItem('bgl_auth_redirect');
+          if (!localStorage.getItem('bgl_auth_redirect')) return;
+          localStorage.removeItem('bgl_auth_redirect');
           setLoginBtn(true);
           function checkRedirect(fb) {
             fb.getRedirectResult(fb.auth)
@@ -2672,5 +2816,175 @@
         </div>
       </div>
     </div>
+    <!-- ─── Help Modal ──────────────────────────────────────────────────────── -->
+    <div id="help-modal" role="dialog" aria-modal="true" aria-label="Guia de operação">
+      <div id="help-panel">
+        <div id="help-header">
+          <h2>❓ Guia de operação</h2>
+          <button id="help-close" onclick="HelpModal.close()" aria-label="Fechar">✕</button>
+        </div>
+        <div id="help-body">
+        </div>
+      </div>
+    </div>
+    <script>
+      const HelpModal = (function () {
+        var loaded = false;
+
+        function mdToHtml(md) {
+          var lines = md.split('\n');
+          var out = [];
+          var i = 0;
+
+          function esc(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          }
+          function inline(s) {
+            s = esc(s);
+            s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+            s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+            return s;
+          }
+          function tableHtml(rows) {
+            var body = rows.filter(function (r) {
+              return !/^\|[-| :]+\|?\s*$/.test(r);
+            });
+            if (!body.length) return '';
+            var h = '<table><thead><tr>';
+            body[0]
+              .replace(/^\||\|$/g, '')
+              .split('|')
+              .forEach(function (c) {
+                h += '<th>' + inline(c.trim()) + '</th>';
+              });
+            h += '</tr></thead><tbody>';
+            for (var j = 1; j < body.length; j++) {
+              h += '<tr>';
+              body[j]
+                .replace(/^\||\|$/g, '')
+                .split('|')
+                .forEach(function (c) {
+                  h += '<td>' + inline(c.trim()) + '</td>';
+                });
+              h += '</tr>';
+            }
+            return h + '</tbody></table>';
+          }
+
+          while (i < lines.length) {
+            var line = lines[i];
+            var hm = line.match(/^(#{1,6})\s+(.*)/);
+            if (hm) {
+              if (hm[1].length === 1) {
+                i++;
+                continue;
+              }
+              var lvl = Math.min(hm[1].length, 6);
+              out.push('<h' + lvl + '>' + inline(hm[2]) + '</h' + lvl + '>');
+              i++;
+              continue;
+            }
+            if (/^---+\s*$/.test(line)) {
+              i++;
+              continue;
+            }
+            if (/^>\s?/.test(line)) {
+              out.push('<blockquote><p>' + inline(line.replace(/^>\s?/, '')) + '</p></blockquote>');
+              i++;
+              continue;
+            }
+            if (line.startsWith('|')) {
+              var tbl = [];
+              while (i < lines.length && lines[i].startsWith('|')) {
+                tbl.push(lines[i++]);
+              }
+              out.push(tableHtml(tbl));
+              continue;
+            }
+            if (/^\s*[-*]\s+/.test(line)) {
+              var lis = [];
+              while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+                lis.push('<li>' + inline(lines[i].replace(/^\s*[-*]\s+/, '')) + '</li>');
+                i++;
+              }
+              out.push('<ul>' + lis.join('') + '</ul>');
+              continue;
+            }
+            if (/^\d+\.\s/.test(line)) {
+              var ols = [];
+              while (
+                i < lines.length &&
+                (/^\d+\.\s/.test(lines[i]) || /^\s{2,}[-*]\s/.test(lines[i]))
+              ) {
+                ols.push(
+                  '<li>' + inline(lines[i].replace(/^(?:\d+\.\s|\s*[-*]\s+)/, '')) + '</li>',
+                );
+                i++;
+              }
+              out.push('<ol>' + ols.join('') + '</ol>');
+              continue;
+            }
+            if (!line.trim()) {
+              i++;
+              continue;
+            }
+            out.push('<p>' + inline(line) + '</p>');
+            i++;
+          }
+          return out.join('\n');
+        }
+
+        function open() {
+          document.getElementById('help-modal').classList.add('open');
+          if (!loaded) {
+            var body = document.getElementById('help-body');
+            body.innerHTML = '<p style="text-align:center;color:#888;padding:2rem">Carregando…</p>';
+            fetch('docs/OPERACAO.md')
+              .then(function (r) {
+                return r.text();
+              })
+              .then(function (md) {
+                body.innerHTML = mdToHtml(md);
+                loaded = true;
+              })
+              .catch(function () {
+                body.innerHTML =
+                  '<p style="color:#c00;padding:1rem">Não foi possível carregar o guia. Verifique sua conexão.</p>';
+              });
+          }
+        }
+        function close() {
+          document.getElementById('help-modal').classList.remove('open');
+        }
+        document.getElementById('help-modal').addEventListener('click', function (e) {
+          if (e.target === document.getElementById('help-modal')) close();
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && document.getElementById('help-modal').classList.contains('open'))
+            close();
+        });
+        return { open: open, close: close };
+      })();
+    </script>
+    <script>
+      (function () {
+        if (typeof BGL_CONFIG === 'undefined' || BGL_CONFIG.env !== 'hml') return;
+        var d =
+          BGL_CONFIG.deployAt !== 'dev'
+            ? new Date(BGL_CONFIG.deployAt).toLocaleString('pt-BR', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })
+            : '—';
+        var el = document.createElement('div');
+        el.innerHTML =
+          '⚠️ HML &nbsp;·&nbsp; ' + BGL_CONFIG.deployVersion + ' &nbsp;·&nbsp; ' + d;
+        el.style.cssText =
+          'position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#000;' +
+          'font:600 11px/1 monospace;text-align:center;padding:5px 12px;letter-spacing:.04em;';
+        document.body.appendChild(el);
+      })();
+    </script>
   </body>
 </html>

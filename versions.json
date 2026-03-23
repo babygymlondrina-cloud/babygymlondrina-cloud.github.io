@@ -2,5 +2,10 @@
   "hml": {
     "commit": "08cbf34",
     "deployedAt": "2026-03-23T02:20:43Z"
+  },
+  "prod": {
+    "commit": "08cbf34",
+    "deployedAt": "2026-03-23T02:20:43Z",
+    "promotedAt": "2026-03-23T02:54:03Z"
   }
 }

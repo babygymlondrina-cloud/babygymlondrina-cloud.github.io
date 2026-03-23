@@ -6,6 +6,11 @@
 // whatsapp, address, instagram e turmas ficam em config/meta no Firestore
 // e são aplicados em BGL_CONFIG pelo loader (applyRemoteConfig / proposta init).
 const BGL_CONFIG = {
+  // Ambiente: 'prod' em produção, 'hml' injetado pelo CI no deploy de homologação
+  env: 'prod',
+  deployVersion: '08cbf34', // substituído pelo CI: hash curto do commit
+  deployAt: '2026-03-23T02:20:43Z', // substituído pelo CI: ISO timestamp do deploy
+
   // Google Analytics 4
   gaId: 'G-QPB21Y8RKP',
 

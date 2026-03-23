@@ -3085,5 +3085,24 @@
         }
       });
     </script>
+    <script>
+      (function () {
+        if (typeof BGL_CONFIG === 'undefined' || BGL_CONFIG.env !== 'hml') return;
+        var d =
+          BGL_CONFIG.deployAt !== 'dev'
+            ? new Date(BGL_CONFIG.deployAt).toLocaleString('pt-BR', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })
+            : '—';
+        var el = document.createElement('div');
+        el.innerHTML = '⚠️ HML &nbsp;·&nbsp; ' + BGL_CONFIG.deployVersion + ' &nbsp;·&nbsp; ' + d;
+        el.style.cssText =
+          'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#000;' +
+          'font:600 11px/1 monospace;text-align:center;padding:5px 12px;letter-spacing:.04em;';
+        document.body.style.paddingTop = parseInt(document.body.style.paddingTop || 0) + 23 + 'px';
+        document.body.prepend(el);
+      })();
+    </script>
   </body>
 </html>
