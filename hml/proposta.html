@@ -508,6 +508,19 @@
         opacity: 0.6;
         cursor: not-allowed;
       }
+      /* ─── APP VERSION BADGE ─── */
+      .app-version-badge {
+        margin-top: 1.2rem;
+        font-size: 0.72rem;
+        color: var(--text-light);
+        text-align: center;
+        opacity: 0.7;
+        letter-spacing: 0.02em;
+      }
+      #login-screen .app-version-badge {
+        color: rgba(255, 255, 255, 0.45);
+        margin-top: 1.4rem;
+      }
       /* ─── USER BAR ─── */
       .user-bar {
         display: flex;
@@ -1186,12 +1199,18 @@
           Entrar com Google
         </button>
         <p id="login-error" style="display: none"></p>
+        <p class="app-version-badge" id="login-version-badge"></p>
       </div>
     </div>
     <div id="form-mode" style="display: none">
       <div class="form-card">
         <div class="user-bar">
           <span class="user-bar-email" id="user-email"></span>
+          <span
+            class="app-version-badge"
+            id="form-version-badge"
+            style="margin-top: 0; flex-shrink: 0"
+          ></span>
           <button class="btn-help" onclick="HelpModal.open()">❓ Ajuda</button>
           <button class="btn-cfg" onclick="ConfigEditor.open()">⚙️ Config</button>
           <button class="btn-logout" onclick="AuthController.logout()">Sair</button>
@@ -2127,6 +2146,7 @@
             gtag('event', 'proposta_gerada', {
               proposal_id: proposalId,
               operator_email: operatorEmail,
+              app_version: BGL_CONST.APP_VERSION,
             });
           }
           const fb = window._fb;
@@ -2136,6 +2156,7 @@
               {
                 proposalId,
                 operatorEmail,
+                appVersion: BGL_CONST.APP_VERSION,
                 criadoEm: fb.serverTimestamp(),
                 mae,
                 filho,
@@ -2393,6 +2414,8 @@
 
         function showForm(session) {
           document.getElementById('user-email').textContent = session.email;
+          const fvb = document.getElementById('form-version-badge');
+          if (fvb) fvb.textContent = 'v' + BGL_CONST.APP_VERSION + ' · ' + BGL_CONST.APP_DATE;
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('form-mode').style.display = 'flex';
           HistoricoController.init(session.email);
@@ -2400,6 +2423,8 @@
         }
 
         function showLogin() {
+          const lvb = document.getElementById('login-version-badge');
+          if (lvb) lvb.textContent = 'v' + BGL_CONST.APP_VERSION + ' · ' + BGL_CONST.APP_DATE;
           document.getElementById('login-screen').style.display = 'flex';
           document.getElementById('form-mode').style.display = 'none';
         }
@@ -2503,6 +2528,8 @@
 
         return { init, login, logout, getEmail };
       })();
+      // Exposto imediatamente — evita ReferenceError se algo posterior ao IIFE falhar
+      window.AuthController = AuthController;
 
       // ─── ConfigEditor ─────────────────────────────────────────────────────────
       const ConfigEditor = (function () {
@@ -2713,7 +2740,6 @@
       })();
 
       // ─── GLOBAL WRAPPERS ─────────────────────────────────────────────────────
-      window.AuthController = AuthController;
       window.ConfigEditor = ConfigEditor;
       window.HistoricoController = HistoricoController;
       window.FormController = FormController;
