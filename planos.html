@@ -1203,6 +1203,8 @@
     </style>
     <!-- Configuração do app (inlined — sem dependência de arquivo externo) -->
     <script src="config.js"></script>
+    <script src="constants.js"></script>
+    <script src="shared.js"></script>
     <!-- Stubs: preenchidos pelo RemoteConfig (Firestore) antes do render -->
     <script>
       window.BGL_MESSAGES = window.BGL_MESSAGES || {};
@@ -1841,16 +1843,7 @@
       </div>
     </div>
     <script>
-      /**
-       * Substitui [chave] no template pelo valor de params.chave.
-       * Parâmetros ausentes permanecem como [chave] sem lançar erro.
-       */
-      function msg(template, params) {
-        if (!params) return template;
-        return template.replace(/\[(\w+)\]/g, function (_, k) {
-          return k in params ? params[k] : '[' + k + ']';
-        });
-      }
+      // msg() e DiscountStrategy definidos em shared.js
 
       // ─── PriceFormatter ───────────────────────────────────────────────────────
       // Utilitários puros de parse/format BRL. Sem dependências de negócio.
@@ -1875,14 +1868,15 @@
       })();
 
       // ─── AppState ─────────────────────────────────────────────────────────────
-      // Singleton — substitui todos os window._* por getters/setters controlados.
+      // Singleton com getters/setters internos e namespaces (lead, discount, ui).
       const AppState = (function () {
         let _bgData = null;
         let _activeDiscount = null;
-        let _pagamento = 'cartao';
+        let _pagamento = BGL_CONST.PAGAMENTO.CARTAO;
         let _selectedPlan = null;
         let _lastLongUrl = '';
         return {
+          // ── Métodos legados (mantidos para compatibilidade interna) ──
           getBgData: () => _bgData,
           setBgData: (o) => {
             _bgData = o;
@@ -1903,30 +1897,35 @@
           setLastLongUrl: (u) => {
             _lastLongUrl = u;
           },
+          // ── Namespaces (Fase 4) ──────────────────────────────────────
+          lead: {
+            get: () => _bgData,
+            set: (v) => {
+              _bgData = v;
+            },
+          },
+          discount: {
+            get: () => _activeDiscount,
+            set: (v) => {
+              _activeDiscount = v;
+            },
+          },
+          ui: {
+            getPagamento: () => _pagamento,
+            setPagamento: (v) => {
+              _pagamento = v;
+            },
+            getSelectedPlan: () => _selectedPlan,
+            setSelectedPlan: (v) => {
+              _selectedPlan = v;
+            },
+            getLastLongUrl: () => _lastLongUrl,
+            setLastLongUrl: (v) => {
+              _lastLongUrl = v;
+            },
+          },
         };
       })();
-      // Aliases window._* para retrocompatibilidade (console, código externo)
-      Object.defineProperty(window, '_bgData', {
-        get: () => AppState.getBgData(),
-        set: (v) => AppState.setBgData(v),
-        configurable: true,
-      });
-      Object.defineProperty(window, '_activeDiscount', {
-        get: () => AppState.getActiveDiscount(),
-        set: (v) => AppState.setActiveDiscount(v),
-        configurable: true,
-      });
-      Object.defineProperty(window, '_pagamento', {
-        get: () => AppState.getPagamento(),
-        set: (v) => AppState.setPagamento(v),
-        configurable: true,
-      });
-      Object.defineProperty(window, '_selectedPlan', {
-        get: () => AppState.getSelectedPlan(),
-        set: (v) => AppState.setSelectedPlan(v),
-        configurable: true,
-      });
-
       // ─── Analytics ────────────────────────────────────────────────────────────
       // Facade sobre GA4. Centraliza PLANO_NOMES, gaEvent, gaId.
       const Analytics = (function () {
@@ -1958,46 +1957,19 @@
           gaEvent('clique_whatsapp', {
             id: gaId(d.mae, d.filho, d.sexo),
             plano: sp.plano,
-            frequencia: sp.freq || 'avulsa',
+            frequencia: sp.freq || BGL_CONST.PLANO.AVULSA,
             preco: sp.preco,
             turma: d.turma || 'nenhuma',
-            tipo: d.tipo === 'renovacao' ? 'renovacao' : 'primeira_vez',
+            tipo:
+              d.tipo === BGL_CONST.TIPO.RENOVACAO
+                ? BGL_CONST.TIPO.RENOVACAO
+                : BGL_CONST.TIPO.PRIMEIRA_VEZ,
           });
         }
         return { gaEvent, gaId, trackFechamento, PLANO_NOMES };
       })();
 
-      // ─── DiscountStrategy ─────────────────────────────────────────────────────
-      // Strategy pattern — resolve qual desconto está ativo e se aplica ao plano.
-      const DiscountStrategy = (function () {
-        function resolve(data) {
-          const isHoje =
-            data.tipo !== 'renovacao' && data.created && Date.now() - data.created < 86400000;
-          const desc = data.desconto;
-          const especial = desc && desc.exp && Date.now() < desc.exp && desc.pct > 0;
-          return especial
-            ? {
-                pct: desc.pct,
-                motivo: desc.motivo,
-                exp: desc.exp,
-                tipo: 'especial',
-                planos: desc.planos,
-              }
-            : isHoje
-              ? { pct: 5, motivo: 'Primeiro dia', exp: data.created + 86400000, tipo: 'hoje' }
-              : null;
-        }
-        function appliesTo(ad, plano) {
-          if (!ad) return false;
-          if (ad.tipo === 'hoje') return plano === 'anual' || plano === 'semestral';
-          if (ad.tipo === 'especial') return !ad.planos || ad.planos.includes(plano);
-          return false;
-        }
-        function getPixPct(ad, plano) {
-          return ad && ad.tipo === 'especial' && ad.pct > 5 && appliesTo(ad, plano) ? ad.pct : 5;
-        }
-        return { resolve, appliesTo, getPixPct };
-      })();
+      // DiscountStrategy definido em shared.js
 
       // ─── LinkEncoder ──────────────────────────────────────────────────────────
       // Kill switch + encode/decode Base64 + encurtamento is.gd.
@@ -2046,7 +2018,7 @@
           const ad = AppState.getActiveDiscount();
           if (
             ad &&
-            ad.tipo === 'especial' &&
+            ad.tipo === BGL_CONST.DESCONTO.ESPECIAL &&
             ad.pct > 5 &&
             DiscountStrategy.appliesTo(ad, btn.dataset.plano)
           ) {
@@ -2066,9 +2038,11 @@
           return { valor: btn.dataset.pix, pct: 5, especial: false };
         }
         function getPrecoEfetivo(btn) {
-          const isPix = AppState.getPagamento() === 'pix';
+          const isPix = AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX;
           if (isPix) {
-            return btn.dataset.pix ? { preco: btn.dataset.pix, porAula: null, tipo: 'pix' } : null;
+            return btn.dataset.pix
+              ? { preco: btn.dataset.pix, porAula: null, tipo: BGL_CONST.PAGAMENTO.PIX }
+              : null;
           }
           const ad = AppState.getActiveDiscount();
           if (ad && btn.dataset.preco && DiscountStrategy.appliesTo(ad, btn.dataset.plano)) {
@@ -2081,7 +2055,11 @@
                 label: calc.label,
               };
           }
-          return { preco: btn.dataset.preco, porAula: btn.dataset.porAula, tipo: 'cartao' };
+          return {
+            preco: btn.dataset.preco,
+            porAula: btn.dataset.porAula,
+            tipo: BGL_CONST.PAGAMENTO.CARTAO,
+          };
         }
         return { calcDescontoAula, calcDesconto, calcPixEfetivo, getPrecoEfetivo };
       })();
@@ -2094,28 +2072,7 @@
           const el = document.querySelector('.pix-note');
           if (el) el.style.display = ad && ad.pct >= 5 ? 'none' : 'block';
         }
-        function renderClient(data) {
-          document.getElementById('client-mode').style.display = 'block';
-          const sexoM = data.sexo === 'm';
-          const artigo = sexoM ? 'o' : 'a';
-          const filho = sexoM ? 'filho' : 'filha';
-          // Store data globally for plan selection
-          const isRenovacao = data.tipo === 'renovacao';
-          const turmaConf = data.turma
-            ? (BGL_CONFIG.turmas || []).find((t) => t.id === data.turma) || null
-            : null;
-          const apelido = turmaConf ? (sexoM ? turmaConf.apelidoM : turmaConf.apelidoF) : null;
-          AppState.setBgData({
-            artigo,
-            filho: data.filho,
-            mae: data.mae,
-            sexo: data.sexo,
-            tipo: data.tipo || 'primeira',
-            turma: turmaConf ? turmaConf.label : null,
-            turmaId: turmaConf ? turmaConf.id : null,
-            apelido,
-          });
-          // Hero
+        function _renderHero(data, artigo, isRenovacao, turmaConf, apelido) {
           document.getElementById('hero-greeting').textContent = msg(BGL_MESSAGES.heroSaudacao, {
             mae: data.mae,
           });
@@ -2129,7 +2086,6 @@
                 : BGL_MESSAGES.heroSubPrimeira,
             { artigo, filho: data.filho, apelido },
           );
-          // Carinha brand kit como fallback (sem foto)
           const carinhaFallback =
             '<img class="carinha-fallback" src="data:image/png;base64,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" alt="">';
           document.getElementById('hero-emoji').innerHTML = carinhaFallback;
@@ -2144,16 +2100,16 @@
             document.getElementById('hero-photo-wrap').style.display = 'block';
             document.getElementById('hero-emoji').style.display = 'none';
           }
-          // Badges — only show on destaque card
-          ['anual', 'semestral', 'trimestral'].forEach((p) => {
-            document.getElementById('badge-' + p).style.display = 'none';
-            document.getElementById('card-' + p).classList.remove('destaque');
-          });
+          [BGL_CONST.PLANO.ANUAL, BGL_CONST.PLANO.SEMESTRAL, BGL_CONST.PLANO.TRIMESTRAL].forEach(
+            (p) => {
+              document.getElementById('badge-' + p).style.display = 'none';
+              document.getElementById('card-' + p).classList.remove('destaque');
+            },
+          );
           if (data.destaque) {
             document.getElementById('card-' + data.destaque).classList.add('destaque');
             document.getElementById('badge-' + data.destaque).style.display = 'inline-block';
           }
-          // CTA initial text
           document.getElementById('cta-hint').textContent = msg(BGL_MESSAGES.ctaHint, {
             artigo,
             filho: data.filho,
@@ -2167,19 +2123,16 @@
           document.getElementById('cta-sub').textContent = isRenovacao
             ? BGL_MESSAGES.ctaSubInicialRenovacao
             : BGL_MESSAGES.ctaSubInicialPrimeira;
-          // Avulsa — mostrar só se flag ativa
           if (data.avulsa) {
             document.getElementById('card-avulsa').style.display = 'flex';
           }
-          // ── Resolve desconto ativo: especial > isHoje (5%) > null ──────────────
-          const ad = DiscountStrategy.resolve(data);
-          AppState.setActiveDiscount(ad);
-          // Banner
+        }
+        function _renderBanner(ad, isRenovacao) {
           if (ad) {
             document.getElementById('urgency-banner').style.display = 'none';
             const db = document.getElementById('desconto-especial-banner');
             db.style.display = 'flex';
-            const isPrimeiroDia = ad.tipo === 'hoje';
+            const isPrimeiroDia = ad.tipo === BGL_CONST.DESCONTO.HOJE;
             db.style.background = 'linear-gradient(135deg, var(--pink-hot), #e0006e)';
             db.style.boxShadow = '0 4px 20px rgba(252,0,124,0.3)';
             if (isPrimeiroDia) db.style.animation = 'pulse-banner 2.5s ease-in-out infinite';
@@ -2192,7 +2145,11 @@
               planosLabel = 'Anual e Semestral';
             } else {
               const p = ad.planos || [];
-              const nomes = { anual: 'Anual', semestral: 'Semestral', trimestral: 'Trimestral' };
+              const nomes = {
+                [BGL_CONST.PLANO.ANUAL]: 'Anual',
+                [BGL_CONST.PLANO.SEMESTRAL]: 'Semestral',
+                [BGL_CONST.PLANO.TRIMESTRAL]: 'Trimestral',
+              };
               planosLabel =
                 p.length === 3 || p.length === 0
                   ? 'Em todos os planos'
@@ -2215,21 +2172,31 @@
               el.style.display = 'none';
             });
           }
-          // Nota de desconto nos cards
+        }
+        function _renderPlanNotes(ad) {
           if (ad) {
             const noteText =
-              ad.tipo === 'hoje'
+              ad.tipo === BGL_CONST.DESCONTO.HOJE
                 ? BGL_MESSAGES.freqNoteIsHoje
                 : msg(BGL_MESSAGES.freqNoteEspecial, { pct: ad.pct, motivo: ad.motivo });
             const planosComDesconto = {
-              anual: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('anual'),
-              semestral: ad.tipo === 'hoje' || !ad.planos || ad.planos.includes('semestral'),
-              trimestral: ad.tipo === 'especial' && ad.planos && ad.planos.includes('trimestral'),
+              [BGL_CONST.PLANO.ANUAL]:
+                ad.tipo === BGL_CONST.DESCONTO.HOJE ||
+                !ad.planos ||
+                ad.planos.includes(BGL_CONST.PLANO.ANUAL),
+              [BGL_CONST.PLANO.SEMESTRAL]:
+                ad.tipo === BGL_CONST.DESCONTO.HOJE ||
+                !ad.planos ||
+                ad.planos.includes(BGL_CONST.PLANO.SEMESTRAL),
+              [BGL_CONST.PLANO.TRIMESTRAL]:
+                ad.tipo === BGL_CONST.DESCONTO.ESPECIAL &&
+                ad.planos &&
+                ad.planos.includes(BGL_CONST.PLANO.TRIMESTRAL),
             };
             [
-              ['anual', '.plan-anual'],
-              ['semestral', '.plan-semestral'],
-              ['trimestral', '.plan-trimestral'],
+              [BGL_CONST.PLANO.ANUAL, '.plan-anual'],
+              [BGL_CONST.PLANO.SEMESTRAL, '.plan-semestral'],
+              [BGL_CONST.PLANO.TRIMESTRAL, '.plan-trimestral'],
             ].forEach(([plano, sel]) => {
               if (!planosComDesconto[plano]) return;
               const el = document.querySelector(sel + ' .freq-options');
@@ -2247,11 +2214,10 @@
               }
             });
           }
-          // Atualiza textos de PIX nos benefits
           const PLANOS_PIX = [
-            { plano: 'anual', sel: '.plan-anual' },
-            { plano: 'semestral', sel: '.plan-semestral' },
-            { plano: 'trimestral', sel: '.plan-trimestral' },
+            { plano: BGL_CONST.PLANO.ANUAL, sel: '.plan-anual' },
+            { plano: BGL_CONST.PLANO.SEMESTRAL, sel: '.plan-semestral' },
+            { plano: BGL_CONST.PLANO.TRIMESTRAL, sel: '.plan-trimestral' },
           ];
           PLANOS_PIX.forEach(({ plano, sel }) => {
             const pixPct = DiscountStrategy.getPixPct(ad, plano);
@@ -2262,40 +2228,66 @@
               pixBenefitEl.style.display =
                 ad && DiscountStrategy.appliesTo(ad, plano) ? 'none' : '';
           });
-          // Nota de PIX
+        }
+        function _renderPixSection(ad) {
           const pixNoteTxt = document.getElementById('pix-note-text');
           if (pixNoteTxt) pixNoteTxt.textContent = BGL_MESSAGES.pixNote;
-          // Label do botão PIX
           const pixBtn = document.getElementById('pag-pix');
           if (pixBtn)
             pixBtn.textContent = ad ? BGL_MESSAGES.pagPixSemOff : BGL_MESSAGES.pagPixComOff;
-          // pix-note visibility (reutiliza helper)
           _updatePixNoteVisibility(ad);
-          // Init btn displays
+        }
+        function _renderFreqBtns(turmaConf) {
           document.querySelectorAll('.freq-btn').forEach((btn) => updateBtnDisplay(btn));
-          // Oculta freq-btns não suportados pela turma
           if (turmaConf && turmaConf.freqs) {
             document.querySelectorAll('.freq-btn').forEach((btn) => {
               btn.style.display = turmaConf.freqs.includes(btn.dataset.freq) ? '' : 'none';
             });
           }
-          // GA: page view with context
-          const diasRestantes = data.exp ? Math.ceil((data.exp - Date.now()) / 86400000) : null;
+        }
+        function renderClient(data) {
+          document.getElementById('client-mode').style.display = 'block';
+          const sexoM = data.sexo === 'm';
+          const artigo = sexoM ? 'o' : 'a';
+          const isRenovacao = data.tipo === BGL_CONST.TIPO.RENOVACAO;
+          const turmaConf = data.turma
+            ? (BGL_CONFIG.turmas || []).find((t) => t.id === data.turma) || null
+            : null;
+          const apelido = turmaConf ? (sexoM ? turmaConf.apelidoM : turmaConf.apelidoF) : null;
+          AppState.setBgData({
+            artigo,
+            filho: data.filho,
+            mae: data.mae,
+            sexo: data.sexo,
+            tipo: data.tipo || 'primeira',
+            turma: turmaConf ? turmaConf.label : null,
+            turmaId: turmaConf ? turmaConf.id : null,
+            apelido,
+          });
+          _renderHero(data, artigo, isRenovacao, turmaConf, apelido);
+          const ad = DiscountStrategy.resolve(data);
+          AppState.setActiveDiscount(ad);
+          _renderBanner(ad, isRenovacao);
+          _renderPlanNotes(ad);
+          _renderPixSection(ad);
+          _renderFreqBtns(turmaConf);
           Analytics.gaEvent('page_view_planos', {
             id: Analytics.gaId(data.mae, data.filho, data.sexo),
             plano_destaque: data.destaque || 'nenhum',
-            dias_restantes: diasRestantes,
+            dias_restantes: data.exp ? Math.ceil((data.exp - Date.now()) / 86400000) : null,
             turma: data.turma || 'nenhuma',
-            tipo: data.tipo === 'renovacao' ? 'renovacao' : 'primeira_vez',
+            tipo:
+              data.tipo === BGL_CONST.TIPO.RENOVACAO
+                ? BGL_CONST.TIPO.RENOVACAO
+                : BGL_CONST.TIPO.PRIMEIRA_VEZ,
           });
-          // Inicializa abas, horários e FAQ
           TabsController.init(data);
         }
         function updateBtnDisplay(btn) {
           const priceEl = btn.querySelector('.freq-price');
           const perEl = btn.querySelector('.freq-per');
           if (!priceEl || !perEl) return;
-          const isPix = AppState.getPagamento() === 'pix';
+          const isPix = AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX;
           const ad = AppState.getActiveDiscount();
           if (isPix && btn.dataset.pix) {
             const pix = PriceCalculator.calcPixEfetivo(btn);
@@ -2310,7 +2302,7 @@
           ) {
             const calc = PriceCalculator.calcDesconto(btn.dataset.preco, ad.pct);
             if (calc) {
-              const icon = ad.tipo === 'hoje' ? '\u2746' : '\uD83C\uDF81';
+              const icon = ad.tipo === BGL_CONST.DESCONTO.HOJE ? '\u2746' : '\uD83C\uDF81';
               priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${calc.preco} ${icon}</span>`;
               perEl.textContent =
                 PriceCalculator.calcDescontoAula(btn.dataset.porAula, ad.pct) +
@@ -2328,14 +2320,18 @@
         }
         function setPagamento(tipo) {
           AppState.setPagamento(tipo);
-          document.getElementById('pag-cartao').classList.toggle('active', tipo === 'cartao');
-          document.getElementById('pag-pix').classList.toggle('active', tipo === 'pix');
+          document
+            .getElementById('pag-cartao')
+            .classList.toggle('active', tipo === BGL_CONST.PAGAMENTO.CARTAO);
+          document
+            .getElementById('pag-pix')
+            .classList.toggle('active', tipo === BGL_CONST.PAGAMENTO.PIX);
           const ad = AppState.getActiveDiscount();
           const pixBtnEl = document.querySelector('#pag-pix');
           if (pixBtnEl)
             pixBtnEl.textContent = ad ? BGL_MESSAGES.pagPixSemOff : BGL_MESSAGES.pagPixComOff;
           const note = document.getElementById('pag-note');
-          if (tipo === 'pix') {
+          if (tipo === BGL_CONST.PAGAMENTO.PIX) {
             if (ad) {
               note.style.display = 'none';
             } else {
@@ -2347,7 +2343,8 @@
           }
           const descontoSuperaPix = ad && ad.pct >= 5;
           document.querySelectorAll('.freq-day1-note').forEach((n) => {
-            n.style.display = descontoSuperaPix || tipo === 'cartao' ? 'block' : 'none';
+            n.style.display =
+              descontoSuperaPix || tipo === BGL_CONST.PAGAMENTO.CARTAO ? 'block' : 'none';
           });
           _updatePixNoteVisibility(ad);
           document.querySelectorAll('.freq-btn').forEach((btn) => updateBtnDisplay(btn));
@@ -2382,7 +2379,7 @@
           const d = AppState.getBgData() || { artigo: 'o', filho: 'seu beb\u00ea' };
           const { plano, freq } = sp;
           let preco = sp.preco;
-          if (plano !== 'avulsa') {
+          if (plano !== BGL_CONST.PLANO.AVULSA) {
             const activeBtn = document.querySelector(
               `.freq-btn[data-plano="${plano}"][data-freq="${freq}"]`,
             );
@@ -2392,7 +2389,7 @@
             }
           }
           const nPlano = Analytics.PLANO_NOMES[plano];
-          if (plano === 'avulsa') {
+          if (plano === BGL_CONST.PLANO.AVULSA) {
             const avulsaLinhas = [
               msg(BGL_MESSAGES.wppAberturaAvulsa, { artigo: d.artigo, filho: d.filho }),
             ];
@@ -2405,13 +2402,15 @@
           }
           const freqLabel = BGL_MESSAGES.wppFreqLabel[freq] || freq;
           const pagLabel =
-            AppState.getPagamento() === 'pix' ? BGL_MESSAGES.wppPagPix : BGL_MESSAGES.wppPagCartao;
+            AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX
+              ? BGL_MESSAGES.wppPagPix
+              : BGL_MESSAGES.wppPagCartao;
           const _ad = AppState.getActiveDiscount();
           const activeBtn = document.querySelector(
             `.freq-btn[data-plano="${plano}"][data-freq="${freq}"]`,
           );
           let diaLabel;
-          if (AppState.getPagamento() === 'pix') {
+          if (AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX) {
             const pix = activeBtn
               ? PriceCalculator.calcPixEfetivo(activeBtn)
               : { valor: preco, pct: 5 };
@@ -2419,14 +2418,14 @@
             preco = pix.valor;
           } else if (_ad && DiscountStrategy.appliesTo(_ad, plano)) {
             diaLabel =
-              _ad.tipo === 'hoje'
+              _ad.tipo === BGL_CONST.DESCONTO.HOJE
                 ? BGL_MESSAGES.wppDiaIsHoje
                 : msg(BGL_MESSAGES.wppDiaEspecial, { pct: _ad.pct, motivo: _ad.motivo });
           } else {
             diaLabel = null;
           }
           const abertura = msg(
-            d.tipo === 'renovacao'
+            d.tipo === BGL_CONST.TIPO.RENOVACAO
               ? BGL_MESSAGES.wppAberturaRenovacao
               : BGL_MESSAGES.wppAberturaPrimeira,
             { artigo: d.artigo, filho: d.filho },
@@ -2456,7 +2455,7 @@
           document.getElementById('btn-trocar').style.display = 'block';
           document.getElementById('cta-title').style.display = 'block';
           document.getElementById('cta-sub').style.display = 'block';
-          const isRenovacao = d.tipo === 'renovacao';
+          const isRenovacao = d.tipo === BGL_CONST.TIPO.RENOVACAO;
           document.getElementById('cta-title').textContent = msg(
             isRenovacao ? BGL_MESSAGES.ctaTituloRenovacao : BGL_MESSAGES.ctaTituloPrimeira,
             { artigo: d.artigo, filho: d.filho, mae: d.mae },
@@ -2472,10 +2471,13 @@
           Analytics.gaEvent('plano_selecionado', {
             id: Analytics.gaId(d.mae, d.filho, d.sexo),
             plano: sp.plano,
-            frequencia: sp.freq || 'avulsa',
+            frequencia: sp.freq || BGL_CONST.PLANO.AVULSA,
             preco: built.preco,
             turma: d.turma || 'nenhuma',
-            tipo: d.tipo === 'renovacao' ? 'renovacao' : 'primeira_vez',
+            tipo:
+              d.tipo === BGL_CONST.TIPO.RENOVACAO
+                ? BGL_CONST.TIPO.RENOVACAO
+                : BGL_CONST.TIPO.PRIMEIRA_VEZ,
           });
           // Scroll to CTA
           setTimeout(() => {
@@ -2560,7 +2562,12 @@
         function selectAvulsa() {
           clearSelection();
           document.getElementById('card-avulsa').classList.add('selected');
-          AppState.setSelectedPlan({ plano: 'avulsa', freq: null, preco: 'R$127', porAula: null });
+          AppState.setSelectedPlan({
+            plano: BGL_CONST.PLANO.AVULSA,
+            freq: null,
+            preco: 'R$127',
+            porAula: null,
+          });
           CTABuilder.update();
         }
         function swap() {
@@ -2886,22 +2893,24 @@
               n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             );
           }
-          ['anual', 'semestral', 'trimestral'].forEach(function (plano) {
-            var cfg = BGL_PLANOS[plano];
-            cfg.frequencias.forEach(function (f) {
-              var btn = document.querySelector(
-                '.freq-btn[data-plano="' + plano + '"][data-freq="' + f.freq + '"]',
-              );
-              if (!btn) return;
-              btn.dataset.preco = cfg.parcelas + 'x de R$' + f.preco;
-              btn.dataset.pix = fmtBRL(f.pix);
-              btn.dataset.porAula = fmtBRL(f.porAula) + '/aula';
-              var priceEl = btn.querySelector('.freq-price');
-              var perEl = btn.querySelector('.freq-per');
-              if (priceEl) priceEl.textContent = cfg.parcelas + '\xd7 de R$' + f.preco;
-              if (perEl) perEl.textContent = btn.dataset.porAula;
-            });
-          });
+          [BGL_CONST.PLANO.ANUAL, BGL_CONST.PLANO.SEMESTRAL, BGL_CONST.PLANO.TRIMESTRAL].forEach(
+            function (plano) {
+              var cfg = BGL_PLANOS[plano];
+              cfg.frequencias.forEach(function (f) {
+                var btn = document.querySelector(
+                  '.freq-btn[data-plano="' + plano + '"][data-freq="' + f.freq + '"]',
+                );
+                if (!btn) return;
+                btn.dataset.preco = cfg.parcelas + 'x de R$' + f.preco;
+                btn.dataset.pix = fmtBRL(f.pix);
+                btn.dataset.porAula = fmtBRL(f.porAula) + '/aula';
+                var priceEl = btn.querySelector('.freq-price');
+                var perEl = btn.querySelector('.freq-per');
+                if (priceEl) priceEl.textContent = cfg.parcelas + '\xd7 de R$' + f.preco;
+                if (perEl) perEl.textContent = btn.dataset.porAula;
+              });
+            },
+          );
           var avulsaEl = document.querySelector('.avulsa-price');
           if (avulsaEl) avulsaEl.textContent = 'R$' + BGL_PLANOS.avulsa.preco;
           var waBase = 'https://wa.me/' + BGL_CONFIG.whatsapp;
@@ -2993,12 +3002,14 @@
       function applyRemoteConfig(remote) {
         if (remote.messages) Object.assign(BGL_MESSAGES, remote.messages);
         if (remote.planos) {
-          ['anual', 'semestral', 'trimestral'].forEach(function (p) {
-            if (remote.planos[p]) {
-              BGL_PLANOS[p] = BGL_PLANOS[p] || {};
-              Object.assign(BGL_PLANOS[p], remote.planos[p]);
-            }
-          });
+          [BGL_CONST.PLANO.ANUAL, BGL_CONST.PLANO.SEMESTRAL, BGL_CONST.PLANO.TRIMESTRAL].forEach(
+            function (p) {
+              if (remote.planos[p]) {
+                BGL_PLANOS[p] = BGL_PLANOS[p] || {};
+                Object.assign(BGL_PLANOS[p], remote.planos[p]);
+              }
+            },
+          );
           if (remote.planos.avulsa) {
             BGL_PLANOS.avulsa = BGL_PLANOS.avulsa || {};
             Object.assign(BGL_PLANOS.avulsa, remote.planos.avulsa);
