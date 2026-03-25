@@ -1676,6 +1676,17 @@
     <script>
       // msg() e DiscountStrategy definidos em shared.js
 
+      // ─── Fail-fast: dependências externas ────────────────────────────────────
+      if (typeof BGL_CONST === 'undefined' || typeof BGL_CONFIG === 'undefined') {
+        document.body.innerHTML =
+          '<div style="font-family:sans-serif;padding:2rem;color:#c0392b">' +
+          '<strong>Erro ao carregar a página.</strong><br>' +
+          'Arquivos de configuração não encontrados (constants.js / config.js).<br>' +
+          'Verifique sua conexão e recarregue.' +
+          '</div>';
+        throw new Error('[BGL] constants.js ou config.js não carregaram');
+      }
+
       // ─── AppState ─────────────────────────────────────────────────────────────
       // Singleton — substitui todos os window._* por getters/setters controlados.
       const AppState = (function () {
