@@ -972,6 +972,8 @@
     </style>
     <!-- Configuração do app (inlined — sem dependência de arquivo externo) -->
     <script src="config.js"></script>
+    <script src="constants.js"></script>
+    <script src="shared.js"></script>
     <!-- Stubs: preenchidos pelo RemoteConfig (Firestore) antes do uso -->
     <script>
       window.BGL_MESSAGES = window.BGL_MESSAGES || {};
@@ -1025,113 +1027,110 @@
         else if (window._fbReadyCb) window._fbReadyCb();
         window._fbReady = true;
       } else {
-      const app = initializeApp(BGL_CONFIG.firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
+        const app = initializeApp(BGL_CONFIG.firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
 
-      // ── Seed inicial dos docs de config no Firestore (roda uma vez se não existirem) ──
-      async function seedRemoteConfig(db) {
-        try {
-          const messagesRef = doc(db, 'config', 'messages');
-          const snap = await getDoc(messagesRef);
-          if (snap.exists()) return; // já populado — não sobrescrever
-          const seeds = [
-            ['messages', BGL_MESSAGES],
-            [
-              'planos',
-              {
-                anual: BGL_PLANOS.anual,
-                semestral: BGL_PLANOS.semestral,
-                trimestral: BGL_PLANOS.trimestral,
-                avulsa: BGL_PLANOS.avulsa,
-              },
-            ],
-            ['horarios', BGL_HORARIOS],
-            ['faq', { items: BGL_FAQ }],
-            [
-              'dadosUnidade',
-              {
-                whatsapp: BGL_CONFIG.whatsapp,
-                address: BGL_CONFIG.address,
-                instagram: BGL_CONFIG.instagram,
-              },
-            ],
-            [
-              'turmas',
-              { items: BGL_CONFIG.turmas },
-            ],
-          ];
-          await Promise.all(seeds.map(([id, data]) => setDoc(doc(db, 'config', id), data)));
-          console.info('[RemoteConfig] Firestore populado com dados locais.');
-        } catch (e) {
-          console.warn('[RemoteConfig] Seed falhou:', e.message);
-        }
-      }
-
-      seedRemoteConfig(db);
-
-      // ── Carrega dados do Firestore para BGL_MESSAGES / BGL_PLANOS / etc. ──
-      // Skippado em testes (BGL_SKIP_REMOTE_CONFIG = true); nesses casos os
-      // mocks são injetados via addInitScript antes da página carregar.
-      if (!window.BGL_SKIP_REMOTE_CONFIG) {
-        (async () => {
+        // ── Seed inicial dos docs de config no Firestore (roda uma vez se não existirem) ──
+        async function seedRemoteConfig(db) {
           try {
-            const [mSnap, pSnap, hSnap, fSnap, duSnap, tSnap] = await Promise.all([
-              getDoc(doc(db, 'config', 'messages')),
-              getDoc(doc(db, 'config', 'planos')),
-              getDoc(doc(db, 'config', 'horarios')),
-              getDoc(doc(db, 'config', 'faq')),
-              getDoc(doc(db, 'config', 'dadosUnidade')),
-              getDoc(doc(db, 'config', 'turmas')),
-            ]);
-            if (mSnap.exists()) Object.assign(window.BGL_MESSAGES, mSnap.data());
-            if (pSnap.exists()) Object.assign(window.BGL_PLANOS, pSnap.data());
-            if (hSnap.exists()) Object.assign(window.BGL_HORARIOS, hSnap.data());
-            if (fSnap.exists() && Array.isArray(fSnap.data().items)) {
-              window.BGL_FAQ.splice(0, window.BGL_FAQ.length, ...fSnap.data().items);
-            }
-            if (duSnap.exists()) {
-              const du = duSnap.data();
-              ['whatsapp', 'address', 'instagram'].forEach((k) => {
-                if (du[k] !== undefined) BGL_CONFIG[k] = du[k];
-              });
-            }
-            if (tSnap.exists() && Array.isArray(tSnap.data().items)) {
-              BGL_CONFIG.turmas = tSnap.data().items;
-              if (window.FormController) window.FormController.populateTurmas();
-            }
+            const messagesRef = doc(db, 'config', 'messages');
+            const snap = await getDoc(messagesRef);
+            if (snap.exists()) return; // já populado — não sobrescrever
+            const seeds = [
+              ['messages', BGL_MESSAGES],
+              [
+                'planos',
+                {
+                  anual: BGL_PLANOS.anual,
+                  semestral: BGL_PLANOS.semestral,
+                  trimestral: BGL_PLANOS.trimestral,
+                  avulsa: BGL_PLANOS.avulsa,
+                },
+              ],
+              ['horarios', BGL_HORARIOS],
+              ['faq', { items: BGL_FAQ }],
+              [
+                'dadosUnidade',
+                {
+                  whatsapp: BGL_CONFIG.whatsapp,
+                  address: BGL_CONFIG.address,
+                  instagram: BGL_CONFIG.instagram,
+                },
+              ],
+              ['turmas', { items: BGL_CONFIG.turmas }],
+            ];
+            await Promise.all(seeds.map(([id, data]) => setDoc(doc(db, 'config', id), data)));
+            console.info('[RemoteConfig] Firestore populado com dados locais.');
           } catch (e) {
-            console.warn('[proposta] RemoteConfig falhou:', e.message);
+            console.warn('[RemoteConfig] Seed falhou:', e.message);
           }
-        })();
-      }
+        }
 
-      window._fb = {
-        auth,
-        db,
-        provider,
-        signInWithPopup,
-        signInWithRedirect,
-        getRedirectResult,
-        signOut,
-        collection,
-        addDoc,
-        serverTimestamp,
-        query,
-        getDocs,
-        orderBy,
-        where,
-        Timestamp,
-        doc,
-        getDoc,
-        setDoc,
-        limit,
-      };
-      if (Array.isArray(window._fbReadyCb)) window._fbReadyCb.forEach((cb) => cb());
-      else if (window._fbReadyCb) window._fbReadyCb();
-      window._fbReady = true;
+        seedRemoteConfig(db);
+
+        // ── Carrega dados do Firestore para BGL_MESSAGES / BGL_PLANOS / etc. ──
+        // Skippado em testes (BGL_SKIP_REMOTE_CONFIG = true); nesses casos os
+        // mocks são injetados via addInitScript antes da página carregar.
+        if (!window.BGL_SKIP_REMOTE_CONFIG) {
+          (async () => {
+            try {
+              const [mSnap, pSnap, hSnap, fSnap, duSnap, tSnap] = await Promise.all([
+                getDoc(doc(db, 'config', 'messages')),
+                getDoc(doc(db, 'config', 'planos')),
+                getDoc(doc(db, 'config', 'horarios')),
+                getDoc(doc(db, 'config', 'faq')),
+                getDoc(doc(db, 'config', 'dadosUnidade')),
+                getDoc(doc(db, 'config', 'turmas')),
+              ]);
+              if (mSnap.exists()) Object.assign(window.BGL_MESSAGES, mSnap.data());
+              if (pSnap.exists()) Object.assign(window.BGL_PLANOS, pSnap.data());
+              if (hSnap.exists()) Object.assign(window.BGL_HORARIOS, hSnap.data());
+              if (fSnap.exists() && Array.isArray(fSnap.data().items)) {
+                window.BGL_FAQ.splice(0, window.BGL_FAQ.length, ...fSnap.data().items);
+              }
+              if (duSnap.exists()) {
+                const du = duSnap.data();
+                ['whatsapp', 'address', 'instagram'].forEach((k) => {
+                  if (du[k] !== undefined) BGL_CONFIG[k] = du[k];
+                });
+              }
+              if (tSnap.exists() && Array.isArray(tSnap.data().items)) {
+                BGL_CONFIG.turmas = tSnap.data().items;
+                if (window.FormController) window.FormController.populateTurmas();
+              }
+            } catch (e) {
+              console.warn('[proposta] RemoteConfig falhou:', e.message);
+            }
+          })();
+        }
+
+        window._fb = {
+          auth,
+          db,
+          provider,
+          signInWithPopup,
+          signInWithRedirect,
+          getRedirectResult,
+          signOut,
+          collection,
+          addDoc,
+          serverTimestamp,
+          query,
+          getDocs,
+          orderBy,
+          where,
+          Timestamp,
+          doc,
+          getDoc,
+          setDoc,
+          limit,
+        };
+        if (Array.isArray(window._fbReadyCb)) window._fbReadyCb.forEach((cb) => cb());
+        else if (window._fbReadyCb) window._fbReadyCb();
+        window._fbReady = true;
       } // end else (!BGL_SKIP_FIREBASE)
     </script>
   </head>
@@ -1284,7 +1283,12 @@
         </div>
         <div
           id="imgbb-status"
-          style="font-size: 0.75rem; margin-bottom: 0.5rem; font-weight: 700; color: var(--teal-dark)"
+          style="
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            color: var(--teal-dark);
+          "
         ></div>
         <div class="field">
           <label>Foto do bebê (opcional)</label>
@@ -1651,23 +1655,14 @@
       </div>
     </div>
     <script>
-      /**
-       * Substitui [chave] no template pelo valor de params.chave.
-       * Parâmetros ausentes permanecem como [chave] sem lançar erro.
-       */
-      function msg(template, params) {
-        if (!params) return template;
-        return template.replace(/\[(\w+)\]/g, function (_, k) {
-          return k in params ? params[k] : '[' + k + ']';
-        });
-      }
+      // msg() e DiscountStrategy definidos em shared.js
 
       // ─── AppState ─────────────────────────────────────────────────────────────
       // Singleton — substitui todos os window._* por getters/setters controlados.
       const AppState = (function () {
         let _bgData = null;
         let _activeDiscount = null;
-        let _pagamento = 'cartao';
+        let _pagamento = BGL_CONST.PAGAMENTO.CARTAO;
         let _selectedPlan = null;
         let _lastLongUrl = '';
         return {
@@ -1747,46 +1742,19 @@
           gaEvent('clique_whatsapp', {
             id: gaId(d.mae, d.filho, d.sexo),
             plano: sp.plano,
-            frequencia: sp.freq || 'avulsa',
+            frequencia: sp.freq || BGL_CONST.PLANO.AVULSA,
             preco: sp.preco,
             turma: d.turma || 'nenhuma',
-            tipo: d.tipo === 'renovacao' ? 'renovacao' : 'primeira_vez',
+            tipo:
+              d.tipo === BGL_CONST.TIPO.RENOVACAO
+                ? BGL_CONST.TIPO.RENOVACAO
+                : BGL_CONST.TIPO.PRIMEIRA_VEZ,
           });
         }
         return { gaEvent, gaId, trackFechamento, PLANO_NOMES };
       })();
 
-      // ─── DiscountStrategy ─────────────────────────────────────────────────────
-      // Strategy pattern — resolve qual desconto está ativo e se aplica ao plano.
-      const DiscountStrategy = (function () {
-        function resolve(data) {
-          const isHoje =
-            data.tipo !== 'renovacao' && data.created && Date.now() - data.created < 86400000;
-          const desc = data.desconto;
-          const especial = desc && desc.exp && Date.now() < desc.exp && desc.pct > 0;
-          return especial
-            ? {
-                pct: desc.pct,
-                motivo: desc.motivo,
-                exp: desc.exp,
-                tipo: 'especial',
-                planos: desc.planos,
-              }
-            : isHoje
-              ? { pct: 5, motivo: 'Primeiro dia', exp: data.created + 86400000, tipo: 'hoje' }
-              : null;
-        }
-        function appliesTo(ad, plano) {
-          if (!ad) return false;
-          if (ad.tipo === 'hoje') return plano === 'anual' || plano === 'semestral';
-          if (ad.tipo === 'especial') return !ad.planos || ad.planos.includes(plano);
-          return false;
-        }
-        function getPixPct(ad, plano) {
-          return ad && ad.tipo === 'especial' && ad.pct > 5 && appliesTo(ad, plano) ? ad.pct : 5;
-        }
-        return { resolve, appliesTo, getPixPct };
-      })();
+      // DiscountStrategy definido em shared.js
 
       // ─── LinkEncoder ──────────────────────────────────────────────────────────
 
@@ -1830,7 +1798,9 @@
         const b = atob(enc)
           .split('')
           .map((c) => c.charCodeAt(0));
-        return b.map((x, i) => String.fromCharCode(x ^ _OBF_SEED.charCodeAt(i % _OBF_SEED.length))).join('');
+        return b
+          .map((x, i) => String.fromCharCode(x ^ _OBF_SEED.charCodeAt(i % _OBF_SEED.length)))
+          .join('');
       }
 
       // ─── PhotoHandler ─────────────────────────────────────────────────────────
@@ -2046,9 +2016,12 @@
               return;
             }
             const planos = [];
-            if (document.getElementById('chk-desc-anual').checked) planos.push('anual');
-            if (document.getElementById('chk-desc-semestral').checked) planos.push('semestral');
-            if (document.getElementById('chk-desc-trimestral').checked) planos.push('trimestral');
+            if (document.getElementById('chk-desc-anual').checked)
+              planos.push(BGL_CONST.PLANO.ANUAL);
+            if (document.getElementById('chk-desc-semestral').checked)
+              planos.push(BGL_CONST.PLANO.SEMESTRAL);
+            if (document.getElementById('chk-desc-trimestral').checked)
+              planos.push(BGL_CONST.PLANO.TRIMESTRAL);
             if (planos.length === 0) {
               alert('Selecione ao menos um plano para o desconto \uD83D\uDE0A');
               return;
@@ -2065,7 +2038,7 @@
             destaque,
             exp,
             created: Date.now(),
-            tipo: tipo === 'renovacao' ? 'renovacao' : undefined,
+            tipo: tipo === BGL_CONST.TIPO.RENOVACAO ? BGL_CONST.TIPO.RENOVACAO : undefined,
             avulsa: mostrarAvulsa || undefined,
             desconto: descontoObj || undefined,
           };
@@ -2107,7 +2080,7 @@
               ? msg(BGL_MESSAGES.shareSaudacaoComNome, { mae: _mae }) + ' '
               : BGL_MESSAGES.shareSaudacaoSemNome + ' ';
             const corpo =
-              (data.tipo === 'renovacao'
+              (data.tipo === BGL_CONST.TIPO.RENOVACAO
                 ? BGL_MESSAGES.shareCorpoRenovacao
                 : BGL_MESSAGES.shareCorpoPrimeira) + '\n\n';
             return 'https://wa.me/?text=' + encodeURIComponent(saudacao + corpo + url);
@@ -2158,21 +2131,24 @@
           }
           const fb = window._fb;
           if (fb) {
-            fb.addDoc(fb.collection(fb.db, BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas'), {
-              proposalId,
-              operatorEmail,
-              criadoEm: fb.serverTimestamp(),
-              mae,
-              filho,
-              sexo,
-              turma: turmaId || null,
-              tipo: data.tipo || 'primeira-experiencia',
-              destaque: destaque || null,
-              avulsa: mostrarAvulsa || false,
-              desconto: descontoObj || null,
-              linkUrl: finalUrl,
-              linkExp: new Date(exp),
-            }).catch(() => {});
+            fb.addDoc(
+              fb.collection(fb.db, BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas'),
+              {
+                proposalId,
+                operatorEmail,
+                criadoEm: fb.serverTimestamp(),
+                mae,
+                filho,
+                sexo,
+                turma: turmaId || null,
+                tipo: data.tipo || 'primeira-experiencia',
+                destaque: destaque || null,
+                avulsa: mostrarAvulsa || false,
+                desconto: descontoObj || null,
+                linkUrl: finalUrl,
+                linkExp: new Date(exp),
+              },
+            ).catch((err) => console.warn('[BGL Firestore]', err));
           }
           // ─────────────────────────────────────────────────────────────────────────
 
@@ -2186,7 +2162,7 @@
           document.getElementById('inp-filho').value = '';
           document.getElementById('inp-sexo').value = 'm';
           document.getElementById('inp-turma').value = '';
-          document.getElementById('inp-destaque').value = 'semestral';
+          document.getElementById('inp-destaque').value = BGL_CONST.PLANO.SEMESTRAL;
           document.getElementById('inp-expiry').value = '30';
           document.getElementById('chk-desconto').checked = false;
           document.getElementById('chk-avulsa').checked = false;
@@ -2283,7 +2259,10 @@
               const fimDate = new Date(fim + 'T23:59:59');
               constraints.push(fb.where('criadoEm', '<=', fb.Timestamp.fromDate(fimDate)));
             }
-            const q = fb.query(fb.collection(fb.db, BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas'), ...constraints);
+            const q = fb.query(
+              fb.collection(fb.db, BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas'),
+              ...constraints,
+            );
             const snap = await fb.getDocs(q);
             const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
             _renderLista(docs);
@@ -2313,7 +2292,7 @@
                 minute: '2-digit',
               })
             : '—';
-          const tipo = d.tipo === 'renovacao' ? '🔄 Renovação' : '🎀 1ª Experiência';
+          const tipo = d.tipo === BGL_CONST.TIPO.RENOVACAO ? '🔄 Renovação' : '🎀 1ª Experiência';
           const turmaLabel = d.turma
             ? ((BGL_CONFIG.turmas || []).find((t) => t.id === d.turma) || {}).label || d.turma
             : '—';
@@ -2823,8 +2802,7 @@
           <h2>❓ Guia de operação</h2>
           <button id="help-close" onclick="HelpModal.close()" aria-label="Fechar">✕</button>
         </div>
-        <div id="help-body">
-        </div>
+        <div id="help-body"></div>
       </div>
     </div>
     <script>
@@ -2961,7 +2939,10 @@
           if (e.target === document.getElementById('help-modal')) close();
         });
         document.addEventListener('keydown', function (e) {
-          if (e.key === 'Escape' && document.getElementById('help-modal').classList.contains('open'))
+          if (
+            e.key === 'Escape' &&
+            document.getElementById('help-modal').classList.contains('open')
+          )
             close();
         });
         return { open: open, close: close };
@@ -2978,8 +2959,7 @@
               })
             : '—';
         var el = document.createElement('div');
-        el.innerHTML =
-          '⚠️ HML &nbsp;·&nbsp; ' + BGL_CONFIG.deployVersion + ' &nbsp;·&nbsp; ' + d;
+        el.innerHTML = '⚠️ HML &nbsp;·&nbsp; ' + BGL_CONFIG.deployVersion + ' &nbsp;·&nbsp; ' + d;
         el.style.cssText =
           'position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#f59e0b;color:#000;' +
           'font:600 11px/1 monospace;text-align:center;padding:5px 12px;letter-spacing:.04em;';
