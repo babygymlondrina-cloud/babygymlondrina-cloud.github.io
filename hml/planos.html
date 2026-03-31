@@ -2037,6 +2037,20 @@
           }
           return { valor: btn.dataset.pix, pct: 5, especial: false };
         }
+        function calcDeducaoPE(precoStr, peValor) {
+          const parsed = PriceFormatter.parseInstallments(precoStr);
+          if (!parsed) return null;
+          const novoVal = parsed.val - peValor / parsed.n;
+          return { precoNovo: parsed.n + 'x de R$' + PriceFormatter.formatBRL(novoVal) };
+        }
+        function calcPixComPE(pixStr, peValor) {
+          const base = PriceFormatter.parseBRL(pixStr.replace('R$', ''));
+          const novo = base - peValor;
+          return (
+            'R$' +
+            novo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          );
+        }
         function getPrecoEfetivo(btn) {
           const isPix = AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX;
           if (isPix) {
@@ -2061,7 +2075,14 @@
             tipo: BGL_CONST.PAGAMENTO.CARTAO,
           };
         }
-        return { calcDescontoAula, calcDesconto, calcPixEfetivo, getPrecoEfetivo };
+        return {
+          calcDescontoAula,
+          calcDesconto,
+          calcPixEfetivo,
+          calcDeducaoPE,
+          calcPixComPE,
+          getPrecoEfetivo,
+        };
       })();
 
       // ─── UIRenderer ───────────────────────────────────────────────────────────
@@ -2263,6 +2284,7 @@
             turma: turmaConf ? turmaConf.label : null,
             turmaId: turmaConf ? turmaConf.id : null,
             apelido,
+            pePaga: !!data[BGL_CONST.PRIMEIRA_EXP],
           });
           _renderHero(data, artigo, isRenovacao, turmaConf, apelido);
           const ad = DiscountStrategy.resolve(data);
@@ -2289,11 +2311,26 @@
           if (!priceEl || !perEl) return;
           const isPix = AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX;
           const ad = AppState.getActiveDiscount();
+          const bgData = AppState.getBgData();
+          const isPe =
+            bgData &&
+            bgData.pePaga &&
+            btn.dataset.plano !== BGL_CONST.PLANO.AVULSA &&
+            BGL_PLANOS.primeiraExp;
+          const peValor = isPe ? BGL_PLANOS.primeiraExp.valor : 0;
           if (isPix && btn.dataset.pix) {
             const pix = PriceCalculator.calcPixEfetivo(btn);
             const icon = pix.especial ? '\uD83C\uDF81' : '\u26A1';
-            priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pix.valor} \u00e0 vista ${icon}</span>`;
-            perEl.textContent = pix.pct + '% off no total';
+            if (isPe && peValor) {
+              const pixNovo = PriceCalculator.calcPixComPE(pix.valor, peValor);
+              priceEl.innerHTML =
+                `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${pix.valor}</span>` +
+                ` <span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pixNovo} \u00e0 vista ${icon}</span>`;
+              perEl.textContent = pix.pct + '% off + R$' + peValor + ' abatidos';
+            } else {
+              priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pix.valor} \u00e0 vista ${icon}</span>`;
+              perEl.textContent = pix.pct + '% off no total';
+            }
           } else if (
             !isPix &&
             ad &&
@@ -2303,19 +2340,47 @@
             const calc = PriceCalculator.calcDesconto(btn.dataset.preco, ad.pct);
             if (calc) {
               const icon = ad.tipo === BGL_CONST.DESCONTO.HOJE ? '\u2746' : '\uD83C\uDF81';
-              priceEl.innerHTML = `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span> <span style="color:var(--purple-dark)">${calc.preco} ${icon}</span>`;
-              perEl.textContent =
-                PriceCalculator.calcDescontoAula(btn.dataset.porAula, ad.pct) +
-                ' (' +
-                calc.label +
-                ')';
+              if (isPe && peValor) {
+                const pe = PriceCalculator.calcDeducaoPE(calc.preco, peValor);
+                const precoFinal = pe ? pe.precoNovo : calc.preco;
+                priceEl.innerHTML =
+                  `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span>` +
+                  ` <span style="color:var(--purple-dark)">${precoFinal} ${icon} \u2705</span>`;
+                perEl.textContent =
+                  PriceCalculator.calcDescontoAula(btn.dataset.porAula, ad.pct) +
+                  ' (' +
+                  calc.label +
+                  ')';
+              } else {
+                priceEl.innerHTML =
+                  `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span>` +
+                  ` <span style="color:var(--purple-dark)">${calc.preco} ${icon}</span>`;
+                perEl.textContent =
+                  PriceCalculator.calcDescontoAula(btn.dataset.porAula, ad.pct) +
+                  ' (' +
+                  calc.label +
+                  ')';
+              }
             } else {
               priceEl.innerHTML = btn.dataset.preco;
               perEl.textContent = btn.dataset.porAula;
             }
           } else {
-            priceEl.innerHTML = btn.dataset.preco;
-            perEl.textContent = btn.dataset.porAula;
+            if (isPe && peValor && btn.dataset.preco) {
+              const pe = PriceCalculator.calcDeducaoPE(btn.dataset.preco, peValor);
+              if (pe) {
+                priceEl.innerHTML =
+                  `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span>` +
+                  ` <span style="color:var(--purple-dark);font-weight:800;">${pe.precoNovo} \u2705</span>`;
+                perEl.textContent = btn.dataset.porAula + ' (R$' + peValor + ' abatidos)';
+              } else {
+                priceEl.innerHTML = btn.dataset.preco;
+                perEl.textContent = btn.dataset.porAula;
+              }
+            } else {
+              priceEl.innerHTML = btn.dataset.preco;
+              perEl.textContent = btn.dataset.porAula;
+            }
           }
         }
         function setPagamento(tipo) {
@@ -2424,6 +2489,16 @@
           } else {
             diaLabel = null;
           }
+          const _isPePaga = d.pePaga && BGL_PLANOS.primeiraExp && plano !== BGL_CONST.PLANO.AVULSA;
+          if (_isPePaga) {
+            const _peValor = BGL_PLANOS.primeiraExp.valor;
+            if (AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX) {
+              preco = PriceCalculator.calcPixComPE(preco, _peValor);
+            } else {
+              const _pe = PriceCalculator.calcDeducaoPE(preco, _peValor);
+              if (_pe) preco = _pe.precoNovo;
+            }
+          }
           const abertura = msg(
             d.tipo === BGL_CONST.TIPO.RENOVACAO
               ? BGL_MESSAGES.wppAberturaRenovacao
@@ -2439,6 +2514,11 @@
             msg(BGL_MESSAGES.wppLinhaValor, { valor: preco }),
             ...(diaLabel ? [diaLabel] : []),
           );
+          if (_isPePaga) {
+            linhas.push(
+              msg(BGL_MESSAGES.wppLinhaPeAbatido, { valor: BGL_PLANOS.primeiraExp.valor }),
+            );
+          }
           const msgWpp = linhas.join('\n');
           const subText = `${nPlano} \u00b7 ${freqLabel} \u00b7 ${pagLabel} \u00b7 ${preco}`;
           return { msgWpp, subText, preco };
@@ -2557,7 +2637,7 @@
           const card = e.currentTarget.closest('.plan-card');
           if (card) card.classList.add('selected');
           AppState.setSelectedPlan({ plano, freq, preco, porAula });
-          CTABuilder.update();
+          requestAnimationFrame(() => CTABuilder.update());
         }
         function selectAvulsa() {
           clearSelection();
@@ -2568,7 +2648,7 @@
             preco: 'R$127',
             porAula: null,
           });
-          CTABuilder.update();
+          requestAnimationFrame(() => CTABuilder.update());
         }
         function swap() {
           AppState.setSelectedPlan(null);
@@ -2885,6 +2965,44 @@
       function _bglDoInit() {
         var _ls = document.getElementById('bgl-loading');
         if (_ls) _ls.style.display = 'none';
+
+        // ── Aplica snapshot de preços do hash em BGL_PLANOS (antes de _initPlanData) ──
+        function applyPriceSnapshot(precos) {
+          if (!precos || typeof precos !== 'object') return;
+          [BGL_CONST.PLANO.ANUAL, BGL_CONST.PLANO.SEMESTRAL, BGL_CONST.PLANO.TRIMESTRAL].forEach(
+            function (plano) {
+              var snap = precos[plano];
+              var cfg = BGL_PLANOS[plano];
+              if (!snap || !cfg || !snap.frequencias) return;
+              if (snap.parcelas !== undefined) cfg.parcelas = snap.parcelas;
+              snap.frequencias.forEach(function (sf) {
+                var f = cfg.frequencias.find(function (x) {
+                  return x.freq === sf.freq;
+                });
+                if (!f) return;
+                if (sf.preco !== undefined) f.preco = sf.preco;
+                if (sf.pix !== undefined) f.pix = sf.pix;
+                if (sf.porAula !== undefined) f.porAula = sf.porAula;
+              });
+            },
+          );
+          if (precos.avulsa && BGL_PLANOS.avulsa && precos.avulsa.preco !== undefined) {
+            BGL_PLANOS.avulsa.preco = precos.avulsa.preco;
+          }
+        }
+
+        // ── Decodifica hash antes de _initPlanData para aplicar snapshot de preços ──
+        var _hashData = null;
+        var _hashRaw = window.location.hash;
+        if (_hashRaw && _hashRaw.startsWith('#data=')) {
+          try {
+            _hashData = LinkEncoder.decode(_hashRaw.replace('#data=', ''));
+            if (_hashData && _hashData.precos) applyPriceSnapshot(_hashData.precos);
+          } catch (e) {
+            _hashData = null;
+          }
+        }
+
         // ── Inicializa preços e configurações a partir de BGL_PLANOS / BGL_CONFIG ──
         function _initPlanData() {
           function fmtBRL(n) {
@@ -2946,35 +3064,28 @@
         _initPlanData();
 
         UIRenderer.initClickHandler();
-        const hash = window.location.hash;
-        if (hash && hash.startsWith('#data=')) {
-          try {
-            const encoded = hash.replace('#data=', '');
-            const data = LinkEncoder.decode(encoded);
-            if (!data.v || data.v < LinkEncoder.LINK_MIN_VERSION) {
-              document.getElementById('outdated-screen').style.display = 'flex';
-              Analytics.gaEvent('link_outdated', {
-                id: Analytics.gaId(data.mae, data.filho, data.sexo),
-              });
-            } else if (data.exp && Date.now() > data.exp) {
-              const screen = document.getElementById('expired-screen');
-              screen.style.display = 'flex';
-              Analytics.gaEvent('link_expirado', {
-                id: Analytics.gaId(data.mae, data.filho, data.sexo),
-              });
-              if (data.mae) {
-                const _artigo = data.sexo === 'm' ? 'o' : 'a';
-                const _filho = data.sexo === 'm' ? 'filho' : 'filha';
-                document.getElementById('expired-name-msg').innerHTML = msg(
-                  BGL_MESSAGES.expiredMsgPersonalizado,
-                  { mae: data.mae, artigo: _artigo, filho: _filho },
-                ).replace(/\n/g, '<br>');
-              }
-            } else {
-              UIRenderer.renderClient(data);
+        if (_hashData) {
+          if (!_hashData.v || _hashData.v < LinkEncoder.LINK_MIN_VERSION) {
+            document.getElementById('outdated-screen').style.display = 'flex';
+            Analytics.gaEvent('link_outdated', {
+              id: Analytics.gaId(_hashData.mae, _hashData.filho, _hashData.sexo),
+            });
+          } else if (_hashData.exp && Date.now() > _hashData.exp) {
+            const screen = document.getElementById('expired-screen');
+            screen.style.display = 'flex';
+            Analytics.gaEvent('link_expirado', {
+              id: Analytics.gaId(_hashData.mae, _hashData.filho, _hashData.sexo),
+            });
+            if (_hashData.mae) {
+              const _artigo = _hashData.sexo === 'm' ? 'o' : 'a';
+              const _filho = _hashData.sexo === 'm' ? 'filho' : 'filha';
+              document.getElementById('expired-name-msg').innerHTML = msg(
+                BGL_MESSAGES.expiredMsgPersonalizado,
+                { mae: _hashData.mae, artigo: _artigo, filho: _filho },
+              ).replace(/\n/g, '<br>');
             }
-          } catch (e) {
-            // hash inv\u00e1lido \u2192 mostra form
+          } else {
+            UIRenderer.renderClient(_hashData);
           }
         }
       }

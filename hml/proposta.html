@@ -1576,6 +1576,7 @@
           </div>
         </div>
         <div
+          id="avulsa-row"
           style="
             display: flex;
             align-items: center;
@@ -1587,7 +1588,6 @@
             border-radius: 12px;
             cursor: pointer;
           "
-          onclick="document.getElementById('chk-avulsa').click()"
         >
           <input
             type="checkbox"
@@ -1611,6 +1611,45 @@
             "
           >
             Mostrar opção de aula avulsa (R$127)
+          </label>
+        </div>
+        <div
+          id="pe-paga-row"
+          style="
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            margin-bottom: 1.1rem;
+            padding: 0.75rem 1rem;
+            background: #fafafa;
+            border: 2px solid #e8e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+          "
+        >
+          <input
+            type="checkbox"
+            id="chk-pe-paga"
+            checked
+            style="
+              width: 18px;
+              height: 18px;
+              accent-color: var(--purple);
+              cursor: pointer;
+              flex-shrink: 0;
+            "
+          />
+          <label
+            for="chk-pe-paga"
+            style="
+              font-size: 0.85rem;
+              font-weight: 700;
+              color: var(--text-light);
+              cursor: pointer;
+              margin: 0;
+            "
+          >
+            Primeira Experiência Paga — R$47 abatidos do plano
           </label>
         </div>
         <button class="btn-gerar" onclick="gerarLink()">✨ Gerar link personalizado</button>
@@ -2001,6 +2040,41 @@
       // ─── FormController ───────────────────────────────────────────────────────
       // Controller MVC — orquestra operações do modo form (equipe).
       const FormController = (function () {
+        const _urlParams = new URLSearchParams(window.location.search);
+
+        // Preenche campos do formulário a partir de parâmetros da URL.
+        // Chamado após showForm() — garante que o form está visível antes de preencher.
+        // Turma é aplicada em populateTurmas() para respeitar o timing do Firestore.
+        function preencherDaUrl() {
+          if (!_urlParams.has('mae') && !_urlParams.has('filho')) return;
+          const mae = _urlParams.get('mae');
+          const filho = _urlParams.get('filho');
+          const sexo = (_urlParams.get('sexo') || '').toLowerCase();
+          const tipo = (_urlParams.get('tipo') || '').toLowerCase();
+          if (mae) document.getElementById('inp-mae').value = mae;
+          if (filho) document.getElementById('inp-filho').value = filho;
+          if (sexo === 'm' || sexo === 'f') document.getElementById('inp-sexo').value = sexo;
+          if (tipo === BGL_CONST.TIPO.RENOVACAO) document.getElementById('inp-tipo').value = tipo;
+          _atualizarAvulsaVisibility();
+          _atualizarPeRow();
+        }
+
+        function _atualizarAvulsaVisibility() {
+          const isRenovacao =
+            document.getElementById('inp-tipo').value === BGL_CONST.TIPO.RENOVACAO;
+          const row = document.getElementById('avulsa-row');
+          row.style.display = isRenovacao ? 'none' : 'flex';
+          if (isRenovacao) document.getElementById('chk-avulsa').checked = false;
+        }
+
+        function _atualizarPeRow() {
+          const isRenovacao =
+            document.getElementById('inp-tipo').value === BGL_CONST.TIPO.RENOVACAO;
+          const row = document.getElementById('pe-paga-row');
+          row.style.display = isRenovacao ? 'none' : 'flex';
+          if (isRenovacao) document.getElementById('chk-pe-paga').checked = false;
+        }
+
         function sincronizarDescDias() {
           const linkDias = parseInt(document.getElementById('inp-expiry').value);
           const sel = document.getElementById('inp-desc-dias');
@@ -2016,6 +2090,29 @@
             }
           }
         }
+        // Captura snapshot dos preços atuais (lidos do BGL_PLANOS no momento da geração).
+        // Embutido no hash para que o cliente sempre veja os preços acordados,
+        // mesmo que o Firestore seja atualizado depois.
+        function _capturarSnapshotPrecos() {
+          var snap = {};
+          [BGL_CONST.PLANO.ANUAL, BGL_CONST.PLANO.SEMESTRAL, BGL_CONST.PLANO.TRIMESTRAL].forEach(
+            function (plano) {
+              var cfg = BGL_PLANOS[plano];
+              if (!cfg || !cfg.frequencias) return;
+              snap[plano] = {
+                parcelas: cfg.parcelas,
+                frequencias: cfg.frequencias.map(function (f) {
+                  return { freq: f.freq, preco: f.preco, pix: f.pix, porAula: f.porAula };
+                }),
+              };
+            },
+          );
+          if (BGL_PLANOS.avulsa && BGL_PLANOS.avulsa.preco !== undefined) {
+            snap.avulsa = { preco: BGL_PLANOS.avulsa.preco };
+          }
+          return snap;
+        }
+
         async function gerarLink() {
           const mae = document.getElementById('inp-mae').value.trim();
           const filho = document.getElementById('inp-filho').value.trim();
@@ -2071,6 +2168,7 @@
             descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000, planos };
           }
           const fotoBase64 = PhotoHandler.getBase64();
+          const pePaga = document.getElementById('chk-pe-paga').checked;
           const data = {
             v: LinkEncoder.LINK_VERSION,
             mae,
@@ -2082,7 +2180,9 @@
             created: Date.now(),
             tipo: tipo === BGL_CONST.TIPO.RENOVACAO ? BGL_CONST.TIPO.RENOVACAO : undefined,
             avulsa: mostrarAvulsa || undefined,
+            [BGL_CONST.PRIMEIRA_EXP]: pePaga || undefined,
             desconto: descontoObj || undefined,
+            precos: _capturarSnapshotPrecos(),
           };
           if (fotoBase64) {
             document.getElementById('link-loading').style.display = 'block';
@@ -2210,11 +2310,14 @@
           document.getElementById('inp-expiry').value = '30';
           document.getElementById('chk-desconto').checked = false;
           document.getElementById('chk-avulsa').checked = false;
+          document.getElementById('chk-pe-paga').checked = true;
           document.getElementById('desconto-fields').style.display = 'none';
           document.getElementById('inp-desc-pct').value = '';
           document.getElementById('inp-desc-motivo').value = '';
           document.getElementById('link-box').style.display = 'none';
           sincronizarDescDias();
+          _atualizarAvulsaVisibility();
+          _atualizarPeRow();
           PhotoHandler.clear();
         }
         function copiarLink() {
@@ -2243,11 +2346,20 @@
             opt.textContent = `${t.label} (${t.idade})`;
             turmaSel.appendChild(opt);
           });
+          // Aplica turma da URL após popular o select (respeita timing do Firestore)
+          const turma = (_urlParams.get('turma') || '').toLowerCase();
+          if (turma) turmaSel.value = turma;
         }
         function init() {
           PhotoHandler.init();
           sincronizarDescDias();
           populateTurmas();
+          _atualizarAvulsaVisibility();
+          _atualizarPeRow();
+          document.getElementById('inp-tipo').addEventListener('change', function () {
+            _atualizarAvulsaVisibility();
+            _atualizarPeRow();
+          });
         }
         return {
           gerarLink,
@@ -2256,6 +2368,7 @@
           sincronizarDescDias,
           limparFormulario,
           populateTurmas,
+          preencherDaUrl,
           init,
         };
       })();
@@ -2436,6 +2549,7 @@
           document.getElementById('form-mode').style.display = 'flex';
           HistoricoController.init(session.email);
           PhotoHandler.loadKeyFromFirestore();
+          FormController.preencherDaUrl();
         }
 
         function showLogin() {
@@ -2463,6 +2577,10 @@
             return;
           }
           setLoginBtn(true);
+          // signInWithPopup funciona em todos os browsers (incluindo Safari) quando
+          // chamado direto de um clique do usuário. signInWithRedirect foi removido
+          // porque o Safari ITP bloqueia o iframe cross-origin usado pelo Firebase
+          // para recuperar o resultado, fazendo getRedirectResult() retornar null.
           fb.signInWithPopup(fb.auth, fb.provider)
             .then(handleAuthResult)
             .catch((err) => {
@@ -2495,6 +2613,8 @@
         }
 
         function init() {
+          // Limpa flag de redirect legada (era usada pelo fluxo Safari antigo)
+          localStorage.removeItem('bgl_auth_redirect');
           const session = getSession();
           if (session) {
             showForm(session);
