@@ -3125,6 +3125,10 @@
             BGL_PLANOS.avulsa = BGL_PLANOS.avulsa || {};
             Object.assign(BGL_PLANOS.avulsa, remote.planos.avulsa);
           }
+          if (remote.planos.primeiraExp) {
+            BGL_PLANOS.primeiraExp = BGL_PLANOS.primeiraExp || {};
+            Object.assign(BGL_PLANOS.primeiraExp, remote.planos.primeiraExp);
+          }
         }
         if (remote.horarios) Object.assign(BGL_HORARIOS, remote.horarios);
         if (remote.faq && Array.isArray(remote.faq.items)) {
