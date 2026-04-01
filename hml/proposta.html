@@ -1239,6 +1239,44 @@
             <option value="primeira">🎀 Primeira Experiência</option>
             <option value="renovacao">🔄 Renovação</option>
           </select>
+          <div
+            id="pe-paga-row"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 0.55rem;
+              margin-top: 0.55rem;
+              padding: 0.4rem 0.6rem;
+              background: rgba(98, 95, 183, 0.07);
+              border-radius: 8px;
+              cursor: pointer;
+            "
+          >
+            <input
+              type="checkbox"
+              id="chk-pe-paga"
+              checked
+              style="
+                width: 15px;
+                height: 15px;
+                accent-color: var(--purple);
+                cursor: pointer;
+                flex-shrink: 0;
+              "
+            />
+            <label
+              for="chk-pe-paga"
+              style="
+                font-size: 0.8rem;
+                font-weight: 700;
+                color: var(--text-light);
+                cursor: pointer;
+                margin: 0;
+              "
+            >
+              PE foi paga — R$47 abatidos no plano
+            </label>
+          </div>
         </div>
         <div class="field">
           <label>Nome do pai / mãe</label>
@@ -1611,45 +1649,6 @@
             "
           >
             Mostrar opção de aula avulsa (R$127)
-          </label>
-        </div>
-        <div
-          id="pe-paga-row"
-          style="
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            margin-bottom: 1.1rem;
-            padding: 0.75rem 1rem;
-            background: #fafafa;
-            border: 2px solid #e8e8f0;
-            border-radius: 12px;
-            cursor: pointer;
-          "
-        >
-          <input
-            type="checkbox"
-            id="chk-pe-paga"
-            checked
-            style="
-              width: 18px;
-              height: 18px;
-              accent-color: var(--purple);
-              cursor: pointer;
-              flex-shrink: 0;
-            "
-          />
-          <label
-            for="chk-pe-paga"
-            style="
-              font-size: 0.85rem;
-              font-weight: 700;
-              color: var(--text-light);
-              cursor: pointer;
-              margin: 0;
-            "
-          >
-            Primeira Experiência Paga — R$47 abatidos do plano
           </label>
         </div>
         <button class="btn-gerar" onclick="gerarLink()">✨ Gerar link personalizado</button>

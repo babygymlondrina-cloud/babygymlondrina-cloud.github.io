@@ -472,6 +472,16 @@
         font-weight: 700;
         color: var(--teal-dark);
       }
+      .pe-note {
+        background: var(--cream);
+        border: 1.5px solid var(--purple);
+        border-radius: 14px;
+        padding: 0.9rem 1.1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--purple-dark);
+      }
       /* CTA */
       .cta-section {
         text-align: center;
@@ -708,6 +718,14 @@
       .plan-benefits li.warn {
         color: var(--orange);
         text-decoration: none;
+      }
+      .cta-pe-line {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+        margin-top: -0.5rem;
+        margin-bottom: 0.75rem;
+        text-align: center;
       }
       /* CTA state */
       .cta-selected {
@@ -1739,11 +1757,14 @@
               <div class="pix-note animate delay-5" id="pix-note-text">
                 5% de desconto para pagamento à vista via PIX.
               </div>
+              <!-- PE note -->
+              <div class="pe-note" id="pe-note" style="display: none"></div>
               <!-- CTA -->
               <div class="cta-section animate delay-6">
                 <div class="cta-hint" id="cta-hint"></div>
                 <div class="cta-title cta-selected" id="cta-title">Ótima escolha! 🎉</div>
                 <div class="cta-sub cta-selected" id="cta-sub" style="margin-bottom: 1rem"></div>
+                <div class="cta-pe-line cta-selected" id="cta-pe-line" style="display: none"></div>
                 <a
                   class="btn-wpp-client cta-selected"
                   href="https://wa.me/554396517182"
@@ -2258,6 +2279,16 @@
             pixBtn.textContent = ad ? BGL_MESSAGES.pagPixSemOff : BGL_MESSAGES.pagPixComOff;
           _updatePixNoteVisibility(ad);
         }
+        function _renderPeNote(pePaga) {
+          const el = document.getElementById('pe-note');
+          if (!el) return;
+          if (pePaga && BGL_PLANOS.primeiraExp) {
+            el.textContent = msg(BGL_MESSAGES.peNote, { valor: BGL_PLANOS.primeiraExp.valor });
+            el.style.display = 'block';
+          } else {
+            el.style.display = 'none';
+          }
+        }
         function _renderFreqBtns(turmaConf) {
           document.querySelectorAll('.freq-btn').forEach((btn) => updateBtnDisplay(btn));
           if (turmaConf && turmaConf.freqs) {
@@ -2292,6 +2323,7 @@
           _renderBanner(ad, isRenovacao);
           _renderPlanNotes(ad);
           _renderPixSection(ad);
+          _renderPeNote(!!data[BGL_CONST.PRIMEIRA_EXP]);
           _renderFreqBtns(turmaConf);
           Analytics.gaEvent('page_view_planos', {
             id: Analytics.gaId(data.mae, data.filho, data.sexo),
@@ -2311,26 +2343,11 @@
           if (!priceEl || !perEl) return;
           const isPix = AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX;
           const ad = AppState.getActiveDiscount();
-          const bgData = AppState.getBgData();
-          const isPe =
-            bgData &&
-            bgData.pePaga &&
-            btn.dataset.plano !== BGL_CONST.PLANO.AVULSA &&
-            BGL_PLANOS.primeiraExp;
-          const peValor = isPe ? BGL_PLANOS.primeiraExp.valor : 0;
           if (isPix && btn.dataset.pix) {
             const pix = PriceCalculator.calcPixEfetivo(btn);
             const icon = pix.especial ? '\uD83C\uDF81' : '\u26A1';
-            if (isPe && peValor) {
-              const pixNovo = PriceCalculator.calcPixComPE(pix.valor, peValor);
-              priceEl.innerHTML =
-                `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${pix.valor}</span>` +
-                ` <span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pixNovo} \u00e0 vista ${icon}</span>`;
-              perEl.textContent = pix.pct + '% off + R$' + peValor + ' abatidos';
-            } else {
-              priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pix.valor} \u00e0 vista ${icon}</span>`;
-              perEl.textContent = pix.pct + '% off no total';
-            }
+            priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pix.valor} \u00e0 vista ${icon}</span>`;
+            perEl.textContent = pix.pct + '% off no total';
           } else if (
             !isPix &&
             ad &&
@@ -2340,47 +2357,21 @@
             const calc = PriceCalculator.calcDesconto(btn.dataset.preco, ad.pct);
             if (calc) {
               const icon = ad.tipo === BGL_CONST.DESCONTO.HOJE ? '\u2746' : '\uD83C\uDF81';
-              if (isPe && peValor) {
-                const pe = PriceCalculator.calcDeducaoPE(calc.preco, peValor);
-                const precoFinal = pe ? pe.precoNovo : calc.preco;
-                priceEl.innerHTML =
-                  `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span>` +
-                  ` <span style="color:var(--purple-dark)">${precoFinal} ${icon} \u2705</span>`;
-                perEl.textContent =
-                  PriceCalculator.calcDescontoAula(btn.dataset.porAula, ad.pct) +
-                  ' (' +
-                  calc.label +
-                  ')';
-              } else {
-                priceEl.innerHTML =
-                  `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span>` +
-                  ` <span style="color:var(--purple-dark)">${calc.preco} ${icon}</span>`;
-                perEl.textContent =
-                  PriceCalculator.calcDescontoAula(btn.dataset.porAula, ad.pct) +
-                  ' (' +
-                  calc.label +
-                  ')';
-              }
+              priceEl.innerHTML =
+                `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span>` +
+                ` <span style="color:var(--purple-dark)">${calc.preco} ${icon}</span>`;
+              perEl.textContent =
+                PriceCalculator.calcDescontoAula(btn.dataset.porAula, ad.pct) +
+                ' (' +
+                calc.label +
+                ')';
             } else {
               priceEl.innerHTML = btn.dataset.preco;
               perEl.textContent = btn.dataset.porAula;
             }
           } else {
-            if (isPe && peValor && btn.dataset.preco) {
-              const pe = PriceCalculator.calcDeducaoPE(btn.dataset.preco, peValor);
-              if (pe) {
-                priceEl.innerHTML =
-                  `<span style="font-size:0.72rem;color:#bbb;text-decoration:line-through;font-weight:600;">${btn.dataset.preco}</span>` +
-                  ` <span style="color:var(--purple-dark);font-weight:800;">${pe.precoNovo} \u2705</span>`;
-                perEl.textContent = btn.dataset.porAula + ' (R$' + peValor + ' abatidos)';
-              } else {
-                priceEl.innerHTML = btn.dataset.preco;
-                perEl.textContent = btn.dataset.porAula;
-              }
-            } else {
-              priceEl.innerHTML = btn.dataset.preco;
-              perEl.textContent = btn.dataset.porAula;
-            }
+            priceEl.innerHTML = btn.dataset.preco;
+            perEl.textContent = btn.dataset.porAula;
           }
         }
         function setPagamento(tipo) {
@@ -2521,7 +2512,7 @@
           }
           const msgWpp = linhas.join('\n');
           const subText = `${nPlano} \u00b7 ${freqLabel} \u00b7 ${pagLabel} \u00b7 ${preco}`;
-          return { msgWpp, subText, preco };
+          return { msgWpp, subText, preco, isPePaga: _isPePaga };
         }
         function update() {
           const sp = AppState.getSelectedPlan();
@@ -2529,9 +2520,20 @@
           const d = AppState.getBgData() || { artigo: 'o', mae: '' };
           const built = _buildMessage();
           if (!built) return;
-          const { msgWpp, subText } = built;
+          const { msgWpp, subText, isPePaga } = built;
           document.getElementById('cta-hint').style.display = 'none';
           document.querySelectorAll('.cta-selected').forEach((el) => (el.style.display = 'flex'));
+          const peLineEl = document.getElementById('cta-pe-line');
+          if (peLineEl) {
+            if (isPePaga && BGL_PLANOS.primeiraExp) {
+              peLineEl.textContent = msg(BGL_MESSAGES.ctaPeLinha, {
+                valor: BGL_PLANOS.primeiraExp.valor,
+              });
+              peLineEl.style.display = 'block';
+            } else {
+              peLineEl.style.display = 'none';
+            }
+          }
           document.getElementById('btn-trocar').style.display = 'block';
           document.getElementById('cta-title').style.display = 'block';
           document.getElementById('cta-sub').style.display = 'block';
