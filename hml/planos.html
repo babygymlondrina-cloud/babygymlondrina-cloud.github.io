@@ -462,6 +462,92 @@
         font-weight: 800;
         color: var(--text);
       }
+      /* Extras */
+      .extras-titulo {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.6rem;
+      }
+      .extra-card {
+        background: white;
+        border-radius: var(--radius);
+        padding: 0.85rem 1rem;
+        margin-bottom: 0.55rem;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s,
+          border-color 0.15s;
+        border: 2px solid transparent;
+      }
+      .extra-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
+      }
+      .extra-card.selected {
+        border-color: var(--purple);
+        box-shadow: 0 0 0 3px rgba(108, 77, 155, 0.12);
+        transform: translateY(-1px);
+      }
+      .extra-img {
+        width: 52px;
+        height: 52px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+        background: var(--cream);
+      }
+      .extra-emoji {
+        width: 52px;
+        height: 52px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        background: var(--cream);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+      }
+      .extra-info {
+        flex: 1;
+      }
+      .extra-label {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .extra-price {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-light);
+        margin-top: 0.1rem;
+      }
+      .extra-check {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid #ddd;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.15s,
+          border-color 0.15s;
+        font-size: 0.85rem;
+        color: white;
+      }
+      .extra-card.selected .extra-check {
+        background: var(--purple);
+        border-color: var(--purple);
+      }
       /* PIX note */
       .pix-note {
         background: linear-gradient(135deg, #e0f7f6, #c8f0ee);
@@ -1751,6 +1837,11 @@
                 </div>
                 <div class="avulsa-price">R$127</div>
               </div>
+              <!-- EXTRAS -->
+              <div id="section-extras" class="animate delay-5" style="display: none">
+                <div class="extras-titulo">🛍️ Itens adicionais</div>
+                <div id="extras-cards"></div>
+              </div>
               <!-- PIX note -->
               <div class="pix-note animate delay-5" id="pix-note-text">
                 5% de desconto para pagamento à vista via PIX.
@@ -1891,6 +1982,7 @@
         let _pagamento = BGL_CONST.PAGAMENTO.CARTAO;
         let _selectedPlan = null;
         let _lastLongUrl = '';
+        let _selectedExtras = new Set();
         return {
           // ── Métodos legados (mantidos para compatibilidade interna) ──
           getBgData: () => _bgData,
@@ -1912,6 +2004,18 @@
           getLastLongUrl: () => _lastLongUrl,
           setLastLongUrl: (u) => {
             _lastLongUrl = u;
+          },
+          // ── Extras ───────────────────────────────────────────────────
+          toggleExtra: (id) => {
+            if (_selectedExtras.has(id)) {
+              _selectedExtras.delete(id);
+            } else {
+              _selectedExtras.add(id);
+            }
+          },
+          getSelectedExtras: () => Array.from(_selectedExtras),
+          clearExtras: () => {
+            _selectedExtras = new Set();
           },
           // ── Namespaces (Fase 4) ──────────────────────────────────────
           lead: {
@@ -2164,6 +2268,59 @@
             document.getElementById('card-avulsa').style.display = 'flex';
           }
         }
+        function _renderExtras(data) {
+          const extras = Array.isArray(data.extras) ? data.extras : [];
+          if (!extras.length) return;
+          const section = document.getElementById('section-extras');
+          const container = document.getElementById('extras-cards');
+          extras.forEach(function (id) {
+            const meta = BGL_PLANOS.extras && BGL_PLANOS.extras[id];
+            if (!meta) return;
+            const card = document.createElement('div');
+            card.className = 'extra-card';
+            card.id = 'extra-card-' + id;
+            card.setAttribute('onclick', "toggleExtra('" + id + "')");
+            // Imagem ou emoji
+            let mediaEl;
+            if (meta.imgUrl) {
+              const img = document.createElement('img');
+              img.src = meta.imgUrl;
+              img.alt = meta.label;
+              img.className = 'extra-img';
+              img.onerror = function () {
+                const fallback = document.createElement('div');
+                fallback.className = 'extra-emoji';
+                fallback.textContent = meta.emoji;
+                img.replaceWith(fallback);
+              };
+              mediaEl = img;
+            } else {
+              const emojiEl = document.createElement('div');
+              emojiEl.className = 'extra-emoji';
+              emojiEl.textContent = meta.emoji;
+              mediaEl = emojiEl;
+            }
+            const infoEl = document.createElement('div');
+            infoEl.className = 'extra-info';
+            const labelEl = document.createElement('div');
+            labelEl.className = 'extra-label';
+            labelEl.textContent = meta.label;
+            const precoEl = document.createElement('div');
+            precoEl.className = 'extra-price';
+            precoEl.textContent = meta.preco > 0 ? 'R$' + meta.preco : 'Consulte o valor';
+            infoEl.appendChild(labelEl);
+            infoEl.appendChild(precoEl);
+            const checkEl = document.createElement('div');
+            checkEl.className = 'extra-check';
+            checkEl.id = 'extra-check-' + id;
+            checkEl.textContent = '✓';
+            card.appendChild(mediaEl);
+            card.appendChild(infoEl);
+            card.appendChild(checkEl);
+            container.appendChild(card);
+          });
+          section.style.display = 'block';
+        }
         function _renderBanner(ad, isRenovacao) {
           if (ad) {
             document.getElementById('urgency-banner').style.display = 'none';
@@ -2313,6 +2470,7 @@
             pePaga: !!data[BGL_CONST.PRIMEIRA_EXP],
           });
           _renderHero(data, artigo, isRenovacao, turmaConf, apelido);
+          _renderExtras(data);
           const ad = DiscountStrategy.resolve(data);
           AppState.setActiveDiscount(ad);
           _renderBanner(ad, isRenovacao);
@@ -2445,6 +2603,19 @@
               msg(BGL_MESSAGES.wppAberturaAvulsa, { artigo: d.artigo, filho: d.filho }),
             ];
             if (d.turma) avulsaLinhas.push(msg(BGL_MESSAGES.wppLinhaTurma, { turma: d.turma }));
+            const selectedExtrasAvulsa = AppState.getSelectedExtras();
+            if (selectedExtrasAvulsa.length && BGL_PLANOS.extras) {
+              const extrasLabel = selectedExtrasAvulsa
+                .filter((id) => BGL_PLANOS.extras[id])
+                .map(function (id) {
+                  const meta = BGL_PLANOS.extras[id];
+                  const precoStr = meta.preco > 0 ? ' (R$' + meta.preco + ')' : '';
+                  return meta.emoji + ' ' + meta.label + precoStr;
+                })
+                .join(', ');
+              if (extrasLabel)
+                avulsaLinhas.push(msg(BGL_MESSAGES.wppLinhaExtras, { extras: extrasLabel }));
+            }
             return {
               msgWpp: avulsaLinhas.join('\n'),
               subText: msg(BGL_MESSAGES.wppSubTextAvulsa, { valor: preco }),
@@ -2504,6 +2675,18 @@
             linhas.push(
               msg(BGL_MESSAGES.wppLinhaPeAbatido, { valor: BGL_PLANOS.primeiraExp.valor }),
             );
+          }
+          const selectedExtras = AppState.getSelectedExtras();
+          if (selectedExtras.length && BGL_PLANOS.extras) {
+            const extrasLabel = selectedExtras
+              .filter((id) => BGL_PLANOS.extras[id])
+              .map(function (id) {
+                const meta = BGL_PLANOS.extras[id];
+                const precoStr = meta.preco > 0 ? ' (R$' + meta.preco + ')' : '';
+                return meta.emoji + ' ' + meta.label + precoStr;
+              })
+              .join(', ');
+            if (extrasLabel) linhas.push(msg(BGL_MESSAGES.wppLinhaExtras, { extras: extrasLabel }));
           }
           const msgWpp = linhas.join('\n');
           const subText = `${nPlano} \u00b7 ${freqLabel} \u00b7 ${pagLabel} \u00b7 ${preco}`;
@@ -2642,6 +2825,8 @@
         }
         function swap() {
           AppState.setSelectedPlan(null);
+          AppState.clearExtras();
+          document.querySelectorAll('.extra-card').forEach((c) => c.classList.remove('selected'));
           clearSelection();
           document.getElementById('cta-hint').style.display = 'block';
           document.querySelectorAll('.cta-selected').forEach((el) => (el.style.display = 'none'));
@@ -3085,6 +3270,12 @@
       window.selecionarFreqBtn = (e, btn) => PlanSelector.select(e, btn);
       window.selecionarAvulsa = () => PlanSelector.selectAvulsa();
       window.trocarPlano = () => PlanSelector.swap();
+      window.toggleExtra = function (id) {
+        AppState.toggleExtra(id);
+        const card = document.getElementById('extra-card-' + id);
+        if (card) card.classList.toggle('selected', AppState.getSelectedExtras().includes(id));
+        CTABuilder.update();
+      };
       window.setPagamento = (t) => UIRenderer.setPagamento(t);
       window.gaCliqueFechamento = () => Analytics.trackFechamento();
       window.toggleEcoTooltip = (e, el) => UIRenderer.toggleEcoTooltip(e, el);
@@ -3118,6 +3309,14 @@
           if (remote.planos.primeiraExp) {
             BGL_PLANOS.primeiraExp = BGL_PLANOS.primeiraExp || {};
             Object.assign(BGL_PLANOS.primeiraExp, remote.planos.primeiraExp);
+          }
+          if (remote.planos.extras) {
+            BGL_PLANOS.extras = BGL_PLANOS.extras || {};
+            Object.keys(remote.planos.extras).forEach(function (id) {
+              if (BGL_PLANOS.extras[id]) {
+                Object.assign(BGL_PLANOS.extras[id], remote.planos.extras[id]);
+              }
+            });
           }
         }
         if (remote.horarios) Object.assign(BGL_HORARIOS, remote.horarios);

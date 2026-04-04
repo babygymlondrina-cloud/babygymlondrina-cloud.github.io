@@ -1651,6 +1651,166 @@
             Mostrar opção de aula avulsa (R$127)
           </label>
         </div>
+        <div id="extras-row" style="margin-bottom: 1.1rem">
+          <div
+            style="
+              font-size: 0.75rem;
+              font-weight: 700;
+              color: var(--text-light);
+              margin-bottom: 0.5rem;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+            "
+          >
+            🛍️ Itens adicionais (opcional)
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.45rem">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                padding: 0.65rem 1rem;
+                background: #fafafa;
+                border: 2px solid #e8e8f0;
+                border-radius: 12px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="chk-extra-avental"
+                style="
+                  width: 18px;
+                  height: 18px;
+                  accent-color: var(--purple);
+                  cursor: pointer;
+                  flex-shrink: 0;
+                "
+              />
+              <label
+                for="chk-extra-avental"
+                style="
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                  color: var(--text-light);
+                  cursor: pointer;
+                  margin: 0;
+                "
+              >
+                🧥 Avental (criança)
+              </label>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                padding: 0.65rem 1rem;
+                background: #fafafa;
+                border: 2px solid #e8e8f0;
+                border-radius: 12px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="chk-extra-body"
+                style="
+                  width: 18px;
+                  height: 18px;
+                  accent-color: var(--purple);
+                  cursor: pointer;
+                  flex-shrink: 0;
+                "
+              />
+              <label
+                for="chk-extra-body"
+                style="
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                  color: var(--text-light);
+                  cursor: pointer;
+                  margin: 0;
+                "
+              >
+                👕 Body (criança)
+              </label>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                padding: 0.65rem 1rem;
+                background: #fafafa;
+                border: 2px solid #e8e8f0;
+                border-radius: 12px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="chk-extra-camiseta"
+                style="
+                  width: 18px;
+                  height: 18px;
+                  accent-color: var(--purple);
+                  cursor: pointer;
+                  flex-shrink: 0;
+                "
+              />
+              <label
+                for="chk-extra-camiseta"
+                style="
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                  color: var(--text-light);
+                  cursor: pointer;
+                  margin: 0;
+                "
+              >
+                👚 Camiseta (criança)
+              </label>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.7rem;
+                padding: 0.65rem 1rem;
+                background: #fafafa;
+                border: 2px solid #e8e8f0;
+                border-radius: 12px;
+                cursor: pointer;
+              "
+            >
+              <input
+                type="checkbox"
+                id="chk-extra-meia"
+                style="
+                  width: 18px;
+                  height: 18px;
+                  accent-color: var(--purple);
+                  cursor: pointer;
+                  flex-shrink: 0;
+                "
+              />
+              <label
+                for="chk-extra-meia"
+                style="
+                  font-size: 0.85rem;
+                  font-weight: 700;
+                  color: var(--text-light);
+                  cursor: pointer;
+                  margin: 0;
+                "
+              >
+                🧦 Meia antiderrapante (mamãe)
+              </label>
+            </div>
+          </div>
+        </div>
         <button class="btn-gerar" onclick="gerarLink()">✨ Gerar link personalizado</button>
         <button class="btn-limpar" onclick="limparFormulario()">🗑️ Limpar formulário</button>
         <div class="link-box" id="link-box">
@@ -2064,6 +2224,18 @@
           const row = document.getElementById('avulsa-row');
           row.style.display = isRenovacao ? 'none' : 'flex';
           if (isRenovacao) document.getElementById('chk-avulsa').checked = false;
+          const extrasRow = document.getElementById('extras-row');
+          extrasRow.style.display = isRenovacao ? 'none' : 'block';
+          if (isRenovacao) {
+            [
+              BGL_CONST.EXTRA.AVENTAL,
+              BGL_CONST.EXTRA.BODY,
+              BGL_CONST.EXTRA.CAMISETA,
+              BGL_CONST.EXTRA.MEIA,
+            ].forEach(function (id) {
+              document.getElementById('chk-extra-' + id).checked = false;
+            });
+          }
         }
 
         function _atualizarPeRow() {
@@ -2168,6 +2340,12 @@
           }
           const fotoBase64 = PhotoHandler.getBase64();
           const pePaga = document.getElementById('chk-pe-paga').checked;
+          const extrasAtivos = [
+            BGL_CONST.EXTRA.AVENTAL,
+            BGL_CONST.EXTRA.BODY,
+            BGL_CONST.EXTRA.CAMISETA,
+            BGL_CONST.EXTRA.MEIA,
+          ].filter((id) => document.getElementById('chk-extra-' + id).checked);
           const data = {
             v: LinkEncoder.LINK_VERSION,
             mae,
@@ -2179,6 +2357,7 @@
             created: Date.now(),
             tipo: tipo === BGL_CONST.TIPO.RENOVACAO ? BGL_CONST.TIPO.RENOVACAO : undefined,
             avulsa: mostrarAvulsa || undefined,
+            extras: extrasAtivos.length ? extrasAtivos : undefined,
             [BGL_CONST.PRIMEIRA_EXP]: pePaga || undefined,
             desconto: descontoObj || undefined,
             precos: _capturarSnapshotPrecos(),
@@ -2287,6 +2466,7 @@
                 tipo: data.tipo || 'primeira-experiencia',
                 destaque: destaque || null,
                 avulsa: mostrarAvulsa || false,
+                extras: extrasAtivos.length ? extrasAtivos : null,
                 desconto: descontoObj || null,
                 linkUrl: finalUrl,
                 linkExp: new Date(exp),
@@ -2309,6 +2489,14 @@
           document.getElementById('inp-expiry').value = '30';
           document.getElementById('chk-desconto').checked = false;
           document.getElementById('chk-avulsa').checked = false;
+          [
+            BGL_CONST.EXTRA.AVENTAL,
+            BGL_CONST.EXTRA.BODY,
+            BGL_CONST.EXTRA.CAMISETA,
+            BGL_CONST.EXTRA.MEIA,
+          ].forEach(function (id) {
+            document.getElementById('chk-extra-' + id).checked = false;
+          });
           document.getElementById('chk-pe-paga').checked = true;
           document.getElementById('desconto-fields').style.display = 'none';
           document.getElementById('inp-desc-pct').value = '';
