@@ -719,13 +719,10 @@
         color: var(--orange);
         text-decoration: none;
       }
-      .cta-pe-line {
+      .cta-pe-inline {
         font-size: 0.82rem;
         font-weight: 700;
         color: var(--teal-dark);
-        margin-top: -0.5rem;
-        margin-bottom: 0.75rem;
-        text-align: center;
       }
       /* CTA state */
       .cta-selected {
@@ -1473,6 +1470,7 @@
                   </span>
                 </div>
               </div>
+              <div class="pe-note" id="pe-note" style="display: none"></div>
               <div class="section-title animate delay-2">📋 Escolha o plano ideal</div>
               <!-- ANUAL -->
               <div class="plan-card plan-anual animate delay-2" id="card-anual">
@@ -1757,14 +1755,11 @@
               <div class="pix-note animate delay-5" id="pix-note-text">
                 5% de desconto para pagamento à vista via PIX.
               </div>
-              <!-- PE note -->
-              <div class="pe-note" id="pe-note" style="display: none"></div>
               <!-- CTA -->
               <div class="cta-section animate delay-6">
                 <div class="cta-hint" id="cta-hint"></div>
                 <div class="cta-title cta-selected" id="cta-title">Ótima escolha! 🎉</div>
                 <div class="cta-sub cta-selected" id="cta-sub" style="margin-bottom: 1rem"></div>
-                <div class="cta-pe-line cta-selected" id="cta-pe-line" style="display: none"></div>
                 <a
                   class="btn-wpp-client cta-selected"
                   href="https://wa.me/554396517182"
@@ -2523,17 +2518,6 @@
           const { msgWpp, subText, isPePaga } = built;
           document.getElementById('cta-hint').style.display = 'none';
           document.querySelectorAll('.cta-selected').forEach((el) => (el.style.display = 'flex'));
-          const peLineEl = document.getElementById('cta-pe-line');
-          if (peLineEl) {
-            if (isPePaga && BGL_PLANOS.primeiraExp) {
-              peLineEl.textContent = msg(BGL_MESSAGES.ctaPeLinha, {
-                valor: BGL_PLANOS.primeiraExp.valor,
-              });
-              peLineEl.style.display = 'block';
-            } else {
-              peLineEl.style.display = 'none';
-            }
-          }
           document.getElementById('btn-trocar').style.display = 'block';
           document.getElementById('cta-title').style.display = 'block';
           document.getElementById('cta-sub').style.display = 'block';
@@ -2545,8 +2529,12 @@
           const ctaSubTexto = isRenovacao
             ? BGL_MESSAGES.ctaSubRenovacao
             : BGL_MESSAGES.ctaSubPrimeira;
+          const peHtml =
+            isPePaga && BGL_PLANOS.primeiraExp
+              ? `<br><span class="cta-pe-inline">${msg(BGL_MESSAGES.ctaPeLinha, { valor: BGL_PLANOS.primeiraExp.valor })}</span>`
+              : '';
           document.getElementById('cta-sub').innerHTML =
-            `<strong>${subText}</strong><br>${ctaSubTexto}`;
+            `<strong>${subText}</strong>${peHtml}<br>${ctaSubTexto}`;
           document.getElementById('btn-fechar').href =
             'https://wa.me/' + BGL_CONFIG.whatsapp + '?text=' + encodeURIComponent(msgWpp);
           // GA: plan selected
