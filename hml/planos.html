@@ -10,8 +10,9 @@
       content="Conheça nossos planos e garanta o desenvolvimento do seu bebê!"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Baloo+2:wght@700;800&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -26,10 +27,13 @@
         --orange: #ffa233;
         --orange-light: #ffcc8f;
         --white: #ffffff;
-        --text: #2d2d2d;
-        --text-light: #6b6b8a;
-        --shadow: 0 4px 24px rgba(98, 95, 183, 0.13);
+        --text: #19151f;
+        --text-light: #736880;
+        --shadow: 0 6px 28px rgba(98, 95, 183, 0.13);
+        --shadow-sm: 0 2px 12px rgba(98, 95, 183, 0.09);
+        --shadow-lg: 0 12px 48px rgba(98, 95, 183, 0.18);
         --radius: 20px;
+        --radius-sm: 14px;
       }
       * {
         box-sizing: border-box;
@@ -37,8 +41,14 @@
         padding: 0;
       }
       body {
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Outfit', sans-serif;
         background: var(--cream);
+        background-image: radial-gradient(
+          circle at 1px 1px,
+          rgba(98, 95, 183, 0.045) 1px,
+          transparent 0
+        );
+        background-size: 28px 28px;
         color: var(--text);
       }
       /* ─── CLIENT PRESENTATION MODE ─── */
@@ -46,8 +56,12 @@
         display: none;
       }
       .hero {
-        background: linear-gradient(160deg, var(--purple) 0%, var(--purple-dark) 60%, #2d2b6b 100%);
-        padding: 2.5rem 1.5rem 5rem;
+        background:
+          radial-gradient(ellipse at 15% 65%, rgba(252, 0, 124, 0.28) 0%, transparent 55%),
+          radial-gradient(ellipse at 88% 12%, rgba(102, 216, 212, 0.22) 0%, transparent 48%),
+          radial-gradient(ellipse at 50% 110%, rgba(67, 61, 153, 0.55) 0%, transparent 60%),
+          linear-gradient(162deg, var(--purple) 0%, var(--purple-dark) 58%, #1c1555 100%);
+        padding: 2.5rem 1.5rem 5.5rem;
         text-align: center;
         position: relative;
         overflow: hidden;
@@ -55,21 +69,21 @@
       .hero::before {
         content: '';
         position: absolute;
-        top: -60px;
-        right: -60px;
-        width: 200px;
-        height: 200px;
-        background: rgba(253, 128, 189, 0.18);
+        top: -40px;
+        right: -50px;
+        width: 220px;
+        height: 220px;
+        background: radial-gradient(circle, rgba(255, 125, 184, 0.22) 0%, transparent 70%);
         border-radius: 50%;
       }
       .hero::after {
         content: '';
         position: absolute;
-        bottom: 20px;
-        left: -40px;
-        width: 140px;
-        height: 140px;
-        background: rgba(102, 216, 212, 0.15);
+        bottom: 30px;
+        left: -50px;
+        width: 160px;
+        height: 160px;
+        background: radial-gradient(circle, rgba(82, 208, 203, 0.18) 0%, transparent 70%);
         border-radius: 50%;
       }
       .hero-logo {
@@ -153,22 +167,23 @@
       }
       /* Urgency banner */
       .urgency-banner {
-        background: linear-gradient(135deg, var(--pink-hot), #e0006e);
+        background: linear-gradient(135deg, var(--pink-hot) 0%, #b5004f 100%);
         border-radius: 16px;
         padding: 0.9rem 1.2rem;
         display: flex;
         align-items: center;
         gap: 0.8rem;
         margin-bottom: 1.5rem;
-        box-shadow: 0 4px 20px rgba(252, 0, 124, 0.3);
+        box-shadow: 0 6px 24px rgba(242, 0, 112, 0.35);
+        animation: pulse-banner 2.4s ease-in-out infinite;
       }
       @keyframes pulse-banner {
         0%,
         100% {
-          box-shadow: 0 4px 20px rgba(252, 0, 124, 0.3);
+          box-shadow: 0 6px 24px rgba(242, 0, 112, 0.35);
         }
         50% {
-          box-shadow: 0 4px 32px rgba(252, 0, 124, 0.55);
+          box-shadow: 0 8px 36px rgba(242, 0, 112, 0.55);
         }
       }
       .urgency-icon {
@@ -190,7 +205,7 @@
       }
       /* Pagamento toggle */
       .pagamento-toggle {
-        background: white;
+        background: var(--white);
         border-radius: 16px;
         padding: 1rem 1.2rem;
         margin-bottom: 1rem;
@@ -218,7 +233,7 @@
         border-radius: 12px;
         border: 2px solid #e8e8f0;
         background: #fafafa;
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Outfit', sans-serif;
         font-size: 0.88rem;
         font-weight: 700;
         color: var(--text-light);
@@ -246,14 +261,14 @@
       }
       /* Garanta vaga */
       .garanta-vaga {
-        background: linear-gradient(135deg, #433d99, #625fb7);
+        background: linear-gradient(135deg, var(--purple-dark) 0%, var(--purple) 100%);
         border-radius: 16px;
         padding: 0.9rem 1.2rem;
         display: flex;
         align-items: center;
         gap: 0.8rem;
         margin-bottom: 1rem;
-        box-shadow: 0 4px 20px rgba(67, 61, 153, 0.25);
+        box-shadow: 0 6px 24px rgba(58, 37, 126, 0.28);
       }
       .garanta-vaga span:first-child {
         font-size: 1.6rem;
@@ -285,7 +300,7 @@
       }
       /* Plan cards */
       .plan-card {
-        background: white;
+        background: var(--white);
         border-radius: var(--radius);
         padding: 1.4rem;
         margin-bottom: 1rem;
@@ -301,7 +316,7 @@
       }
       .plan-card.destaque {
         border-color: var(--purple);
-        box-shadow: 0 8px 32px rgba(98, 95, 183, 0.22);
+        box-shadow: 0 8px 36px rgba(90, 61, 172, 0.2);
       }
       .plan-badge {
         display: none;
@@ -591,22 +606,33 @@
         align-items: center;
         justify-content: center;
         gap: 0.6rem;
-        background: #25d366;
+        background: linear-gradient(135deg, #28d869 0%, #20b858 100%);
         color: white;
-        border-radius: 16px;
-        padding: 1rem 2rem;
+        border-radius: 18px;
+        padding: 1.05rem 2rem;
         font-family: 'Baloo 2', cursive;
         font-size: 1.1rem;
         font-weight: 700;
         text-decoration: none;
-        box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
+        box-shadow: 0 6px 24px rgba(37, 211, 102, 0.38);
         transition:
-          transform 0.15s,
-          box-shadow 0.15s;
+          transform 0.18s,
+          box-shadow 0.18s;
+        animation: cta-breathe 3s ease-in-out infinite;
+      }
+      @keyframes cta-breathe {
+        0%,
+        100% {
+          box-shadow: 0 6px 24px rgba(37, 211, 102, 0.38);
+        }
+        50% {
+          box-shadow: 0 10px 36px rgba(37, 211, 102, 0.55);
+        }
       }
       .btn-wpp-client:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 28px rgba(37, 211, 102, 0.45);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 36px rgba(37, 211, 102, 0.5);
+        animation: none;
       }
       .btn-wpp-client svg {
         width: 22px;
@@ -700,7 +726,7 @@
         background: #fafafe;
         cursor: pointer;
         transition: background 0.15s;
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Outfit', sans-serif;
         width: 100%;
         text-align: left;
         position: relative;
@@ -839,7 +865,9 @@
       #expired-screen {
         display: none;
         min-height: 100vh;
-        background: linear-gradient(160deg, #433d99 0%, #2d2b6b 100%);
+        background:
+          radial-gradient(ellipse at 30% 70%, rgba(242, 0, 112, 0.18) 0%, transparent 55%),
+          linear-gradient(160deg, var(--purple) 0%, var(--purple-dark) 55%, #14104a 100%);
         align-items: center;
         justify-content: center;
         flex-direction: column;
@@ -1016,26 +1044,33 @@
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         margin: 0 -1rem 1.2rem;
-        box-shadow: 0 2px 8px rgba(98, 95, 183, 0.1);
+        box-shadow: 0 2px 12px rgba(90, 61, 172, 0.1);
       }
       .tab-btn {
-        padding: 0.85rem 0.4rem;
+        padding: 0.9rem 0.4rem;
         border: none;
         border-bottom: 3px solid transparent;
         background: none;
-        font-family: 'Nunito', sans-serif;
-        font-size: 0.8rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.82rem;
         font-weight: 700;
         color: var(--text-light);
         cursor: pointer;
         transition:
-          color 0.15s,
-          border-color 0.15s;
+          color 0.18s,
+          border-color 0.18s,
+          background 0.18s;
         white-space: nowrap;
+        letter-spacing: 0.01em;
+      }
+      .tab-btn:hover {
+        background: rgba(90, 61, 172, 0.04);
+        color: var(--purple);
       }
       .tab-btn.active {
         color: var(--purple);
         border-bottom-color: var(--purple);
+        background: rgba(90, 61, 172, 0.05);
       }
       /* ─── PANEL SLIDER ─── */
       .panels-overflow {
@@ -1278,7 +1313,7 @@
         border-radius: 14px;
         background: var(--purple);
         color: #fff;
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Outfit', sans-serif;
         font-size: 0.95rem;
         font-weight: 800;
         cursor: pointer;
@@ -1295,7 +1330,7 @@
         border: 1.5px solid #ddd;
         border-radius: 14px;
         background: none;
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Outfit', sans-serif;
         font-size: 0.85rem;
         font-weight: 700;
         color: var(--text-light);
@@ -1343,7 +1378,7 @@
         z-index: 9999;
       "
     >
-      <div style="text-align: center; font-family: 'Nunito', sans-serif; padding: 2rem">
+      <div style="text-align: center; font-family: 'Outfit', sans-serif; padding: 2rem">
         <div id="bgl-loading-icon" style="font-size: 2.5rem; margin-bottom: 0.75rem">💜</div>
         <div
           id="bgl-loading-msg"
@@ -1362,7 +1397,7 @@
             color: #fff;
             border: none;
             border-radius: 999px;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Outfit', sans-serif;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
@@ -1875,7 +1910,7 @@
                     border: 1.5px solid #ddd;
                     border-radius: 14px;
                     padding: 0.7rem;
-                    font-family: 'Nunito', sans-serif;
+                    font-family: 'Outfit', sans-serif;
                     font-size: 0.85rem;
                     font-weight: 700;
                     color: var(--text-light);

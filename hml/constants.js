@@ -27,7 +27,6 @@ const BGL_CONST = {
   },
   EXTRA: {
     AVENTAL: 'avental',
-    BODY: 'body',
     CAMISETA: 'camiseta',
     MEIA: 'meia',
   },
