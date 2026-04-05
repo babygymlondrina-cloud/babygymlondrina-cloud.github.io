@@ -3313,9 +3313,10 @@
           if (remote.planos.extras) {
             BGL_PLANOS.extras = BGL_PLANOS.extras || {};
             Object.keys(remote.planos.extras).forEach(function (id) {
-              if (BGL_PLANOS.extras[id]) {
-                Object.assign(BGL_PLANOS.extras[id], remote.planos.extras[id]);
-              }
+              BGL_PLANOS.extras[id] = Object.assign(
+                BGL_PLANOS.extras[id] || {},
+                remote.planos.extras[id],
+              );
             });
           }
         }
