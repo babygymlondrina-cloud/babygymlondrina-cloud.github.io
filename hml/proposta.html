@@ -2197,15 +2197,35 @@
         // Chamado após showForm() — garante que o form está visível antes de preencher.
         // Turma é aplicada em populateTurmas() para respeitar o timing do Firestore.
         function preencherDaUrl() {
-          if (!_urlParams.has('mae') && !_urlParams.has('filho')) return;
+          const hasAny =
+            _urlParams.has('mae') ||
+            _urlParams.has('filho') ||
+            _urlParams.has('pe') ||
+            _urlParams.has('descpct') ||
+            _urlParams.has('descmotivo');
+          if (!hasAny) return;
           const mae = _urlParams.get('mae');
           const filho = _urlParams.get('filho');
           const sexo = (_urlParams.get('sexo') || '').toLowerCase();
           const tipo = (_urlParams.get('tipo') || '').toLowerCase();
+          const pe = _urlParams.get('pe');
+          const descpct = _urlParams.get('descpct');
+          const descmotivo = _urlParams.get('descmotivo');
           if (mae) document.getElementById('inp-mae').value = mae;
           if (filho) document.getElementById('inp-filho').value = filho;
           if (sexo === 'm' || sexo === 'f') document.getElementById('inp-sexo').value = sexo;
           if (tipo === BGL_CONST.TIPO.RENOVACAO) document.getElementById('inp-tipo').value = tipo;
+          if (pe !== null) document.getElementById('chk-pe-paga').checked = pe === '1';
+          if (descpct !== null || descmotivo !== null) {
+            document.getElementById('chk-desconto').checked = true;
+            toggleDesconto();
+            if (descpct !== null) {
+              const pctNum = parseInt(descpct, 10);
+              if (pctNum >= 1 && pctNum <= 99)
+                document.getElementById('inp-desc-pct').value = pctNum;
+            }
+            if (descmotivo !== null) document.getElementById('inp-desc-motivo').value = descmotivo;
+          }
           _atualizarAvulsaVisibility();
           _atualizarPeRow();
         }
