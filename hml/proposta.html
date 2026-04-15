@@ -31,6 +31,8 @@
         --text-light: #736880;
         --shadow: 0 6px 28px rgba(98, 95, 183, 0.13);
         --shadow-sm: 0 2px 12px rgba(98, 95, 183, 0.09);
+        --warning-bg: #fffbeb;
+        --warning-title: #92400e;
         --shadow-lg: 0 12px 48px rgba(98, 95, 183, 0.18);
         --radius: 20px;
         --radius-sm: 14px;
@@ -500,6 +502,38 @@
         font-size: 0.82rem;
         color: #c0392b;
         text-align: center;
+      }
+      #inapp-warning {
+        margin-top: 1rem;
+        padding: 0.9rem 1rem;
+        background: var(--warning-bg);
+        border: 1px solid var(--orange);
+        border-radius: 10px;
+        font-size: 0.82rem;
+        color: var(--text);
+        text-align: left;
+        line-height: 1.5;
+        max-width: 280px;
+      }
+      #inapp-warning .inapp-title {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-size: 0.88rem;
+        color: var(--warning-title);
+      }
+      .btn-copy-url {
+        display: block;
+        margin-top: 0.7rem;
+        padding: 0.45rem 1rem;
+        background: var(--purple);
+        border: none;
+        border-radius: 20px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--white);
+        cursor: pointer;
+        width: 100%;
       }
       .btn-google-login {
         width: 100%;
@@ -1239,6 +1273,7 @@
           Entrar com Google
         </button>
         <p id="login-error" style="display: none"></p>
+        <div id="inapp-warning" style="display: none"></div>
         <p class="app-version-badge" id="login-version-badge"></p>
       </div>
     </div>
@@ -2749,6 +2784,52 @@
           if (lvb) lvb.textContent = 'v' + BGL_CONST.APP_VERSION + ' · ' + BGL_CONST.APP_DATE;
           document.getElementById('login-screen').style.display = 'flex';
           document.getElementById('form-mode').style.display = 'none';
+          if (isInAppBrowser()) showInAppWarning();
+        }
+
+        function isInAppBrowser() {
+          const ua = navigator.userAgent || '';
+          return /WhatsApp|FBAN|FBAV|Instagram|FB_IAB|Line\/|KAKAOTALK|MicroMessenger/.test(ua);
+        }
+
+        function isIos() {
+          return /iPhone|iPad|iPod/.test(navigator.userAgent || '');
+        }
+
+        function showInAppWarning() {
+          const el = document.getElementById('inapp-warning');
+          if (!el) return;
+          const browser = isIos() ? 'Safari' : 'Chrome';
+          const instrucao = isIos()
+            ? 'Toque em <strong>⋮</strong> e selecione <em>"Abrir no Safari"</em>.'
+            : 'Toque em <strong>⋮</strong> e selecione <em>"Abrir no Chrome"</em> ou <em>"Abrir no navegador"</em>.';
+          el.innerHTML =
+            '<strong class="inapp-title">Browser interno detectado</strong>' +
+            'O login com Google não funciona aqui. ' +
+            'Abra esta página no <strong>' +
+            browser +
+            '</strong> para continuar.<br><br>' +
+            instrucao +
+            '<button class="btn-copy-url" onclick="AuthController.copyUrl()">📋 Copiar link</button>';
+          el.style.display = 'block';
+          setLoginBtn(true);
+        }
+
+        function copyUrl() {
+          const url = window.location.href;
+          const browser = isIos() ? 'Safari' : 'Chrome';
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText(url)
+              .then(() => {
+                showError('Link copiado! Cole no ' + browser + ' para abrir.');
+              })
+              .catch(() => {
+                prompt('Copie este link e abra no ' + browser + ':', url);
+              });
+          } else {
+            prompt('Copie este link e abra no ' + browser + ':', url);
+          }
         }
 
         function showError(errorMsg) {
@@ -2815,7 +2896,7 @@
           showLogin();
         }
 
-        return { init, login, logout, getEmail };
+        return { init, login, logout, getEmail, copyUrl };
       })();
       // Exposto imediatamente — evita ReferenceError se algo posterior ao IIFE falhar
       window.AuthController = AuthController;
