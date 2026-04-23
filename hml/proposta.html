@@ -115,6 +115,14 @@
         letter-spacing: 1px;
         margin-bottom: 0.4rem;
       }
+      .field-optional {
+        font-size: 0.7rem;
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--text-muted, #aaa);
+        margin-left: 0.3rem;
+      }
       .field input,
       .field select {
         width: 100%;
@@ -1344,6 +1352,13 @@
           <label>Nome do pai / mãe</label>
           <input type="text" id="inp-mae" placeholder="Ex: Ana Paula" autocomplete="off" />
         </div>
+        <div class="field">
+          <label>
+            WhatsApp do responsável
+            <span class="field-optional">(opcional — abre o chat direto)</span>
+          </label>
+          <input type="tel" id="inp-telefone" placeholder="Ex: 43996517182" autocomplete="off" />
+        </div>
         <div class="field-row">
           <div class="field">
             <label>Nome do bebê</label>
@@ -2234,12 +2249,14 @@
           const hasAny =
             _urlParams.has('mae') ||
             _urlParams.has('filho') ||
+            _urlParams.has('telefone') ||
             _urlParams.has('pe') ||
             _urlParams.has('descpct') ||
             _urlParams.has('descmotivo');
           if (!hasAny) return;
           const mae = _urlParams.get('mae');
           const filho = _urlParams.get('filho');
+          const telefone = _urlParams.get('telefone');
           const sexo = (_urlParams.get('sexo') || '').toLowerCase();
           const tipo = (_urlParams.get('tipo') || '').toLowerCase();
           const pe = _urlParams.get('pe');
@@ -2247,6 +2264,7 @@
           const descmotivo = _urlParams.get('descmotivo');
           if (mae) document.getElementById('inp-mae').value = mae;
           if (filho) document.getElementById('inp-filho').value = filho;
+          if (telefone) document.getElementById('inp-telefone').value = telefone;
           if (sexo === 'm' || sexo === 'f') document.getElementById('inp-sexo').value = sexo;
           if (tipo === BGL_CONST.TIPO.RENOVACAO) document.getElementById('inp-tipo').value = tipo;
           if (pe !== null) document.getElementById('chk-pe-paga').checked = pe === '1';
@@ -2330,6 +2348,7 @@
         async function gerarLink() {
           const mae = document.getElementById('inp-mae').value.trim();
           const filho = document.getElementById('inp-filho').value.trim();
+          const telefone = document.getElementById('inp-telefone').value.replace(/\D/g, '');
           const sexo = document.getElementById('inp-sexo').value;
           const turmaId = document.getElementById('inp-turma').value || undefined;
           const destaque = document.getElementById('inp-destaque').value;
@@ -2437,15 +2456,16 @@
           });
           document.getElementById('link-expiry-label').textContent = '\u23F1 Expira em: ' + expStr;
           const wppText = (url) => {
-            const _mae = (AppState.getBgData() || {}).mae || '';
-            const saudacao = _mae
-              ? msg(BGL_MESSAGES.shareSaudacaoComNome, { mae: _mae }) + ' '
+            const primeiroNome = mae.trim().split(/\s+/)[0];
+            const saudacao = primeiroNome
+              ? msg(BGL_MESSAGES.shareSaudacaoComNome, { mae: primeiroNome }) + ' '
               : BGL_MESSAGES.shareSaudacaoSemNome + ' ';
             const corpo =
               (data.tipo === BGL_CONST.TIPO.RENOVACAO
                 ? BGL_MESSAGES.shareCorpoRenovacao
                 : BGL_MESSAGES.shareCorpoPrimeira) + '\n\n';
-            return 'https://wa.me/?text=' + encodeURIComponent(saudacao + corpo + url);
+            const base = telefone ? 'https://wa.me/55' + telefone : 'https://wa.me/';
+            return base + '?text=' + encodeURIComponent(saudacao + corpo + url);
           };
           const temFotoBase64 = !!data.foto;
           if (temFotoBase64) {
@@ -2503,6 +2523,7 @@
                 criadoEm: fb.serverTimestamp(),
                 mae,
                 filho,
+                telefone: telefone || null,
                 sexo,
                 turma: turmaId || null,
                 tipo: data.tipo || 'primeira-experiencia',
@@ -2524,6 +2545,7 @@
         function limparFormulario() {
           document.getElementById('inp-tipo').value = 'primeira';
           document.getElementById('inp-mae').value = '';
+          document.getElementById('inp-telefone').value = '';
           document.getElementById('inp-filho').value = '';
           document.getElementById('inp-sexo').value = 'm';
           document.getElementById('inp-turma').value = '';
