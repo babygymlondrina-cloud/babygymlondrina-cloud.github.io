@@ -2457,9 +2457,11 @@
           document.getElementById('link-expiry-label').textContent = '\u23F1 Expira em: ' + expStr;
           const wppText = (url) => {
             const primeiroNome = mae.trim().split(/\s+/)[0];
+            const tmplComNome = BGL_MESSAGES.shareSaudacaoComNome || 'Oi, [mae]! 💜';
+            const tmplSemNome = BGL_MESSAGES.shareSaudacaoSemNome || 'Oi! 💜';
             const saudacao = primeiroNome
-              ? msg(BGL_MESSAGES.shareSaudacaoComNome, { mae: primeiroNome }) + ' '
-              : BGL_MESSAGES.shareSaudacaoSemNome + ' ';
+              ? msg(tmplComNome, { mae: primeiroNome }) + ' '
+              : tmplSemNome + ' ';
             const corpo =
               (data.tipo === BGL_CONST.TIPO.RENOVACAO
                 ? BGL_MESSAGES.shareCorpoRenovacao
