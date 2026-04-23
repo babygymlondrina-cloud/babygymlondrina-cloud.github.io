@@ -4,8 +4,8 @@
     "deployedAt": "2026-04-23T11:55:50Z"
   },
   "prod": {
-    "commit": "1c1a58f",
-    "deployedAt": "2026-04-18T02:51:03Z",
-    "promotedAt": "2026-04-21T00:14:47Z"
+    "commit": "41f33ad",
+    "deployedAt": "2026-04-23T11:55:50Z",
+    "promotedAt": "2026-04-23T12:05:00Z"
   }
 }
