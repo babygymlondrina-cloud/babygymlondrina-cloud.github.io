@@ -2812,7 +2812,13 @@
 
         function isInAppBrowser() {
           const ua = navigator.userAgent || '';
-          return /WhatsApp|FBAN|FBAV|Instagram|FB_IAB|Line\/|KAKAOTALK|MicroMessenger/.test(ua);
+          // Android: apps como WhatsApp adicionam seu nome ao UA
+          if (/WhatsApp|FBAN|FBAV|Instagram|FB_IAB|Line\/|KAKAOTALK|MicroMessenger/.test(ua))
+            return true;
+          // iOS: WKWebView não adiciona o nome do app ao UA, mas também não tem
+          // "Safari", "CriOS" (Chrome) ou "FxiOS" (Firefox) — que os browsers reais têm
+          if (/iPhone|iPad|iPod/.test(ua) && !/Safari|CriOS|FxiOS/.test(ua)) return true;
+          return false;
         }
 
         function isIos() {
