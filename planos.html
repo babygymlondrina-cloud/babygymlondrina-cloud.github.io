@@ -3406,18 +3406,23 @@
         if (window.BGL_SKIP_REMOTE_CONFIG) return true;
 
         // Verificar cache no sessionStorage
+        var fromCache = false;
         try {
           var raw = sessionStorage.getItem(CACHE_KEY);
           if (raw) {
             var cached = JSON.parse(raw);
             if (Date.now() - cached.ts < CACHE_TTL) {
               applyRemoteConfig(cached.data);
-              return true;
+              fromCache = true;
             }
           }
         } catch (_) {}
 
-        // Buscar no Firestore com timeout de 3s
+        // Links #data= com cache válido não precisam do Firebase para renderizar
+        var _isProposalId = window.location.hash && /^#[a-z0-9]{10,}$/i.test(window.location.hash);
+        if (fromCache && !_isProposalId) return true;
+
+        // Inicializar Firebase SDK (fetch de config ou links proposalId)
         try {
           var fbApp = await import('https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js');
           var fbFs =
@@ -3431,6 +3436,7 @@
           window._fb.db = db;
           window._fb.doc = fbFs.doc;
           window._fb.getDoc = fbFs.getDoc;
+          if (fromCache) return true; // proposalId com cache: Firebase pronto, config já aplicada
           var docIds = ['messages', 'planos', 'horarios', 'faq', 'dadosUnidade', 'turmas'];
           var timeout = new Promise(function (_, rej) {
             return setTimeout(function () {
