@@ -2509,6 +2509,11 @@
             document.getElementById('link-loading').textContent = '\u23F3 Salvando...';
             try {
               const col = BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas';
+              const shortUrl =
+                window.location.origin +
+                window.location.pathname.replace('proposta.html', 'planos.html') +
+                '#' +
+                proposalId;
               await fb.setDoc(fb.doc(fb.db, col, proposalId), {
                 proposalId,
                 operatorEmail,
@@ -2525,13 +2530,9 @@
                 extras: extrasAtivos.length ? extrasAtivos : null,
                 desconto: descontoObj || null,
                 linkExp: new Date(exp),
+                linkUrl: shortUrl,
                 linkPayload: JSON.parse(JSON.stringify(data)),
               });
-              const shortUrl =
-                window.location.origin +
-                window.location.pathname.replace('proposta.html', 'planos.html') +
-                '#' +
-                proposalId;
               AppState.setLastLongUrl(shortUrl);
               document.getElementById('link-url').textContent = shortUrl;
               document.getElementById('link-full-label').textContent = 'Link gerado:';
@@ -2763,15 +2764,15 @@
       // ─── AUTH ─────────────────────────────────────────────────────────────────
       const AuthController = (function () {
         const SESSION_KEY = 'bgl_auth';
-        const SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
+        const SESSION_TTL = 24 * 60 * 60 * 1000; // 24h
 
         function getSession() {
           try {
-            const raw = sessionStorage.getItem(SESSION_KEY);
+            const raw = localStorage.getItem(SESSION_KEY);
             if (!raw) return null;
             const s = JSON.parse(raw);
             if (Date.now() > s.exp) {
-              sessionStorage.removeItem(SESSION_KEY);
+              localStorage.removeItem(SESSION_KEY);
               return null;
             }
             return s;
@@ -2781,7 +2782,7 @@
         }
 
         function saveSession(email, name) {
-          sessionStorage.setItem(
+          localStorage.setItem(
             SESSION_KEY,
             JSON.stringify({ email, name, exp: Date.now() + SESSION_TTL }),
           );
@@ -2917,7 +2918,7 @@
         }
 
         function logout() {
-          sessionStorage.removeItem(SESSION_KEY);
+          localStorage.removeItem(SESSION_KEY);
           const fb = window._fb;
           if (fb) fb.signOut(fb.auth).catch(() => {});
           showLogin();
