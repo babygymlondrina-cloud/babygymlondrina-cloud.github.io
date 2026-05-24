@@ -2525,7 +2525,7 @@
                 extras: extrasAtivos.length ? extrasAtivos : null,
                 desconto: descontoObj || null,
                 linkExp: new Date(exp),
-                linkPayload: data,
+                linkPayload: JSON.parse(JSON.stringify(data)),
               });
               const shortUrl =
                 window.location.origin +
