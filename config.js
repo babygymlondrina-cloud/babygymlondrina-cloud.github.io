@@ -8,8 +8,8 @@
 const BGL_CONFIG = {
   // Ambiente: 'prod' em produção, 'hml' injetado pelo CI no deploy de homologação
   env: 'prod',
-  deployVersion: '3bcd022', // substituído pelo CI: hash curto do commit
-  deployAt: '2026-04-23T13:06:39Z', // substituído pelo CI: ISO timestamp do deploy
+  deployVersion: 'b57d0c7', // substituído pelo CI: hash curto do commit
+  deployAt: '2026-05-24T15:31:23Z', // substituído pelo CI: ISO timestamp do deploy
 
   // Google Analytics 4
   gaId: 'G-QPB21Y8RKP',
@@ -38,7 +38,7 @@ const BGL_CONFIG = {
   },
 
   // APIs externas
-  isgdApi: 'https://is.gd/create.php?format=json&url=',
+  isgdApi: 'https://is.gd/create.php?format=json',
   imgbbApi: 'https://api.imgbb.com/1/upload',
 
   // Foto do bebê

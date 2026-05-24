@@ -2057,12 +2057,35 @@
             encode(data)
           );
         }
-        async function shorten(longUrl) {
-          const api = BGL_CONFIG.isgdApi + encodeURIComponent(longUrl);
-          const resp = await fetch(api);
-          const json = await resp.json();
-          if (json.shorturl) return json.shorturl;
-          throw new Error(json.errormessage || 'Erro ao encurtar');
+        function shorten(longUrl) {
+          return new Promise((resolve, reject) => {
+            const cbName = '_isgdCb_' + Date.now();
+            const script = document.createElement('script');
+            const cleanup = () => {
+              delete window[cbName];
+              window.removeEventListener('error', parseErrHandler);
+              if (script.parentNode) script.parentNode.removeChild(script);
+            };
+            const parseErrHandler = (e) => {
+              if (e.filename && e.filename.includes('is.gd')) {
+                cleanup();
+                reject(new Error('Resposta inválida'));
+              }
+            };
+            window.addEventListener('error', parseErrHandler);
+            window[cbName] = (json) => {
+              cleanup();
+              if (json.shorturl) resolve(json.shorturl);
+              else reject(new Error(json.errormessage || 'Erro ao encurtar'));
+            };
+            script.onerror = () => {
+              cleanup();
+              reject(new Error('Rede indisponível'));
+            };
+            script.src =
+              BGL_CONFIG.isgdApi + '&callback=' + cbName + '&url=' + encodeURIComponent(longUrl);
+            document.head.appendChild(script);
+          });
         }
         return { LINK_VERSION, LINK_MIN_VERSION, encode, decode, buildUrl, shorten };
       })();
@@ -2407,6 +2430,13 @@
             BGL_CONST.EXTRA.CAMISETA,
             BGL_CONST.EXTRA.MEIA,
           ].filter((id) => document.getElementById('chk-extra-' + id).checked);
+          const proposalId = (
+            crypto.randomUUID
+              ? crypto.randomUUID()
+              : Date.now().toString(36) + Math.random().toString(36).slice(2)
+          )
+            .replace(/-/g, '')
+            .slice(0, 20);
           const data = {
             v: LinkEncoder.LINK_VERSION,
             mae,
@@ -2440,10 +2470,6 @@
             document.getElementById('link-loading').textContent = '\u23F3 Encurtando link...';
           }
           const longUrl = LinkEncoder.buildUrl(data);
-          AppState.setLastLongUrl(longUrl);
-          document.getElementById('link-url').textContent = longUrl;
-          document.getElementById('link-full-label').textContent = 'Link completo:';
-          document.getElementById('link-short-wrap').style.display = 'none';
           document.getElementById('link-full-wrap').style.display = 'block';
           document.getElementById('link-box').style.display = 'block';
           const expDate = new Date(exp);
@@ -2469,43 +2495,6 @@
             const base = telefone ? 'https://wa.me/55' + telefone : 'https://wa.me/';
             return base + '?text=' + encodeURIComponent(saudacao + corpo + url);
           };
-          const temFotoBase64 = !!data.foto;
-          if (temFotoBase64) {
-            AppState.setLastLongUrl(longUrl);
-            document.getElementById('link-full-label').textContent =
-              'Link gerado (com foto \u2014 n\u00e3o encurtado):';
-            document.getElementById('link-short-wrap').style.display = 'none';
-            document.getElementById('link-expiry-label').textContent +=
-              ' \u00b7 \uD83D\uDCF7 com foto';
-            document.getElementById('btn-wpp-share').href = wppText(longUrl);
-          } else {
-            document.getElementById('link-loading').style.display = 'block';
-            const fotoLabel = data.fotoUrl ? ' \u00b7 \uD83D\uDCF7 com foto' : '';
-            try {
-              const shortUrl = await LinkEncoder.shorten(longUrl);
-              AppState.setLastLongUrl(shortUrl);
-              document.getElementById('link-short').textContent = shortUrl;
-              document.getElementById('link-short-wrap').style.display = 'block';
-              document.getElementById('link-full-wrap').style.display = 'none';
-              document.getElementById('link-expiry-label').textContent += fotoLabel;
-              document.getElementById('btn-wpp-share').href = wppText(shortUrl);
-            } catch (err) {
-              AppState.setLastLongUrl(longUrl);
-              document.getElementById('link-full-label').textContent = 'Link gerado:';
-              document.getElementById('link-expiry-label').textContent += fotoLabel;
-              document.getElementById('btn-wpp-share').href = wppText(longUrl);
-            }
-            document.getElementById('link-loading').style.display = 'none';
-          }
-          // ─── Persistência + GA4 ──────────────────────────────────────────────────
-          const finalUrl = AppState.getLastLongUrl() || longUrl;
-          const proposalId = (
-            crypto.randomUUID
-              ? crypto.randomUUID()
-              : Date.now().toString(36) + Math.random().toString(36).slice(2)
-          )
-            .replace(/-/g, '')
-            .slice(0, 20);
           const operatorEmail = AuthController.getEmail() || 'desconhecido';
           if (typeof gtag !== 'undefined') {
             gtag('event', 'proposta_gerada', {
@@ -2515,10 +2504,12 @@
             });
           }
           const fb = window._fb;
-          if (fb) {
-            fb.addDoc(
-              fb.collection(fb.db, BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas'),
-              {
+          if (fb && !data.foto) {
+            document.getElementById('link-loading').style.display = 'block';
+            document.getElementById('link-loading').textContent = '\u23F3 Salvando...';
+            try {
+              const col = BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas';
+              await fb.setDoc(fb.doc(fb.db, col, proposalId), {
                 proposalId,
                 operatorEmail,
                 appVersion: BGL_CONST.APP_VERSION,
@@ -2533,12 +2524,36 @@
                 avulsa: mostrarAvulsa || false,
                 extras: extrasAtivos.length ? extrasAtivos : null,
                 desconto: descontoObj || null,
-                linkUrl: finalUrl,
                 linkExp: new Date(exp),
-              },
-            ).catch((err) => console.warn('[BGL Firestore]', err));
+                linkPayload: data,
+              });
+              const shortUrl =
+                window.location.origin +
+                window.location.pathname.replace('proposta.html', 'planos.html') +
+                '#' +
+                proposalId;
+              AppState.setLastLongUrl(shortUrl);
+              document.getElementById('link-url').textContent = shortUrl;
+              document.getElementById('link-full-label').textContent = 'Link gerado:';
+              document.getElementById('btn-wpp-share').href = wppText(shortUrl);
+            } catch (err) {
+              console.warn('[BGL Firestore]', err);
+              AppState.setLastLongUrl(longUrl);
+              document.getElementById('link-url').textContent = longUrl;
+              document.getElementById('link-full-label').textContent = 'Link gerado:';
+              document.getElementById('btn-wpp-share').href = wppText(longUrl);
+            }
+            document.getElementById('link-loading').style.display = 'none';
+          } else {
+            AppState.setLastLongUrl(longUrl);
+            document.getElementById('link-url').textContent = longUrl;
+            const fotoLabel = data.foto ? ' \u00b7 \uD83D\uDCF7 com foto' : '';
+            document.getElementById('link-full-label').textContent = data.foto
+              ? 'Link gerado (com foto \u2014 n\u00e3o encurtado):'
+              : 'Link gerado:';
+            document.getElementById('link-expiry-label').textContent += fotoLabel;
+            document.getElementById('btn-wpp-share').href = wppText(longUrl);
           }
-          // ─────────────────────────────────────────────────────────────────────────
 
           document
             .getElementById('link-box')

@@ -3172,9 +3172,8 @@
       })();
 
       // ─── INIT ─────────────────────────────────────────────────────────────────
-      function _bglDoInit() {
+      async function _bglDoInit() {
         var _ls = document.getElementById('bgl-loading');
-        if (_ls) _ls.style.display = 'none';
 
         // ── Aplica snapshot de preços do hash em BGL_PLANOS (antes de _initPlanData) ──
         function applyPriceSnapshot(precos) {
@@ -3201,16 +3200,49 @@
           }
         }
 
-        // ── Decodifica hash antes de _initPlanData para aplicar snapshot de preços ──
+        // ── Decodifica hash ou busca proposta no Firestore ──
         var _hashData = null;
         var _hashRaw = window.location.hash;
         if (_hashRaw && _hashRaw.startsWith('#data=')) {
+          if (_ls) _ls.style.display = 'none';
           try {
             _hashData = LinkEncoder.decode(_hashRaw.replace('#data=', ''));
             if (_hashData && _hashData.precos) applyPriceSnapshot(_hashData.precos);
           } catch (e) {
             _hashData = null;
           }
+        } else if (_hashRaw && /^#[a-z0-9]{10,}$/i.test(_hashRaw)) {
+          var _proposalId = _hashRaw.slice(1);
+          var _fb = window._fb;
+          if (!_fb) {
+            document.getElementById('bgl-loading-icon').textContent = '❌';
+            document.getElementById('bgl-loading-msg').textContent =
+              'Este link requer conexão com o banco de dados.';
+            return;
+          } else {
+            try {
+              document.getElementById('bgl-loading-msg').textContent = 'Carregando proposta…';
+              var _col = BGL_CONFIG.env === 'hml' ? 'propostas_hml' : 'propostas';
+              var _snap = await _fb.getDoc(_fb.doc(_fb.db, _col, _proposalId));
+              if (!_snap.exists()) {
+                document.getElementById('bgl-loading-icon').textContent = '❌';
+                document.getElementById('bgl-loading-msg').textContent = 'Link não encontrado.';
+                return;
+              }
+              _hashData = _snap.data().linkPayload;
+              if (_hashData && _hashData.precos) applyPriceSnapshot(_hashData.precos);
+              if (_ls) _ls.style.display = 'none';
+            } catch (_e) {
+              console.warn('[BGL proposalId]', _e);
+              document.getElementById('bgl-loading-icon').textContent = '⚠️';
+              document.getElementById('bgl-loading-msg').textContent =
+                'Não foi possível carregar o link. Verifique sua conexão.';
+              document.getElementById('bgl-loading-retry').style.display = 'inline-block';
+              return;
+            }
+          }
+        } else {
+          if (_ls) _ls.style.display = 'none';
         }
 
         // ── Inicializa preços e configurações a partir de BGL_PLANOS / BGL_CONFIG ──
@@ -3395,6 +3427,10 @@
           });
           var app = existingApp || fbApp.initializeApp(BGL_CONFIG.firebaseConfig, 'bgl-rc');
           var db = fbFs.getFirestore(app);
+          window._fb = window._fb || {};
+          window._fb.db = db;
+          window._fb.doc = fbFs.doc;
+          window._fb.getDoc = fbFs.getDoc;
           var docIds = ['messages', 'planos', 'horarios', 'faq', 'dadosUnidade', 'turmas'];
           var timeout = new Promise(function (_, rej) {
             return setTimeout(function () {
