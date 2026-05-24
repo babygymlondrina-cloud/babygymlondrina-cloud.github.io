@@ -2063,8 +2063,16 @@
             const script = document.createElement('script');
             const cleanup = () => {
               delete window[cbName];
+              window.removeEventListener('error', parseErrHandler);
               if (script.parentNode) script.parentNode.removeChild(script);
             };
+            const parseErrHandler = (e) => {
+              if (e.filename && e.filename.includes('is.gd')) {
+                cleanup();
+                reject(new Error('Resposta inválida'));
+              }
+            };
+            window.addEventListener('error', parseErrHandler);
             window[cbName] = (json) => {
               cleanup();
               if (json.shorturl) resolve(json.shorturl);
