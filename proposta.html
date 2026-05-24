@@ -1893,13 +1893,7 @@
             <div class="link-url" id="link-url" style="font-size: 0.7rem"></div>
           </div>
           <button class="btn-copy" onclick="copiarLink()">📋 Copiar link</button>
-          <a
-            class="btn-wpp"
-            id="btn-wpp-share"
-            href="#"
-            target="_blank"
-            onclick="limparFormulario()"
-          >
+          <a class="btn-wpp" id="btn-wpp-share" href="#" rel="noopener noreferrer">
             📲 Abrir no WhatsApp
           </a>
         </div>
@@ -2536,13 +2530,13 @@
               AppState.setLastLongUrl(shortUrl);
               document.getElementById('link-url').textContent = shortUrl;
               document.getElementById('link-full-label').textContent = 'Link gerado:';
-              document.getElementById('btn-wpp-share').href = wppText(shortUrl);
+              document.getElementById('btn-wpp-share').dataset.wppUrl = wppText(shortUrl);
             } catch (err) {
               console.warn('[BGL Firestore]', err);
               AppState.setLastLongUrl(longUrl);
               document.getElementById('link-url').textContent = longUrl;
               document.getElementById('link-full-label').textContent = 'Link gerado:';
-              document.getElementById('btn-wpp-share').href = wppText(longUrl);
+              document.getElementById('btn-wpp-share').dataset.wppUrl = wppText(longUrl);
             }
             document.getElementById('link-loading').style.display = 'none';
           } else {
@@ -2553,7 +2547,7 @@
               ? 'Link gerado (com foto \u2014 n\u00e3o encurtado):'
               : 'Link gerado:';
             document.getElementById('link-expiry-label').textContent += fotoLabel;
-            document.getElementById('btn-wpp-share').href = wppText(longUrl);
+            document.getElementById('btn-wpp-share').dataset.wppUrl = wppText(longUrl);
           }
 
           document
@@ -2581,6 +2575,7 @@
           document.getElementById('inp-desc-pct').value = '';
           document.getElementById('inp-desc-motivo').value = '';
           document.getElementById('link-box').style.display = 'none';
+          document.getElementById('btn-wpp-share').dataset.wppUrl = '';
           sincronizarDescDias();
           _atualizarAvulsaVisibility();
           _atualizarPeRow();
@@ -2625,6 +2620,16 @@
           document.getElementById('inp-tipo').addEventListener('change', function () {
             _atualizarAvulsaVisibility();
             _atualizarPeRow();
+          });
+          // No PC, target="_blank" pode ser bloqueado pelo popup blocker quando há onclick.
+          // window.open() chamado diretamente por clique real (isTrusted) não é bloqueado.
+          document.getElementById('btn-wpp-share').addEventListener('click', function (e) {
+            e.preventDefault();
+            var url = this.dataset.wppUrl;
+            limparFormulario();
+            if (e.isTrusted && url) {
+              window.open(url, '_blank', 'noopener,noreferrer');
+            }
           });
         }
         return {
