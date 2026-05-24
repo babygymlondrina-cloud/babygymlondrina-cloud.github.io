@@ -2486,8 +2486,13 @@
               (data.tipo === BGL_CONST.TIPO.RENOVACAO
                 ? BGL_MESSAGES.shareCorpoRenovacao
                 : BGL_MESSAGES.shareCorpoPrimeira) + '\n\n';
-            const base = telefone ? 'https://wa.me/55' + telefone : 'https://wa.me/';
-            return base + '?text=' + encodeURIComponent(saudacao + corpo + url);
+            const encodedText = encodeURIComponent(saudacao + corpo + url);
+            if (telefone) {
+              // wa.me redirects para api.whatsapp.com/send corrompendo emoji de 4 bytes (%F0…→%EF%BF%BD).
+              // Usar api.whatsapp.com/send direto preserva o encoding correto.
+              return 'https://api.whatsapp.com/send/?phone=55' + telefone + '&text=' + encodedText;
+            }
+            return 'https://wa.me/?text=' + encodedText;
           };
           const operatorEmail = AuthController.getEmail() || 'desconhecido';
           if (typeof gtag !== 'undefined') {
