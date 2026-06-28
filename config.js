@@ -8,11 +8,15 @@
 const BGL_CONFIG = {
   // Ambiente: 'prod' em produção, 'hml' injetado pelo CI no deploy de homologação
   env: 'prod',
-  deployVersion: '8f2a3e7', // substituído pelo CI: hash curto do commit
-  deployAt: '2026-05-24T23:15:59Z', // substituído pelo CI: ISO timestamp do deploy
+  deployVersion: 'e618dff', // substituído pelo CI: hash curto do commit
+  deployAt: '2026-06-28T21:00:18Z', // substituído pelo CI: ISO timestamp do deploy
 
   // Google Analytics 4
   gaId: 'G-QPB21Y8RKP',
+
+  // Meta Pixel (index.html). Mantenha em sincronia com o ID no <noscript>
+  // do index.html, que não consegue ler esta variável.
+  pixelId: '2266639127113248',
 
   // Kill switch de versão
   linkVersion: 3, // versão embutida em cada link novo
