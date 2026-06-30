@@ -6,7 +6,7 @@
 
 const BGL_CONST = {
   APP_VERSION: '3.5',
-  APP_DATE: '2026-06-28',
+  APP_DATE: '2026-06-30',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
