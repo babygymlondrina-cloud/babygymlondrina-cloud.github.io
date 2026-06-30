@@ -4,9 +4,9 @@
     "deployedAt": "2026-06-30T21:04:44Z"
   },
   "prod": {
-    "commit": "a2673af",
-    "deployedAt": "2026-06-29T21:52:09Z",
-    "promotedAt": "2026-06-30T02:13:56Z",
+    "commit": "17b371b",
+    "deployedAt": "2026-06-30T21:04:44Z",
+    "promotedAt": "2026-06-30T21:10:43Z",
     "appVersion": "3.5"
   }
 }
