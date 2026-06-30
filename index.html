@@ -358,9 +358,9 @@ function trackClick(btn) {
     pagina: 'landing'
   });
 
-  // Meta Pixel: clique no WhatsApp = intenção de agendamento (evento Lead)
+  // Meta Pixel: clique no WhatsApp pela BIO (orgânico). Custom para separar do Lead da landing de anúncio.
   if (btn === 'whatsapp' && typeof fbq === 'function') {
-    fbq('track', 'Lead', { content_name: '1a Experiencia Baby Gym' });
+    fbq('trackCustom', 'LeadBio', { content_name: '1a Experiencia Baby Gym', origem: 'bio' });
   }
 }
 
