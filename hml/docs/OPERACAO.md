@@ -20,8 +20,7 @@ Este documento é para a **equipe da Baby Gym Londrina**: como gerar links de fe
 3. Escolha opcionalmente qual plano destacar com um badge
 4. Marque **Avulsa** se quiser exibir a opção de aula avulsa
 5. Configure um desconto especial (%, motivo, validade, quais planos) — opcional
-6. Faça upload da foto da criança — opcional (vai para o ImgBB com badge Baby GYM)
-7. Clique em **Gerar link** → o link encurtado aparece com botão **Abrir no WhatsApp**
+6. Clique em **Gerar link** → o link encurtado aparece com botão **Abrir no WhatsApp**
    - Ao clicar em **Abrir no WhatsApp**, o formulário é limpo automaticamente
    - O botão **Limpar formulário** também reseta tudo manualmente
 8. As propostas geradas ficam listadas em **Minhas propostas** com filtro por data
@@ -35,7 +34,7 @@ Este documento é para a **equipe da Baby Gym Londrina**: como gerar links de fe
 1. Abre o link recebido no WhatsApp
 2. A página exibe:
    - Saudação personalizada com nome da mãe e da criança
-   - Foto da criança (ou carinha fallback se não houver foto)
+   - Carinha ilustrativa (links antigos com foto ainda a exibem até expirar)
    - Banner de desconto (se ativo)
    - Cards dos planos Anual, Semestral, Trimestral (e Avulsa, se habilitada)
    - Abas de **Horários** (se turma definida) e **FAQ**

@@ -8,8 +8,8 @@
 const BGL_CONFIG = {
   // Ambiente: 'prod' em produção, 'hml' injetado pelo CI no deploy de homologação
   env: 'hml',
-  deployVersion: '2841ed9', // substituído pelo CI: hash curto do commit
-  deployAt: '2026-07-01T18:04:56Z', // substituído pelo CI: ISO timestamp do deploy
+  deployVersion: '58224b3', // substituído pelo CI: hash curto do commit
+  deployAt: '2026-07-08T22:50:33Z', // substituído pelo CI: ISO timestamp do deploy
 
   // Google Analytics 4
   gaId: 'G-QPB21Y8RKP',
@@ -41,13 +41,4 @@ const BGL_CONFIG = {
     appId: '1:975011039458:web:561996934bd610bef0f6bb',
   },
 
-  // APIs externas
-  isgdApi: 'https://is.gd/create.php?format=json',
-  imgbbApi: 'https://api.imgbb.com/1/upload',
-
-  // Foto do bebê
-  photoMaxPx: 320, // dimensão máxima (largura ou altura) em px
-
-  // Badge Baby GYM sobreposto na foto
-  badgeColor: 'rgba(67,61,153,0.88)',
 };

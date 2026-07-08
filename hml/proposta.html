@@ -150,50 +150,6 @@
         grid-template-columns: 1fr 1fr;
         gap: 0.8rem;
       }
-      .foto-area {
-        border: 2px dashed #ccc;
-        border-radius: 14px;
-        padding: 1.2rem;
-        text-align: center;
-        cursor: pointer;
-        background: #fafafa;
-        transition:
-          border-color 0.2s,
-          background 0.2s;
-        position: relative;
-      }
-      .foto-area:hover {
-        border-color: var(--purple);
-        background: #f3f2ff;
-      }
-      .foto-area input[type='file'] {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        cursor: pointer;
-        border: none;
-        width: 100%;
-        height: 100%;
-      }
-      .foto-area .foto-icon {
-        font-size: 2rem;
-        display: block;
-        margin-bottom: 0.3rem;
-      }
-      .foto-area p {
-        font-size: 0.85rem;
-        color: var(--text-light);
-        font-weight: 600;
-      }
-      .foto-preview {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        object-fit: cover;
-        margin: 0 auto 0.5rem;
-        display: none;
-        border: 3px solid var(--purple);
-      }
       .btn-gerar {
         width: 100%;
         background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
@@ -1396,55 +1352,6 @@
             <option value="30" selected>30 dias</option>
           </select>
         </div>
-        <div
-          id="imgbb-configured"
-          style="
-            display: none;
-            background: #e0f7f6;
-            border-radius: 12px;
-            padding: 0.7rem 1rem;
-            margin-bottom: 1rem;
-            align-items: center;
-            gap: 0.5rem;
-          "
-        >
-          <span style="font-size: 1rem">🖼️</span>
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--teal-dark)">
-            ImgBB configurado — fotos geram link curto
-          </span>
-        </div>
-        <div id="imgbb-field" style="margin-bottom: 1rem; display: none">
-          <div
-            style="
-              background: #fff8e1;
-              border-radius: 12px;
-              padding: 0.7rem 1rem;
-              font-size: 0.8rem;
-              font-weight: 700;
-              color: #7a6000;
-            "
-          >
-            🖼️ ImgBB não configurado — fotos ficam no link longo
-          </div>
-        </div>
-        <div
-          id="imgbb-status"
-          style="
-            font-size: 0.75rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-            color: var(--teal-dark);
-          "
-        ></div>
-        <div class="field">
-          <label>Foto do bebê (opcional)</label>
-          <div class="foto-area" id="foto-area">
-            <input type="file" id="inp-foto" accept="image/*" />
-            <img class="foto-preview" id="foto-preview" src="" alt="" />
-            <span class="foto-icon" id="foto-icon">📷</span>
-            <p id="foto-txt">Toque para adicionar uma foto</p>
-          </div>
-        </div>
         <div style="margin-bottom: 1.1rem">
           <div
             style="
@@ -2033,7 +1940,7 @@
 
       // ─── LinkEncoder ──────────────────────────────────────────────────────────
 
-      // Kill switch + encode/decode Base64 + encurtamento is.gd.
+      // Kill switch + encode/decode Base64 do hash do link.
       const LinkEncoder = (function () {
         const LINK_VERSION = BGL_CONFIG.linkVersion;
         const LINK_MIN_VERSION = BGL_CONFIG.linkMinVersion;
@@ -2051,209 +1958,8 @@
             encode(data)
           );
         }
-        function shorten(longUrl) {
-          return new Promise((resolve, reject) => {
-            const cbName = '_isgdCb_' + Date.now();
-            const script = document.createElement('script');
-            const cleanup = () => {
-              delete window[cbName];
-              window.removeEventListener('error', parseErrHandler);
-              if (script.parentNode) script.parentNode.removeChild(script);
-            };
-            const parseErrHandler = (e) => {
-              if (e.filename && e.filename.includes('is.gd')) {
-                cleanup();
-                reject(new Error('Resposta inválida'));
-              }
-            };
-            window.addEventListener('error', parseErrHandler);
-            window[cbName] = (json) => {
-              cleanup();
-              if (json.shorturl) resolve(json.shorturl);
-              else reject(new Error(json.errormessage || 'Erro ao encurtar'));
-            };
-            script.onerror = () => {
-              cleanup();
-              reject(new Error('Rede indisponível'));
-            };
-            script.src =
-              BGL_CONFIG.isgdApi + '&callback=' + cbName + '&url=' + encodeURIComponent(longUrl);
-            document.head.appendChild(script);
-          });
-        }
-        return { LINK_VERSION, LINK_MIN_VERSION, encode, decode, buildUrl, shorten };
+        return { LINK_VERSION, LINK_MIN_VERSION, encode, decode, buildUrl };
       })();
-
-      // ─── Obfuscação de chave (XOR + base64) ──────────────────────────────────
-      const _OBF_SEED = 'BGL_LONDRINA_IMGS';
-      function _xorObf(str) {
-        const r = [];
-        for (let i = 0; i < str.length; i++)
-          r.push(str.charCodeAt(i) ^ _OBF_SEED.charCodeAt(i % _OBF_SEED.length));
-        return btoa(String.fromCharCode(...r));
-      }
-      function _xorDeobf(enc) {
-        const b = atob(enc)
-          .split('')
-          .map((c) => c.charCodeAt(0));
-        return b
-          .map((x, i) => String.fromCharCode(x ^ _OBF_SEED.charCodeAt(i % _OBF_SEED.length)))
-          .join('');
-      }
-
-      // ─── PhotoHandler ─────────────────────────────────────────────────────────
-      // Facade sobre File API (canvas badge) + ImgBB API + Firestore (chave).
-      const PhotoHandler = (function () {
-        let _fotoBase64 = '';
-        let _imgbbKey = null;
-        function init() {
-          document.getElementById('inp-foto').addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (ev) {
-              const img = new Image();
-              img.onload = function () {
-                const canvas = document.createElement('canvas');
-                const MAX = BGL_CONFIG.photoMaxPx;
-                let w = img.width,
-                  h = img.height;
-                if (w > h) {
-                  if (w > MAX) {
-                    h = (h * MAX) / w;
-                    w = MAX;
-                  }
-                } else {
-                  if (h > MAX) {
-                    w = (w * MAX) / h;
-                    h = MAX;
-                  }
-                }
-                canvas.width = w;
-                canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, w, h);
-                // ── Baby GYM brand badge ──────────────────────────────
-                const bw = Math.round(w * 0.44);
-                const bh = Math.round(bw * 0.28);
-                const bx = w - bw - Math.round(w * 0.04);
-                const by = h - bh - Math.round(h * 0.04);
-                const rad = Math.round(bh * 0.38);
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(bx + rad, by);
-                ctx.lineTo(bx + bw - rad, by);
-                ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + rad);
-                ctx.lineTo(bx + bw, by + bh - rad);
-                ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - rad, by + bh);
-                ctx.lineTo(bx + rad, by + bh);
-                ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - rad);
-                ctx.lineTo(bx, by + rad);
-                ctx.quadraticCurveTo(bx, by, bx + rad, by);
-                ctx.closePath();
-                ctx.fillStyle = BGL_CONFIG.badgeColor;
-                ctx.fill();
-                const fontSize1 = Math.round(bh * 0.32);
-                ctx.fillStyle = 'rgba(255,255,255,0.75)';
-                ctx.font = '500 ' + fontSize1 + 'px Nunito, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillText('baby', bx + bw / 2, by + Math.round(bh * 0.08));
-                const fontSize2 = Math.round(bh * 0.5);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '800 ' + fontSize2 + 'px Nunito, sans-serif';
-                ctx.textBaseline = 'alphabetic';
-                ctx.fillText('GYM', bx + bw / 2, by + bh - Math.round(bh * 0.1));
-                ctx.restore();
-                // ─────────────────────────────────────────────────────
-                _fotoBase64 = canvas.toDataURL('image/jpeg', 0.72);
-                document.getElementById('foto-preview').src = _fotoBase64;
-                document.getElementById('foto-preview').style.display = 'block';
-                document.getElementById('foto-icon').style.display = 'none';
-                document.getElementById('foto-txt').textContent = '\u2705 Foto adicionada';
-              };
-              img.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-          });
-        }
-        function getBase64() {
-          return _fotoBase64;
-        }
-        function getImgbbKey() {
-          return _imgbbKey;
-        }
-        async function uploadImgbb(base64, expirySeconds) {
-          const key = getImgbbKey();
-          if (!key) return null;
-          const b64 = base64.split(',')[1] || base64;
-          const form = new FormData();
-          form.append('key', key);
-          form.append('image', b64);
-          if (expirySeconds) form.append('expiration', String(expirySeconds));
-          const resp = await fetch(BGL_CONFIG.imgbbApi, {
-            method: 'POST',
-            body: form,
-          });
-          const json = await resp.json();
-          if (json.success) return json.data.url;
-          throw new Error((json.error && json.error.message) || 'Erro ImgBB');
-        }
-        function _updateImgbbUI() {
-          const cfg = document.getElementById('imgbb-configured');
-          const field = document.getElementById('imgbb-field');
-          if (_imgbbKey) {
-            if (cfg) cfg.style.display = 'flex';
-            if (field) field.style.display = 'none';
-          } else {
-            if (cfg) cfg.style.display = 'none';
-            if (field) field.style.display = 'block';
-          }
-        }
-        async function loadKeyFromFirestore() {
-          if (!window._fb && !window._fbReady) {
-            await new Promise((resolve) => {
-              if (!Array.isArray(window._fbReadyCb)) window._fbReadyCb = [];
-              window._fbReadyCb.push(resolve);
-              setTimeout(resolve, 8000);
-            });
-          }
-          const fb = window._fb;
-          if (!fb) return;
-          try {
-            const snap = await fb.getDoc(fb.doc(fb.db, 'config', 'secrets'));
-            if (snap.exists() && snap.data().imgbbKey) {
-              _imgbbKey = _xorDeobf(snap.data().imgbbKey);
-            }
-          } catch (e) {
-            console.warn('[ImgBB] Falha ao carregar chave:', e.message);
-          }
-          _updateImgbbUI();
-        }
-        function clear() {
-          _fotoBase64 = '';
-          const preview = document.getElementById('foto-preview');
-          if (preview) {
-            preview.style.display = 'none';
-            preview.src = '';
-          }
-          const icon = document.getElementById('foto-icon');
-          if (icon) icon.style.display = '';
-          const txt = document.getElementById('foto-txt');
-          if (txt) txt.textContent = 'Toque para adicionar uma foto';
-          const inp = document.getElementById('inp-foto');
-          if (inp) inp.value = '';
-        }
-        return {
-          init,
-          getBase64,
-          getImgbbKey,
-          uploadImgbb,
-          loadKeyFromFirestore,
-          clear,
-        };
-      })();
-
       // ─── FormController ───────────────────────────────────────────────────────
       // Controller MVC — orquestra operações do modo form (equipe).
       const FormController = (function () {
@@ -2417,7 +2123,6 @@
             }
             descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000, planos };
           }
-          const fotoBase64 = PhotoHandler.getBase64();
           const pePaga = document.getElementById('chk-pe-paga').checked;
           const extrasAtivos = [
             BGL_CONST.EXTRA.AVENTAL,
@@ -2447,22 +2152,6 @@
             desconto: descontoObj || undefined,
             precos: _capturarSnapshotPrecos(),
           };
-          if (fotoBase64) {
-            document.getElementById('link-loading').style.display = 'block';
-            document.getElementById('link-loading').textContent = '\u2B06\uFE0F Enviando foto...';
-            document.getElementById('link-box').style.display = 'block';
-            try {
-              const imgbbExpiry = days * 86400;
-              const fotoUrl = await PhotoHandler.uploadImgbb(fotoBase64, imgbbExpiry);
-              data.fotoUrl = fotoUrl;
-            } catch (err) {
-              data.foto = fotoBase64;
-              document.getElementById('imgbb-status').textContent =
-                '\u26A0\uFE0F ImgBB falhou, usando link longo';
-            }
-            document.getElementById('link-loading').style.display = 'none';
-            document.getElementById('link-loading').textContent = '\u23F3 Encurtando link...';
-          }
           const longUrl = LinkEncoder.buildUrl(data);
           document.getElementById('link-full-wrap').style.display = 'block';
           document.getElementById('link-box').style.display = 'block';
@@ -2504,7 +2193,7 @@
             });
           }
           const fb = window._fb;
-          if (fb && !data.foto) {
+          if (fb) {
             document.getElementById('link-loading').style.display = 'block';
             document.getElementById('link-loading').textContent = '\u23F3 Salvando...';
             try {
@@ -2552,11 +2241,7 @@
           } else {
             AppState.setLastLongUrl(longUrl);
             document.getElementById('link-url').textContent = longUrl;
-            const fotoLabel = data.foto ? ' \u00b7 \uD83D\uDCF7 com foto' : '';
-            document.getElementById('link-full-label').textContent = data.foto
-              ? 'Link gerado (com foto \u2014 n\u00e3o encurtado):'
-              : 'Link gerado:';
-            document.getElementById('link-expiry-label').textContent += fotoLabel;
+            document.getElementById('link-full-label').textContent = 'Link gerado:';
             var _wLong2 = buildWpp(longUrl);
             document.getElementById('btn-wpp-share').dataset.wppUrl = _wLong2.url;
             document.getElementById('btn-wpp-share').dataset.wppMsg = _wLong2.message;
@@ -2592,7 +2277,6 @@
           sincronizarDescDias();
           _atualizarAvulsaVisibility();
           _atualizarPeRow();
-          PhotoHandler.clear();
         }
         function copiarLink() {
           const url = AppState.getLastLongUrl() || document.getElementById('link-url').textContent;
@@ -2638,7 +2322,6 @@
           }, 3500);
         }
         function init() {
-          PhotoHandler.init();
           sincronizarDescDias();
           populateTurmas();
           _atualizarAvulsaVisibility();
@@ -2850,7 +2533,6 @@
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('form-mode').style.display = 'flex';
           HistoricoController.init(session.email);
-          PhotoHandler.loadKeyFromFirestore();
           FormController.preencherDaUrl();
         }
 
