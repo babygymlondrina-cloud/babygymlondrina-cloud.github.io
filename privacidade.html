@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidade — Baby Gym Londrina</title>
+<meta name="description" content="Como a Baby Gym Londrina coleta, usa e protege os dados de famílias e crianças, conforme a LGPD.">
+<!-- Favicon: marca simples (roxo + sparkle) — cores espelham --purple/--purple-dark -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23625fb7%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23433d99%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22url%28%23g%29%22%2F%3E%3Cpath%20d%3D%22M16%205%20C17.3%2013%2C%2019%2014.7%2C%2027%2016%20C19%2017.3%2C%2017.3%2019%2C%2016%2027%20C14.7%2019%2C%2013%2017.3%2C%205%2016%20C13%2014.7%2C%2014.7%2013%2C%2016%205%20Z%22%20fill%3D%22%23fff%22%2F%3E%3C%2Fsvg%3E">
+<!-- Configuração centralizada -->
+<script src="config.js"></script>
+<!-- Google tag (gtag.js) — ID carregado via config.js -->
+<script>
+  (function () {
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + BGL_CONFIG.gaId;
+    document.head.appendChild(s);
+  })();
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', BGL_CONFIG.gaId);
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #fd80bd;
+    --pink-hot: #fc007c;
+    --purple: #625fb7;
+    --purple-dark: #433d99;
+    --teal: #66d8d4;
+    --teal-dark: #00bfb8;
+    --cream: #fff7ee;
+    --orange: #ffa233;
+    --orange-light: #ffcc8f;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: var(--cream);
+    font-family: 'Nunito', sans-serif;
+    color: color-mix(in srgb, var(--purple-dark) 80%, black 5%);
+    line-height: 1.65;
+    font-size: 0.95rem;
+    overflow-x: hidden;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2.2rem 1.2rem 2.5rem;
+  }
+  h1 {
+    font-family: 'Baloo 2', cursive;
+    font-weight: 800;
+    font-size: 1.55rem;
+    color: var(--purple-dark);
+    text-align: center;
+  }
+  .vigencia {
+    text-align: center;
+    font-size: 0.8rem;
+    color: color-mix(in srgb, var(--purple-dark) 55%, transparent);
+    margin-bottom: 1.6rem;
+  }
+  .resumo {
+    background: #fff;
+    border: 2px solid var(--purple);
+    border-radius: 18px;
+    padding: 1.1rem 1.2rem;
+    margin-bottom: 1.6rem;
+    font-size: 0.92rem;
+    box-shadow: 0 6px 18px rgba(67, 61, 153, 0.08);
+  }
+  .resumo strong { color: var(--purple-dark); }
+  section { margin-bottom: 1.7rem; }
+  h2 {
+    font-family: 'Baloo 2', cursive;
+    font-weight: 700;
+    color: var(--purple-dark);
+    font-size: 1.12rem;
+    margin-bottom: 0.45rem;
+  }
+  p, li { margin-bottom: 0.5rem; }
+  ul { padding-left: 1.2rem; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(67, 61, 153, 0.06);
+  }
+  th, td {
+    text-align: left;
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid #f0ecff;
+    vertical-align: top;
+  }
+  th { background: #f3f2ff; color: var(--purple-dark); }
+  a { color: var(--purple-dark); font-weight: 700; }
+  .contato {
+    background: #fff;
+    border-radius: 18px;
+    padding: 1.1rem 1.2rem;
+    box-shadow: 0 4px 14px rgba(67, 61, 153, 0.06);
+  }
+  .footer {
+    margin-top: 8px;
+    font-size: 0.76rem;
+    color: #b0b0b0;
+    font-weight: 600;
+    text-align: center;
+    padding: 0 1.2rem 2rem;
+  }
+  .footer span { color: var(--pink-hot); }
+  .footer a { color: #b0b0b0; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Política de Privacidade</h1>
+    <p class="vigencia">Baby Gym Londrina · vigente desde 06/07/2026</p>
+
+    <div class="resumo" id="resumo">
+      <strong>Resumo em linguagem simples:</strong> usamos seus dados de contato e as
+      informações do seu bebê para agendar e preparar a Primeira Experiência com
+      segurança, e para falar com você depois sobre a visita e nossos planos. Não
+      vendemos seus dados. Você pode pedir para ver, corrigir ou apagar tudo a
+      qualquer momento pelo nosso WhatsApp.
+    </div>
+
+    <section id="quem-somos">
+      <h2>1. Quem somos</h2>
+      <p>
+        A <strong>Baby Gym Londrina</strong> (MIRANDA E YAMADA LTDA), unidade franqueada
+        localizada na Rua Shangai, 42 – Jardim Cláudia, Londrina/PR, é a controladora dos
+        dados pessoais tratados neste site e no nosso atendimento por WhatsApp.
+      </p>
+    </section>
+
+    <section id="dados-coletados">
+      <h2>2. Quais dados coletamos</h2>
+      <table>
+        <tr><th>Dados</th><th>Quando</th></tr>
+        <tr>
+          <td>Nome e telefone do responsável; nome que aparece no WhatsApp</td>
+          <td>Quando você fala com a gente pelo WhatsApp</td>
+        </tr>
+        <tr>
+          <td>Nome, data de nascimento e sexo do bebê; <strong>alergias e prematuridade</strong> (dados de saúde)</td>
+          <td>No agendamento da Primeira Experiência</td>
+        </tr>
+        <tr>
+          <td>E-mail do responsável</td>
+          <td>No agendamento da Primeira Experiência</td>
+        </tr>
+        <tr>
+          <td>Conteúdo da conversa com nosso atendimento (inclusive assistente virtual)</td>
+          <td>Durante o atendimento</td>
+        </tr>
+        <tr>
+          <td>Dados de navegação (páginas visitadas, origem do acesso) — sem identificar você</td>
+          <td>Ao visitar nosso site</td>
+        </tr>
+      </table>
+    </section>
+
+    <section id="finalidades">
+      <h2>3. Para que usamos</h2>
+      <ul>
+        <li><strong>Agendar e preparar a Primeira Experiência</strong> — incluindo os dados de saúde do bebê, usados exclusivamente para a segurança da criança durante a aula;</li>
+        <li><strong>Confirmar presença, enviar lembretes e a cobrança PIX</strong> da Primeira Experiência;</li>
+        <li><strong>Apresentar nossos planos</strong> após a visita, com propostas personalizadas;</li>
+        <li>Se você se matricular, usar seu <strong>e-mail</strong> para enviar contrato, nota fiscal e comunicados sobre a matrícula;</li>
+        <li><strong>Entrar em contato depois</strong> sobre sua visita, pesquisas de satisfação e novas oportunidades — você pode pedir para não receber mais contatos a qualquer momento;</li>
+        <li><strong>Medir nosso site e anúncios</strong> de forma agregada (sem identificar você).</li>
+      </ul>
+      <p>
+        O tratamento de dados de crianças é feito com base no consentimento do responsável
+        (art. 14 da LGPD), coletado na própria conversa de WhatsApp, sempre no melhor
+        interesse da criança.
+      </p>
+    </section>
+
+    <section id="compartilhamento">
+      <h2>4. Com quem compartilhamos</h2>
+      <p>
+        <strong>Não vendemos nem cedemos seus dados.</strong> Usamos serviços de tecnologia
+        que processam dados em nosso nome (operadores): Google (armazenamento, planilhas e
+        análise de audiência), plataforma de atendimento por WhatsApp com assistente
+        virtual, plataforma de automação de tarefas, Mercado Pago e Meta
+        (medição de anúncios, de forma agregada). Exigimos desses serviços a proteção
+        adequada dos dados.
+      </p>
+      <p>
+        Quando a Primeira Experiência tem cobrança, geramos o PIX através do
+        <strong>Mercado Pago</strong>, nosso gateway de pagamento — para isso, enviamos a
+        ele seu <strong>e-mail</strong> junto com o valor da cobrança, exigência padrão
+        da própria plataforma de pagamento para processar a transação.
+      </p>
+    </section>
+
+    <section id="retencao">
+      <h2>5. Por quanto tempo guardamos</h2>
+      <p>
+        Dados de contato e agendamento: enquanto durar nosso relacionamento e por até
+        24 meses após o último contato, quando são apagados ou anonimizados. Dados de
+        alunos matriculados e registros de pagamento seguem os prazos legais (fiscais e
+        contratuais) aplicáveis.
+      </p>
+    </section>
+
+    <section id="direitos">
+      <h2>6. Seus direitos</h2>
+      <p>
+        A LGPD garante a você: confirmar se tratamos seus dados, acessá-los, corrigi-los,
+        pedir a exclusão ou anonimização, revogar o consentimento e solicitar informações
+        sobre compartilhamentos. Para exercer qualquer direito, é só chamar no WhatsApp —
+        respondemos em até 15 dias.
+      </p>
+    </section>
+
+    <section id="seguranca">
+      <h2>7. Segurança</h2>
+      <p>
+        Os dados ficam em serviços com criptografia em trânsito e acesso restrito à nossa
+        equipe autorizada. Os links de proposta enviados às famílias não carregam dados
+        pessoais na URL e expiram automaticamente.
+      </p>
+    </section>
+
+    <section id="contato" class="contato">
+      <h2>8. Fale com a gente</h2>
+      <p>
+        Dúvidas sobre esta política ou sobre seus dados:<br>
+        📱 WhatsApp: <a href="https://wa.me/554396517182">(43) 9651-7182</a><br>
+        ✉️ E-mail: <a href="mailto:babygymlondrina@gmail.com">babygymlondrina@gmail.com</a>
+      </p>
+    </section>
+  </main>
+  <div class="footer">
+    Baby Gym Londrina · Feito com <span>♥</span> para cada fase do seu filho<br>
+    Esta política pode ser atualizada — a versão vigente estará sempre nesta página.<br>
+    MIRANDA E YAMADA LTDA · CNPJ 59.056.027/0001-49 · <a href="index.html">Voltar ao site</a>
+  </div>
+</body>
+</html>
