@@ -808,6 +808,20 @@
         font-size: 0.75rem;
         opacity: 0.85;
       }
+      #cfg-env-badge {
+        font-weight: 800;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
+      }
+      #cfg-env-badge.prod {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      #cfg-env-badge.hml {
+        background: var(--orange);
+        color: #3a2100;
+      }
       #cfg-close {
         background: none;
         border: none;
@@ -1089,7 +1103,7 @@
         // ── Seed inicial dos docs de config no Firestore (roda uma vez se não existirem) ──
         async function seedRemoteConfig(db) {
           try {
-            const messagesRef = doc(db, 'config', 'messages');
+            const messagesRef = doc(db, 'config', configDocId('messages'));
             const snap = await getDoc(messagesRef);
             if (snap.exists()) return; // já populado — não sobrescrever
             const seeds = [
@@ -1115,7 +1129,9 @@
               ],
               ['turmas', { items: BGL_CONFIG.turmas }],
             ];
-            await Promise.all(seeds.map(([id, data]) => setDoc(doc(db, 'config', id), data)));
+            await Promise.all(
+              seeds.map(([id, data]) => setDoc(doc(db, 'config', configDocId(id)), data)),
+            );
             console.info('[RemoteConfig] Firestore populado com dados locais.');
           } catch (e) {
             console.warn('[RemoteConfig] Seed falhou:', e.message);
@@ -1131,12 +1147,12 @@
           (async () => {
             try {
               const [mSnap, pSnap, hSnap, fSnap, duSnap, tSnap] = await Promise.all([
-                getDoc(doc(db, 'config', 'messages')),
-                getDoc(doc(db, 'config', 'planos')),
-                getDoc(doc(db, 'config', 'horarios')),
-                getDoc(doc(db, 'config', 'faq')),
-                getDoc(doc(db, 'config', 'dadosUnidade')),
-                getDoc(doc(db, 'config', 'turmas')),
+                getDoc(doc(db, 'config', configDocId('messages'))),
+                getDoc(doc(db, 'config', configDocId('planos'))),
+                getDoc(doc(db, 'config', configDocId('horarios'))),
+                getDoc(doc(db, 'config', configDocId('faq'))),
+                getDoc(doc(db, 'config', configDocId('dadosUnidade'))),
+                getDoc(doc(db, 'config', configDocId('turmas'))),
               ]);
               if (mSnap.exists()) Object.assign(window.BGL_MESSAGES, mSnap.data());
               if (pSnap.exists()) Object.assign(window.BGL_PLANOS, pSnap.data());
@@ -2702,7 +2718,7 @@
           loadEl.style.display = 'block';
           _setMsg('', '');
           try {
-            const snap = await fb.getDoc(fb.doc(fb.db, 'config', id));
+            const snap = await fb.getDoc(fb.doc(fb.db, 'config', configDocId(id)));
             const data = snap.exists() ? snap.data() : {};
             jsonEl.value = JSON.stringify(data, null, 2);
             jsonEl.placeholder = '';
@@ -2718,7 +2734,7 @@
           const listEl = document.getElementById('cfg-history-list');
           try {
             const q = fb.query(
-              fb.collection(fb.db, 'config', id, 'history'),
+              fb.collection(fb.db, 'config', configDocId(id), 'history'),
               fb.orderBy('savedAt', 'desc'),
               fb.limit(15),
             );
@@ -2783,12 +2799,18 @@
           _setMsg('Salvando...', '');
           const savedBy = window.AuthController ? window.AuthController.getEmail() : 'desconhecido';
           try {
-            await fb.setDoc(fb.doc(fb.db, 'config', id), data);
-            await fb.addDoc(fb.collection(fb.db, 'config', id, 'history'), {
-              data,
-              savedBy,
-              savedAt: fb.serverTimestamp(),
-            });
+            // Snapshot do estado ANTERIOR vai para o histórico — é o que permite desfazer
+            // este save. Gravar o próprio `data` (novo) no histórico não serve para rollback.
+            const prevSnap = await fb.getDoc(fb.doc(fb.db, 'config', configDocId(id)));
+            const prevData = prevSnap.exists() ? prevSnap.data() : null;
+            await fb.setDoc(fb.doc(fb.db, 'config', configDocId(id)), data);
+            if (prevData) {
+              await fb.addDoc(fb.collection(fb.db, 'config', configDocId(id), 'history'), {
+                data: prevData,
+                savedBy,
+                savedAt: fb.serverTimestamp(),
+              });
+            }
             _setMsg('✅ Salvo com sucesso!', 'ok');
             await _loadHistory(id);
           } catch (e) {
@@ -2802,7 +2824,9 @@
         async function restore(sectionId, historyId) {
           const fb = window._fb;
           try {
-            const snap = await fb.getDoc(fb.doc(fb.db, 'config', sectionId, 'history', historyId));
+            const snap = await fb.getDoc(
+              fb.doc(fb.db, 'config', configDocId(sectionId), 'history', historyId),
+            );
             if (!snap.exists()) return;
             const entry = snap.data();
             if (!entry.data) return;
@@ -2859,6 +2883,10 @@
           document.getElementById('cfg-modal').classList.add('open');
           const email = window.AuthController ? window.AuthController.getEmail() : '';
           document.getElementById('cfg-operator').textContent = email || '';
+          const isHml = typeof BGL_CONFIG !== 'undefined' && BGL_CONFIG.env === 'hml';
+          const envBadge = document.getElementById('cfg-env-badge');
+          envBadge.textContent = isHml ? 'HML' : 'PROD';
+          envBadge.className = isHml ? 'hml' : 'prod';
           if (!_current) selectSection('messages');
           else _loadSection(_current);
         }
@@ -2888,6 +2916,7 @@
         <div id="cfg-header">
           <h2>⚙️ Configurações do App</h2>
           <div id="cfg-header-right">
+            <span id="cfg-env-badge"></span>
             <span id="cfg-operator"></span>
             <button id="cfg-close" onclick="ConfigEditor.close()" aria-label="Fechar">×</button>
           </div>

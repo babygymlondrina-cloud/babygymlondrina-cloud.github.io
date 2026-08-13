@@ -79,12 +79,14 @@ PIX = total à vista com 5% de desconto.
 
 Em produção, use o **⚙️ Config** no `proposta.html`. Os textos ficam no Firestore e são carregados em tempo real — sem precisar fazer deploy.
 
+> **PROD × HML:** o cabeçalho do modal mostra um selo **PROD** ou **HML** conforme o ambiente em que você está (raiz do site = PROD, `/hml/` = HML). Cada seção tem um registro independente por ambiente — editar em HML nunca afeta os preços/textos que os clientes reais veem, e serve para testar uma mudança antes de aplicá-la em produção.
+
 As seções editáveis são:
 
 | Seção | O que controla |
 |---|---|
 | **messages** | Saudações, CTA, mensagens WhatsApp, banners de desconto, textos de UI |
-| **planos** | Preços por plano e frequência |
+| **planos** | Preços por plano e frequência. Remover a seção de um plano (ex.: `anual`) o desativa: o card some da tela do cliente sem quebrar os demais planos — use isso para parar de vender um plano temporariamente |
 | **horarios** | Grade de horários por turma |
 | **faq** | Perguntas frequentes exibidas na aba FAQ |
 | **dadosUnidade** | Número WhatsApp, endereço e Instagram do rodapé |
@@ -111,7 +113,7 @@ Os textos aceitam parâmetros dinâmicos entre `[colchetes]`:
 
 ### Histórico de edições
 
-Cada salvamento no Config Editor cria um snapshot com o e-mail de quem salvou e o horário. Para restaurar uma versão anterior, clique nela — o conteúdo carrega no editor — e salve novamente. Nenhuma versão é apagada.
+Cada **Salvar** grava no histórico o conteúdo que estava salvo **até aquele momento** (com e-mail e horário de quem fez a alteração seguinte) — ou seja, cada entrada é um ponto de rollback real para a versão que acabou de ser substituída. Para restaurar uma versão anterior, clique nela — o conteúdo carrega no editor — e salve novamente (isso cria mais uma entrada de histórico com o estado anterior a essa restauração). Nenhuma versão é apagada.
 
 ---
 
