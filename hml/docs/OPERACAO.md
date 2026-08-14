@@ -38,6 +38,8 @@ Este documento é para a **equipe da Baby Gym Londrina**: como gerar links de fe
    - Banner de desconto (se ativo)
    - Cards dos planos Anual, Semestral, Trimestral (e Avulsa, se habilitada)
    - Abas de **Horários** (se turma definida) e **FAQ**
+
+   > A lista de benefícios de cada card mostra só o que o plano **inclui** (Avental, Trancamento, Cancela no 1º mês, Valor fixo). Descontos não entram nessa lista — aparecem no banner do topo, na nota laranja abaixo das frequências do plano que tem o desconto, e no botão de PIX. Assim o cliente não vê o mesmo benefício presente num card e ausente noutro.
 3. O cliente escolhe plano, frequência e forma de pagamento (cartão ou PIX)
 4. Clica em **Fechar no WhatsApp** → escolhe horários (se turma definida) → abre conversa com mensagem pré-preenchida
 

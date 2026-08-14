@@ -57,10 +57,5 @@ const DiscountStrategy = (function () {
     if (ad.tipo === BGL_CONST.DESCONTO.ESPECIAL) return !ad.planos || ad.planos.includes(plano);
     return false;
   }
-  function getPixPct(ad, plano) {
-    return ad && ad.tipo === BGL_CONST.DESCONTO.ESPECIAL && ad.pct > 5 && appliesTo(ad, plano)
-      ? ad.pct
-      : 5;
-  }
-  return { resolve, appliesTo, getPixPct };
+  return { resolve, appliesTo };
 })();
