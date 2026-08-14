@@ -14,6 +14,14 @@ function msg(template, params) {
   });
 }
 
+// ─── configDocId ─────────────────────────────────────────────────────────────
+// Sufixa o id do doc da coleção `config` com "_hml" em homologação, mantendo
+// config/planos (prod) e config/planos_hml (hml) como registros independentes
+// — mesmo critério já usado para as coleções propostas / propostas_hml.
+function configDocId(id) {
+  return typeof BGL_CONFIG !== 'undefined' && BGL_CONFIG.env === 'hml' ? id + '_hml' : id;
+}
+
 // ─── DiscountStrategy ────────────────────────────────────────────────────────
 // Strategy pattern — resolve qual desconto está ativo e se aplica ao plano.
 // Depende de BGL_CONST (constants.js deve ser carregado antes).
@@ -49,10 +57,5 @@ const DiscountStrategy = (function () {
     if (ad.tipo === BGL_CONST.DESCONTO.ESPECIAL) return !ad.planos || ad.planos.includes(plano);
     return false;
   }
-  function getPixPct(ad, plano) {
-    return ad && ad.tipo === BGL_CONST.DESCONTO.ESPECIAL && ad.pct > 5 && appliesTo(ad, plano)
-      ? ad.pct
-      : 5;
-  }
-  return { resolve, appliesTo, getPixPct };
+  return { resolve, appliesTo };
 })();

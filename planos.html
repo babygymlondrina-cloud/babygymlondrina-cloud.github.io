@@ -1347,6 +1347,8 @@
       window.BGL_PLANOS = window.BGL_PLANOS || {};
       window.BGL_HORARIOS = window.BGL_HORARIOS || {};
       window.BGL_FAQ = window.BGL_FAQ || [];
+      // Detecta HML pelo URL — mais confiável que o sed no CI (mesmo critério de proposta.html)
+      if (window.location.pathname.startsWith('/hml/')) BGL_CONFIG.env = 'hml';
       // Testes: aplica mock de config/dadosUnidade e config/turmas (whatsapp, address, instagram, turmas)
       if (window._BGL_META_MOCK) Object.assign(BGL_CONFIG, window._BGL_META_MOCK);
     </script>
@@ -1666,14 +1668,6 @@
                     <span>✅</span>
                     Valor fixo 12 meses
                   </li>
-                  <li class="yes benefit-5pct-hoje">
-                    <span>✅</span>
-                    5% desconto hoje
-                  </li>
-                  <li class="yes benefit-pix-pct">
-                    <span>✅</span>
-                    <span class="pix-pct-text">5% desconto PIX</span>
-                  </li>
                 </ul>
               </div>
               <!-- SEMESTRAL -->
@@ -1764,14 +1758,6 @@
                     <span>✅</span>
                     Valor fixo 6 meses
                   </li>
-                  <li class="yes benefit-5pct-hoje">
-                    <span>✅</span>
-                    5% desconto hoje
-                  </li>
-                  <li class="yes benefit-pix-pct">
-                    <span>✅</span>
-                    <span class="pix-pct-text">5% desconto PIX</span>
-                  </li>
                 </ul>
               </div>
               <!-- TRIMESTRAL -->
@@ -1846,14 +1832,6 @@
                   <li class="warn">
                     <span>⚠️</span>
                     Sujeito a reajuste
-                  </li>
-                  <li class="no benefit-5pct-hoje">
-                    <span>❌</span>
-                    5% desconto hoje
-                  </li>
-                  <li class="yes benefit-pix-pct">
-                    <span>✅</span>
-                    <span class="pix-pct-text">5% desconto PIX</span>
                   </li>
                 </ul>
               </div>
@@ -2356,7 +2334,7 @@
           });
           section.style.display = 'block';
         }
-        function _renderBanner(ad, isRenovacao) {
+        function _renderBanner(ad) {
           if (ad) {
             document.getElementById('urgency-banner').style.display = 'none';
             const db = document.getElementById('desconto-especial-banner');
@@ -2390,16 +2368,6 @@
             );
           } else {
             document.getElementById('urgency-banner').style.display = 'none';
-            document.querySelectorAll('.benefit-5pct-hoje').forEach((el) => {
-              el.classList.remove('yes');
-              el.classList.add('no');
-              el.querySelector('span').textContent = '\u274C';
-            });
-          }
-          if (isRenovacao) {
-            document.querySelectorAll('.benefit-5pct-hoje').forEach((el) => {
-              el.style.display = 'none';
-            });
           }
         }
         function _renderPlanNotes(ad) {
@@ -2443,20 +2411,6 @@
               }
             });
           }
-          const PLANOS_PIX = [
-            { plano: BGL_CONST.PLANO.ANUAL, sel: '.plan-anual' },
-            { plano: BGL_CONST.PLANO.SEMESTRAL, sel: '.plan-semestral' },
-            { plano: BGL_CONST.PLANO.TRIMESTRAL, sel: '.plan-trimestral' },
-          ];
-          PLANOS_PIX.forEach(({ plano, sel }) => {
-            const pixPct = DiscountStrategy.getPixPct(ad, plano);
-            const el = document.querySelector(sel + ' .benefit-pix-pct .pix-pct-text');
-            if (el) el.textContent = ' ' + pixPct + '% desconto PIX';
-            const pixBenefitEl = document.querySelector(sel + ' .benefit-pix-pct');
-            if (pixBenefitEl)
-              pixBenefitEl.style.display =
-                ad && DiscountStrategy.appliesTo(ad, plano) ? 'none' : '';
-          });
         }
         function _renderPixSection(ad) {
           const pixNoteTxt = document.getElementById('pix-note-text');
@@ -2508,7 +2462,7 @@
           _renderExtras(data);
           const ad = DiscountStrategy.resolve(data);
           AppState.setActiveDiscount(ad);
-          _renderBanner(ad, isRenovacao);
+          _renderBanner(ad);
           _renderPlanNotes(ad);
           _renderPixSection(ad);
           _renderPeNote(!!data[BGL_CONST.PRIMEIRA_EXP]);
@@ -3256,6 +3210,13 @@
           [BGL_CONST.PLANO.ANUAL, BGL_CONST.PLANO.SEMESTRAL, BGL_CONST.PLANO.TRIMESTRAL].forEach(
             function (plano) {
               var cfg = BGL_PLANOS[plano];
+              var card = document.getElementById('card-' + plano);
+              // Plano sem preço configurado (desativado via Config Editor) — esconde o
+              // card em vez de quebrar o render dos demais planos.
+              if (!cfg || !cfg.frequencias) {
+                if (card) card.style.display = 'none';
+                return;
+              }
               cfg.frequencias.forEach(function (f) {
                 var btn = document.querySelector(
                   '.freq-btn[data-plano="' + plano + '"][data-freq="' + f.freq + '"]',
@@ -3355,7 +3316,7 @@
 
     <!-- ══════════════════════════════ REMOTE CONFIG (Firestore) ══ -->
     <script type="module">
-      const CACHE_KEY = 'bgl_rc_v1';
+      const CACHE_KEY = configDocId('bgl_rc_v1');
       const CACHE_TTL = 60 * 60 * 1000; // 1h
 
       function applyRemoteConfig(remote) {
@@ -3446,7 +3407,7 @@
           var snaps = await Promise.race([
             Promise.all(
               docIds.map(function (id) {
-                return fbFs.getDoc(fbFs.doc(db, 'config', id));
+                return fbFs.getDoc(fbFs.doc(db, 'config', configDocId(id)));
               }),
             ),
             timeout,

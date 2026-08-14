@@ -38,6 +38,8 @@ Este documento é para a **equipe da Baby Gym Londrina**: como gerar links de fe
    - Banner de desconto (se ativo)
    - Cards dos planos Anual, Semestral, Trimestral (e Avulsa, se habilitada)
    - Abas de **Horários** (se turma definida) e **FAQ**
+
+   > A lista de benefícios de cada card mostra só o que o plano **inclui** (Avental, Trancamento, Cancela no 1º mês, Valor fixo). Descontos não entram nessa lista — aparecem no banner do topo, na nota laranja abaixo das frequências do plano que tem o desconto, e no botão de PIX. Assim o cliente não vê o mesmo benefício presente num card e ausente noutro.
 3. O cliente escolhe plano, frequência e forma de pagamento (cartão ou PIX)
 4. Clica em **Fechar no WhatsApp** → escolhe horários (se turma definida) → abre conversa com mensagem pré-preenchida
 
@@ -79,12 +81,14 @@ PIX = total à vista com 5% de desconto.
 
 Em produção, use o **⚙️ Config** no `proposta.html`. Os textos ficam no Firestore e são carregados em tempo real — sem precisar fazer deploy.
 
+> **PROD × HML:** o cabeçalho do modal mostra um selo **PROD** ou **HML** conforme o ambiente em que você está (raiz do site = PROD, `/hml/` = HML). Cada seção tem um registro independente por ambiente — editar em HML nunca afeta os preços/textos que os clientes reais veem, e serve para testar uma mudança antes de aplicá-la em produção.
+
 As seções editáveis são:
 
 | Seção | O que controla |
 |---|---|
 | **messages** | Saudações, CTA, mensagens WhatsApp, banners de desconto, textos de UI |
-| **planos** | Preços por plano e frequência |
+| **planos** | Preços por plano e frequência. Remover a seção de um plano (ex.: `anual`) o desativa: o card some da tela do cliente sem quebrar os demais planos — use isso para parar de vender um plano temporariamente |
 | **horarios** | Grade de horários por turma |
 | **faq** | Perguntas frequentes exibidas na aba FAQ |
 | **dadosUnidade** | Número WhatsApp, endereço e Instagram do rodapé |
@@ -111,7 +115,7 @@ Os textos aceitam parâmetros dinâmicos entre `[colchetes]`:
 
 ### Histórico de edições
 
-Cada salvamento no Config Editor cria um snapshot com o e-mail de quem salvou e o horário. Para restaurar uma versão anterior, clique nela — o conteúdo carrega no editor — e salve novamente. Nenhuma versão é apagada.
+Cada **Salvar** grava no histórico o conteúdo que estava salvo **até aquele momento** (com e-mail e horário de quem fez a alteração seguinte) — ou seja, cada entrada é um ponto de rollback real para a versão que acabou de ser substituída. Para restaurar uma versão anterior, clique nela — o conteúdo carrega no editor — e salve novamente (isso cria mais uma entrada de histórico com o estado anterior a essa restauração). Nenhuma versão é apagada.
 
 ---
 
