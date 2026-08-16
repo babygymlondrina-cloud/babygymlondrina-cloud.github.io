@@ -77,6 +77,36 @@ PIX = total à vista com 5% de desconto.
 
 ---
 
+## Planilha "Dados de atendimento IA" — não apague linhas
+
+Quando uma Primeira Experiência cai, é reagendada ou entrou errado, **marque o
+status na coluna T (`statusConfirmacao`) em vez de apagar a linha.** O valor é
+`cancelado`.
+
+Isso não é preferência de organização — apagar quebra coisas de verdade:
+
+- **A linha some, o registro no sistema não.** O agendamento continua lá,
+  agora sem nenhuma linha correspondente. Ele só é removido quando alguém roda
+  o backfill à mão, e até lá ele aparece em relatório como divergência.
+- **Some também da planilha.** Você perde o registro de que aquela PE existiu e
+  por que caiu — que é justamente o que os funis contam.
+- **Apagar e cadastrar de novo cria duplicata.** Cada linha tem um
+  identificador próprio; a linha nova ganha um identificador novo, e a antiga
+  fica no sistema como um agendamento fantasma.
+
+`cancelado` faz o certo sozinho: o agendamento é encerrado, para de contar como
+ativo, e o histórico fica.
+
+**Se realmente precisar apagar** — linha de teste, cadastro duplicado do bot —
+avise o Michel, porque precisa rodar o backfill depois. E tem uma janela pior:
+**nos primeiros 30 minutos** depois que a linha entra, ela ainda não foi
+sincronizada, e apagar nesse intervalo deixa um registro órfão que nem o
+relatório consegue associar a nada. É exatamente quando a gente mais percebe
+que uma linha entrou errada — então, nessa meia hora, `cancelado` em vez de
+apagar.
+
+---
+
 ## Como editar textos e mensagens
 
 Em produção, use o **⚙️ Config** no `proposta.html`. Os textos ficam no Firestore e são carregados em tempo real — sem precisar fazer deploy.
