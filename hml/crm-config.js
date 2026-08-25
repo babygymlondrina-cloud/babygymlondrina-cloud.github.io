@@ -1,8 +1,8 @@
 // ─── Baby Gym Londrina — Configuração da tela do CRM ──────────────────────────
 // Carregado SÓ pelo crm.html (tela da equipe). Deliberadamente separado do
-// config.js, que planos.html, index.html e ads.html também carregam: são as
-// páginas públicas que o cliente abre, e a URL da API de leads não tem por que
-// ser servida nelas.
+// config.js, que outras CINCO páginas carregam — planos.html, proposta.html,
+// index.html, ads.html e privacidade.html. Quatro delas são públicas, abertas
+// pelo cliente, e a URL da API de leads não tem por que ser servida ali.
 //
 // Nunca commite sem rodar: npm run lint && npm test
 
