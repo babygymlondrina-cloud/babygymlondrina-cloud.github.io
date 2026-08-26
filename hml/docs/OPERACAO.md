@@ -35,8 +35,9 @@ conforme a hora passa — **sem precisar recarregar a página**:
 
 A **turma** aparece uma vez só, ao lado do horário no topo do bloco — cada horário
 tem uma turma só, então repetir na frente de cada bebê era ruído. Dentro do
-bloco, cada linha traz o **nome do bebê** em destaque e o **nome da mãe** logo
-abaixo, mais discreto — o bebê é quem você confere primeiro, a mãe é o contexto.
+bloco, cada linha traz o **nome do bebê** em destaque (com 👦 ou 👧 na frente,
+quando o sexo está cadastrado) e o **nome da mãe** logo abaixo, mais discreto —
+o bebê é quem você confere primeiro, a mãe é o contexto.
 
 Às 13:59 o bloco das 14h ainda está em "ainda vem"; às 14:00 ele vira "agora"; às
 15:00 desce para "já passou". A tela faz isso pelo relógio do computador, sozinha.

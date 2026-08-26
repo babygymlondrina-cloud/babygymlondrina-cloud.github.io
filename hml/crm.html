@@ -753,10 +753,11 @@
       /**
        * Emoji do sexo do bebê, ou string vazia quando o valor não é
        * reconhecível — mesma regra do `startsWith('m')` que
-       * `LinkBuilder.proposta()` usa para o `&sexo=`. Só existe no detalhe do
-       * lead (`bebe.sexo`, do doc completo); a `view=agenda` do Painel do Dia
-       * não traz esse campo por agendamento, então os cards do Painel não têm
-       * como mostrá-lo sem uma mudança na API.
+       * `LinkBuilder.proposta()` usa para o `&sexo=`. Usado no card de
+       * detalhe (`bebe.sexo`, do doc completo) e nos itens do Painel do Dia
+       * (`item.sexo`, resolvido pela própria `view=agenda` — casando
+       * `agendamento.bebe` com `lead.bebes[].nome` do lado do servidor, sem
+       * exigir uma busca extra por agendamento; `functions/views-agenda.js`).
        */
       function emojiSexo(sexo) {
         const s = String(sexo || '')
@@ -1136,6 +1137,7 @@
           return (
             '<div class="item">' +
             '<div class="item-bebe">' +
+            (emojiSexo(dados.sexo) ? emojiSexo(dados.sexo) + ' ' : '') +
             esc(ou(dados.bebe, 'bebê não informado')) +
             '</div>' +
             '<div class="item-mae">' +
