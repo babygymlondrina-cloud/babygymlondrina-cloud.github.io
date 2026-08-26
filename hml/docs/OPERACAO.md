@@ -29,9 +29,14 @@ conforme a hora passa — **sem precisar recarregar a página**:
 
 | Faixa | O que é |
 |---|---|
-| **Agora** | O bloco do horário corrente, em destaque forte: quem deve chegar agora. Cada linha traz o nome da mãe, o nome do bebê e a turma |
+| **Agora** | O bloco do horário corrente, em destaque forte: quem deve chegar agora |
 | **Já passou** | Os horários anteriores, esmaecidos — é a sua lista de conferência do dia |
 | **Ainda vem** | Os horários seguintes de hoje, visíveis e discretos |
+
+A **turma** aparece uma vez só, ao lado do horário no topo do bloco — cada horário
+tem uma turma só, então repetir na frente de cada bebê era ruído. Dentro do
+bloco, cada linha traz o **nome do bebê** em destaque e o **nome da mãe** logo
+abaixo, mais discreto — o bebê é quem você confere primeiro, a mãe é o contexto.
 
 Às 13:59 o bloco das 14h ainda está em "ainda vem"; às 14:00 ele vira "agora"; às
 15:00 desce para "já passou". A tela faz isso pelo relógio do computador, sozinha.
@@ -78,9 +83,9 @@ que o CRM sabe daquele responsável: contato, bebês, agendamentos e histórico 
 confirmação e pagamento.
 
 Cada bebê tem seu próprio botão **📄 Gerar proposta**, que abre o `proposta.html`
-já preenchido com mãe, bebê, sexo, turma e se a PE está paga. É o que substitui a
-coluna de link que existia na planilha — e, diferente dela, acerta quando a família
-tem dois filhos com turmas diferentes.
+já preenchido com mãe, bebê, sexo, turma, telefone e se a PE está paga. É o que
+substitui a coluna de link que existia na planilha — e, diferente dela, acerta
+quando a família tem dois filhos com turmas diferentes.
 
 ### Quando a tela atualiza
 

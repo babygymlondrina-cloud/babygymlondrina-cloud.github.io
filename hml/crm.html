@@ -337,19 +337,37 @@
         font-size: 0.72rem;
         font-weight: 600;
         color: var(--text-light);
+        margin-left: auto;
+      }
+      /* Turma ao lado da hora — uma vez por bloco (cada horário tem uma
+         turma só), não repetida na frente de cada bebê. `opacity` em vez de
+         uma cor fixa: herda `currentColor` certo tanto no bloco normal
+         quanto no destaque de "agora" (fundo pink-hot, texto branco). */
+      .bloco-turma {
+        font-weight: 600;
+        font-size: 0.78rem;
+        opacity: 0.75;
       }
       .item {
         padding: 0.6rem 0.8rem;
         border-top: 1px solid var(--line);
       }
-      .item-nome {
-        font-weight: 700;
+      /* Bebê e mãe no MESMO tamanho — só o peso e a cor diferenciam: o bebê
+         é quem importa primeiro na conferência, a mãe é contexto. */
+      .item-bebe {
+        font-weight: 800;
         font-size: 0.95rem;
+        color: var(--text);
+      }
+      .item-mae {
+        font-weight: 500;
+        font-size: 0.95rem;
+        color: var(--text-light);
       }
       .item-sub {
         font-size: 0.8rem;
         color: var(--text-light);
-        margin-top: 0.1rem;
+        margin-top: 0.3rem;
       }
       /* AGORA — destaque forte: quem deve chegar neste horário. */
       .faixa-agora .faixa-titulo {
@@ -367,7 +385,8 @@
       .faixa-agora .bloco-hora small {
         color: var(--white);
       }
-      .faixa-agora .item-nome {
+      .faixa-agora .item-bebe,
+      .faixa-agora .item-mae {
         font-size: 1.05rem;
       }
       /* JÁ PASSOU — esmaecido, vira lista de conferência. */
@@ -731,6 +750,22 @@
         return v === null ? vazio || '—' : v;
       }
 
+      /**
+       * Emoji do sexo do bebê, ou string vazia quando o valor não é
+       * reconhecível — mesma regra do `startsWith('m')` que
+       * `LinkBuilder.proposta()` usa para o `&sexo=`. Só existe no detalhe do
+       * lead (`bebe.sexo`, do doc completo); a `view=agenda` do Painel do Dia
+       * não traz esse campo por agendamento, então os cards do Painel não têm
+       * como mostrá-lo sem uma mudança na API.
+       */
+      function emojiSexo(sexo) {
+        const s = String(sexo || '')
+          .trim()
+          .toLowerCase();
+        if (!s) return '';
+        return s.startsWith('m') ? '👦' : s.startsWith('f') ? '👧' : '';
+      }
+
       const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
       /** `YYYY-MM-DD` → `seg 25/08`. Meio-dia UTC evita virada de fuso. */
@@ -963,10 +998,11 @@
          * aposenta (mapa da §2 do plano). O caminho é relativo ao da página
          * atual, então em `/hml/` o link continua apontando para o `/hml/`.
          */
-        function proposta({ mae, filho, sexo, turma, pePaga }) {
+        function proposta({ mae, filho, sexo, turma, pePaga, telefone }) {
           const p = new URLSearchParams();
           if (mae) p.set('mae', mae);
           if (filho) p.set('filho', filho);
+          if (telefone) p.set('telefone', telefone);
           const s = String(sexo || '')
             .trim()
             .toLowerCase();
@@ -1099,13 +1135,11 @@
         function item(dados, opcoes) {
           return (
             '<div class="item">' +
-            '<div class="item-nome">' +
-            esc(ou(dados.nome, 'Sem nome')) +
-            '</div>' +
-            '<div class="item-sub">' +
+            '<div class="item-bebe">' +
             esc(ou(dados.bebe, 'bebê não informado')) +
-            ' · ' +
-            esc(ou(dados.turma, 'sem turma')) +
+            '</div>' +
+            '<div class="item-mae">' +
+            esc(ou(dados.nome, 'Sem nome')) +
             '</div>' +
             '<div class="item-sub">' +
             badgeConfirmacao(dados.confirmacao) +
@@ -1117,12 +1151,20 @@
           );
         }
 
+        /**
+         * `bloco-hora` traz a turma ao lado da hora, uma vez só — cada
+         * horário tem uma única turma (regra da recepção), então repetir na
+         * frente de cada bebê do bloco era ruído. Item da turma vem do
+         * primeiro agendamento do grupo, que é o único que existe na prática.
+         */
         function bloco(grupo, opcoes) {
           const n = grupo.itens.length;
+          const turma = grupo.itens[0] && grupo.itens[0].turma;
           return (
             '<div class="bloco">' +
             '<div class="bloco-hora">' +
             esc(grupo.hora) +
+            (turma ? '<span class="bloco-turma">' + esc(turma) + '</span>' : '') +
             '<small>' +
             n +
             (n === 1 ? ' agendamento' : ' agendamentos') +
@@ -1388,14 +1430,20 @@
       // um responsável pode ter dois filhos com turmas e sexos diferentes (a
       // fórmula que este botão aposenta só sabia lidar com um).
       const LeadDetailRenderer = (function () {
+        /** Campo de texto BRUTO — sempre escapado. */
         function _campo(rotulo, valor) {
-          return (
-            '<div class="campo"><dt>' +
-            esc(rotulo) +
-            '</dt><dd>' +
-            (typeof valor === 'string' ? esc(valor) : valor) +
-            '</dd></div>'
-          );
+          return _campoHtml(rotulo, esc(valor));
+        }
+
+        /**
+         * Campo cujo valor já é HTML de confiança (badges montados por
+         * `badge()`, que escapa o texto deles por dentro) — não escapa de
+         * novo. Achado em uso real: `_campo` decidia por `typeof valor`, e
+         * `badge(...) + badge(...)` também é `string`, então a Recuperação
+         * saía como `&lt;span&gt;...` na tela em vez do badge renderizado.
+         */
+        function _campoHtml(rotulo, html) {
+          return '<div class="campo"><dt>' + esc(rotulo) + '</dt><dd>' + html + '</dd></div>';
         }
 
         /** Agendamentos do bebê, do mais recente para o mais antigo. */
@@ -1414,7 +1462,7 @@
             );
         }
 
-        function _bebe(lead, bebe) {
+        function _bebe(lead, bebe, telefoneFallback) {
           const agendamentos = _agendamentosDo(lead, bebe.nome);
           const ultimo = agendamentos[0] || {};
           const href = LinkBuilder.proposta({
@@ -1424,10 +1472,16 @@
             turma: ultimo.turma,
             pePaga:
               !!ultimo.pagamentoPE && ultimo.pagamentoPE.status === BGL_CONST.CRM.PAGAMENTO_PE.PAGO,
+            // `lead.telefone` é `null` no lead que só resolve por chatID
+            // (LID do WhatsApp/Instagram/Telegram) — nesse caso o docId
+            // (`resposta.id`, sempre o telefone OU o chatID) é o melhor
+            // valor que dá pra pré-preencher no proposta.html.
+            telefone: lead.telefone || telefoneFallback,
           });
           return (
             '<div class="bebe-card">' +
             '<div class="bebe-nome">' +
+            (emojiSexo(bebe.sexo) ? emojiSexo(bebe.sexo) + ' ' : '') +
             esc(ou(bebe.nome, 'Bebê sem nome')) +
             '</div>' +
             '<div class="item-sub">' +
@@ -1501,7 +1555,7 @@
             _campo('Canal', ou(lead.canal)) +
             _campo('Como conheceu', ou(lead.comoConheceu)) +
             _campo('Primeiro contato', ou(lead.primeiroContatoEm)) +
-            _campo(
+            _campoHtml(
               'Recuperação',
               (lead.recuperacao && lead.recuperacao.travado ? badge('Travado', 'warn') : '') +
                 (lead.recuperacao && lead.recuperacao.reengajavel === false
@@ -1518,7 +1572,7 @@
             bebes.length +
             ')</h3>' +
             (bebes.length
-              ? bebes.map((b) => _bebe(lead, b)).join('')
+              ? bebes.map((b) => _bebe(lead, b, resposta.id)).join('')
               : '<div class="vazio">Nenhum bebê cadastrado.</div>') +
             '<h3 class="secao-titulo">Agendamentos (' +
             agendamentos.length +
