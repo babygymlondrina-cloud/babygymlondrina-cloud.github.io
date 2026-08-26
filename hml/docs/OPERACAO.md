@@ -1,15 +1,111 @@
 # Operação — Baby Gym Londrina Planos App
 
-Este documento é para a **equipe da Baby Gym Londrina**: como gerar links de fechamento, o que o cliente vê, planos disponíveis e regras de negócio.
+Este documento é para a **equipe da Baby Gym Londrina**: como usar a tela do CRM, como gerar links de fechamento, o que o cliente vê, planos disponíveis e regras de negócio.
 
 ---
 
-## Os dois modos
+## As três telas
 
-| Modo | Quem usa | Onde |
+| Tela | Quem usa | Onde |
 |---|---|---|
-| **Form mode** | Equipe Baby Gym | `proposta.html` (URL não divulgada) |
+| **CRM** | Equipe Baby Gym | `crm.html` (URL não divulgada) — a agenda do dia e os leads |
+| **Form mode** | Equipe Baby Gym | `proposta.html` (URL não divulgada) — gera o link de planos |
 | **Client mode** | Pai/mãe | `planos.html#data=<hash>` — o link gerado |
+
+As duas telas da equipe pedem **login com a conta Google autorizada**, e dividem a
+mesma sessão: entrou numa, já está dentro da outra (a sessão vale 24 horas).
+
+---
+
+## O CRM (crm.html) — a tela do dia a dia
+
+Substitui abrir a planilha "Dados de atendimento IA" para ver quem chega hoje.
+**Nesta versão ela só MOSTRA — nada do que você faz aqui altera a planilha.**
+
+### Painel do Dia — a tela que abre primeiro
+
+O Painel acompanha o relógio. Ele se divide em três faixas, e elas mudam sozinhas
+conforme a hora passa — **sem precisar recarregar a página**:
+
+| Faixa | O que é |
+|---|---|
+| **Agora** | O bloco do horário corrente, em destaque forte: quem deve chegar agora. Cada linha traz o nome da mãe, o nome do bebê e a turma |
+| **Já passou** | Os horários anteriores, esmaecidos — é a sua lista de conferência do dia |
+| **Ainda vem** | Os horários seguintes de hoje, visíveis e discretos |
+
+Às 13:59 o bloco das 14h ainda está em "ainda vem"; às 14:00 ele vira "agora"; às
+15:00 desce para "já passou". A tela faz isso pelo relógio do computador, sozinha.
+
+Embaixo das faixas vem **a lista completa do dia**, com o estado de **confirmação**
+e de **pagamento da PE** de cada agendamento — os dois itens que você confere de
+manhã.
+
+**Agendamento sem horário na planilha** não consegue entrar em faixa nenhuma (não
+dá para saber onde colocar). Ele aparece num aviso laranja e na lista completa —
+se isso acontecer com frequência, é sinal de que a coluna de horário está ficando
+vazia na planilha.
+
+### O que cada linha traz
+
+Em **todas as três faixas**, cada linha tem:
+
+- **Presença** e **Fechou** — por enquanto só **mostram** o que a planilha já diz.
+  Ainda **não** são botões: marcar presença e marcar fechamento chegam na próxima
+  entrega, junto com a gravação de volta na planilha. Até lá, continue marcando na
+  planilha como você faz hoje. Eles ficam nas três faixas de propósito: a presença
+  é marcada quando a mãe **chega** — ou seja, dentro do horário corrente, não só
+  depois que ele passa —, e você precisa enxergar como está cada agendamento antes
+  mesmo de a hora chegar.
+- **💬 Conversa** — abre a conversa no WhatsApp com aquele telefone.
+
+Só na faixa **"já passou"** aparece também:
+
+- **📄 Proposta** — abre o detalhe do lead, de onde sai o link de proposta pronto.
+  Fica só ali porque proposta é conversa de depois da Primeira Experiência.
+
+### As outras abas
+
+| Aba | O que mostra |
+|---|---|
+| **🗓️ Semana** | Os agendamentos de hoje até daqui a 5 dias, dia a dia — o que você mandava na mensagem das 18h |
+| **❄️ Frios** | Os leads a recuperar (mesma regra da aba `LeadsFrios` da planilha) |
+| **🔎 Buscar** | Busca pelo telefone do responsável — o Ctrl+F que você faz na planilha |
+
+### Detalhe do lead
+
+A busca por telefone (e o botão 📄 de qualquer lista) abre uma janela com tudo o
+que o CRM sabe daquele responsável: contato, bebês, agendamentos e histórico de
+confirmação e pagamento.
+
+Cada bebê tem seu próprio botão **📄 Gerar proposta**, que abre o `proposta.html`
+já preenchido com mãe, bebê, sexo, turma e se a PE está paga. É o que substitui a
+coluna de link que existia na planilha — e, diferente dela, acerta quando a família
+tem dois filhos com turmas diferentes.
+
+### Quando a tela atualiza
+
+A tela busca dados novos:
+
+- ao abrir;
+- ao você voltar para a aba do navegador;
+- sozinha, a cada 5 minutos, **enquanto a aba estiver à vista**;
+- quando você clica em **↻ Atualizar**.
+
+**Aba escondida atrás de outra não busca nada** — é de propósito: a tela fica aberta
+o dia inteiro e cada busca custa. Se ficou muito tempo em outra aba, volte para ela
+ou clique em ↻ Atualizar.
+
+### Quando alguma coisa dá errado
+
+A tela nunca fica em branco: ela diz o que houve, em cima da lista.
+
+| Mensagem | O que fazer |
+|---|---|
+| "Sua sessão expirou" | Entrar de novo com o Google |
+| "Seu e-mail não tem acesso à API do CRM" | Falar com o Michel — o e-mail precisa ser liberado no servidor, não só no login |
+| "Sem conexão com a API do CRM" | Conferir a internet e clicar em ↻ Atualizar |
+| "A API do CRM está fora do ar" | Esperar alguns minutos e tentar de novo; se insistir, avisar o Michel |
+| "A URL da API do CRM não está configurada" | Avisar o Michel — falta um passo de configuração, não é problema seu |
 
 ---
 

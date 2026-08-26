@@ -2498,47 +2498,20 @@
 
       // ─── AUTH ─────────────────────────────────────────────────────────────────
       const AuthController = (function () {
-        const SESSION_KEY = 'bgl_auth';
-        const SESSION_TTL = 24 * 60 * 60 * 1000; // 24h
-
-        function getSession() {
-          try {
-            const raw = localStorage.getItem(SESSION_KEY);
-            if (!raw) return null;
-            const s = JSON.parse(raw);
-            if (Date.now() > s.exp) {
-              localStorage.removeItem(SESSION_KEY);
-              return null;
-            }
-            return s;
-          } catch {
-            return null;
-          }
-        }
-
-        function saveSession(email, name) {
-          localStorage.setItem(
-            SESSION_KEY,
-            JSON.stringify({ email, name, exp: Date.now() + SESSION_TTL }),
-          );
-        }
-
-        function isAllowed(email) {
-          return (BGL_CONFIG.allowedEmails || [])
-            .map((e) => e.toLowerCase())
-            .includes(email.toLowerCase());
-        }
+        // Sessão, allowlist e detecção de webview vivem no shared.js
+        // (`AuthSession` / `BrowserEnv`) — o crm.html usa os mesmos, e a mesma
+        // chave de localStorage faz login numa página valer na outra.
 
         function handleAuthResult(result) {
           const email = (result.user.email || '').toLowerCase();
-          if (!isAllowed(email)) {
+          if (!AuthSession.isAllowed(email)) {
             const fb = window._fb;
             if (fb) fb.signOut(fb.auth);
             showError('Este e-mail não tem permissão de acesso. Contate o responsável.');
             setLoginBtn(false);
             return;
           }
-          saveSession(email, result.user.displayName || email);
+          AuthSession.save({ email, name: result.user.displayName || email });
           showForm({ email, name: result.user.displayName || email });
         }
 
@@ -2557,29 +2530,14 @@
           if (lvb) lvb.textContent = 'v' + BGL_CONST.APP_VERSION + ' · ' + BGL_CONST.APP_DATE;
           document.getElementById('login-screen').style.display = 'flex';
           document.getElementById('form-mode').style.display = 'none';
-          if (isInAppBrowser()) showInAppWarning();
-        }
-
-        function isInAppBrowser() {
-          const ua = navigator.userAgent || '';
-          // Android: apps como WhatsApp adicionam seu nome ao UA
-          if (/WhatsApp|FBAN|FBAV|Instagram|FB_IAB|Line\/|KAKAOTALK|MicroMessenger/.test(ua))
-            return true;
-          // iOS: WKWebView não adiciona o nome do app ao UA, mas também não tem
-          // "Safari", "CriOS" (Chrome) ou "FxiOS" (Firefox) — que os browsers reais têm
-          if (/iPhone|iPad|iPod/.test(ua) && !/Safari|CriOS|FxiOS/.test(ua)) return true;
-          return false;
-        }
-
-        function isIos() {
-          return /iPhone|iPad|iPod/.test(navigator.userAgent || '');
+          if (BrowserEnv.isInAppBrowser()) showInAppWarning();
         }
 
         function showInAppWarning() {
           const el = document.getElementById('inapp-warning');
           if (!el) return;
-          const browser = isIos() ? 'Safari' : 'Chrome';
-          const instrucao = isIos()
+          const browser = BrowserEnv.browserRecomendado();
+          const instrucao = BrowserEnv.isIos()
             ? 'Toque em <strong>⋮</strong> e selecione <em>"Abrir no Safari"</em>.'
             : 'Toque em <strong>⋮</strong> e selecione <em>"Abrir no Chrome"</em> ou <em>"Abrir no navegador"</em>.';
           el.innerHTML =
@@ -2596,7 +2554,7 @@
 
         function copyUrl() {
           const url = window.location.href;
-          const browser = isIos() ? 'Safari' : 'Chrome';
+          const browser = BrowserEnv.browserRecomendado();
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard
               .writeText(url)
@@ -2652,7 +2610,7 @@
         }
 
         function logout() {
-          localStorage.removeItem(SESSION_KEY);
+          AuthSession.clear();
           const fb = window._fb;
           if (fb) fb.signOut(fb.auth).catch(() => {});
           showLogin();
@@ -2660,14 +2618,14 @@
         }
 
         function getEmail() {
-          const s = getSession();
+          const s = AuthSession.get();
           return s ? s.email : null;
         }
 
         function init() {
           // Limpa flag de redirect legada (era usada pelo fluxo Safari antigo)
           localStorage.removeItem('bgl_auth_redirect');
-          const session = getSession();
+          const session = AuthSession.get();
           if (session) {
             showForm(session);
             return;

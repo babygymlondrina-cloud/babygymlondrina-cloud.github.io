@@ -10,10 +10,11 @@ const BGL_CRM_CONFIG = {
   // API de leads do CRM — uma URL por ambiente. São duas Cloud Functions,
   // `api` (coleção `leads`) e `apiHml` (`leads_hml`), e quem escolhe é a
   // página, via shared.js:apiBaseUrl() — docs/CRM_FASE3_PLANO.md, D6.
-  // `hml` nasce vazia: a URL só existe depois do primeiro deploy da `apiHml`
-  // (ver README, "Deploy e ambientes", e docs/COMANDOS.md).
+  // `hml` preenchida em 2026-08-25 (M-4), com a URL impressa pelo primeiro
+  // `firebase deploy --only functions` da `apiHml` (ver README, "Deploy e
+  // ambientes", e docs/COMANDOS.md).
   apiUrl: {
     prod: 'https://api-mhw2usejhq-rj.a.run.app',
-    hml: '',
+    hml: 'https://southamerica-east1-baby-gym-londrina-b1ad9.cloudfunctions.net/apiHml',
   },
 };

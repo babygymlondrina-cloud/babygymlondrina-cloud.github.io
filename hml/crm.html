@@ -1,0 +1,1994 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Baby Gym Londrina — CRM</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Paleta — TODA cor do arquivo sai daqui (regra 4 do CLAUDE.md).
+         Nenhum hexadecimal solto abaixo deste bloco. */
+      :root {
+        --purple: #625fb7;
+        --purple-dark: #433d99;
+        --purple-deep: #130f42;
+        --pink: #fd80bd;
+        --pink-hot: #fc007c;
+        --teal: #66d8d4;
+        --teal-dark: #00bfb8;
+        --cream: #fff7ee;
+        --orange: #ffa233;
+        --white: #ffffff;
+        --text: #19151f;
+        --text-light: #736880;
+        --line: #e7e2ee;
+        --surface: #ffffff;
+        --surface-muted: #f6f3fb;
+        --ok: #1b7f5a;
+        --ok-bg: #e6f6ef;
+        --warn: #92400e;
+        --warn-bg: #fffbeb;
+        --danger: #c0392b;
+        --danger-bg: #fff0f0;
+        --neutral: #736880;
+        --neutral-bg: #f0edf6;
+        --google-border: #dadce0;
+        --google-border-hover: #bbbbbb;
+        --google-text: #3c4043;
+        --overlay: rgba(19, 15, 66, 0.55);
+        --tint-purple-strong: rgba(98, 95, 183, 0.18);
+        --tint-purple: rgba(98, 95, 183, 0.08);
+        --tint-purple-soft: rgba(98, 95, 183, 0.04);
+        --tint-white-soft: rgba(255, 255, 255, 0.18);
+        --tint-white-faint: rgba(255, 255, 255, 0.45);
+        --tint-pink: rgba(252, 0, 124, 0.2);
+        --tint-teal: rgba(102, 216, 212, 0.18);
+        --shadow: 0 6px 28px rgba(98, 95, 183, 0.13);
+        --shadow-sm: 0 2px 12px rgba(98, 95, 183, 0.09);
+        --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.22);
+        --radius: 20px;
+        --radius-sm: 12px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: var(--cream);
+        color: var(--text);
+      }
+      /* ─── LOGIN ─── */
+      #login-screen {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        background:
+          radial-gradient(ellipse at 20% 80%, var(--tint-pink) 0%, transparent 52%),
+          radial-gradient(ellipse at 85% 10%, var(--tint-teal) 0%, transparent 45%),
+          linear-gradient(145deg, var(--purple) 0%, var(--purple-dark) 55%, var(--purple-deep) 100%);
+      }
+      .login-card {
+        background: var(--white);
+        border-radius: 28px;
+        padding: 2.5rem 2rem;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+      }
+      .login-brand {
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--purple);
+        margin-bottom: 0.5rem;
+      }
+      .login-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        margin-bottom: 0.6rem;
+      }
+      .login-desc {
+        font-size: 0.88rem;
+        color: var(--text-light);
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+      }
+      #login-error {
+        margin-top: 1rem;
+        padding: 0.7rem 1rem;
+        background: var(--danger-bg);
+        border: 1px solid var(--danger);
+        border-radius: 10px;
+        font-size: 0.82rem;
+        color: var(--danger);
+      }
+      #inapp-warning {
+        margin-top: 1rem;
+        padding: 0.9rem 1rem;
+        background: var(--warn-bg);
+        border: 1px solid var(--orange);
+        border-radius: 10px;
+        font-size: 0.82rem;
+        color: var(--text);
+        text-align: left;
+        line-height: 1.5;
+      }
+      #inapp-warning .inapp-title {
+        display: block;
+        margin-bottom: 0.4rem;
+        font-size: 0.88rem;
+        color: var(--warn);
+      }
+      .btn-copy-url {
+        display: block;
+        margin-top: 0.7rem;
+        padding: 0.45rem 1rem;
+        background: var(--purple);
+        border: none;
+        border-radius: 20px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--white);
+        cursor: pointer;
+        width: 100%;
+      }
+      .btn-google-login {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        background: var(--white);
+        border: 1.5px solid var(--google-border);
+        border-radius: 24px;
+        padding: 0.75rem 1.5rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--google-text);
+        cursor: pointer;
+        box-shadow: var(--shadow-sm);
+      }
+      .btn-google-login:hover {
+        border-color: var(--google-border-hover);
+      }
+      .btn-google-login:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .app-version-badge {
+        margin-top: 1.2rem;
+        font-size: 0.72rem;
+        color: var(--text-light);
+        opacity: 0.75;
+        letter-spacing: 0.02em;
+      }
+      #login-screen .app-version-badge {
+        color: var(--tint-white-faint);
+        margin-top: 1.4rem;
+      }
+      /* ─── APP ─── */
+      #crm-app {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .user-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 0.9rem;
+        background: linear-gradient(135deg, var(--tint-purple) 0%, var(--tint-purple-soft) 100%);
+        border-bottom: 1px solid var(--line);
+      }
+      .user-bar-email {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--purple-dark);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1 1 8rem;
+      }
+      .user-bar .app-version-badge {
+        margin-top: 0;
+      }
+      #env-badge {
+        font-weight: 800;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
+      }
+      #env-badge.prod {
+        background: var(--neutral-bg);
+        color: var(--neutral);
+      }
+      #env-badge.hml {
+        background: var(--orange);
+        color: var(--warn);
+      }
+      .btn-bar {
+        background: none;
+        border: 1.5px solid var(--purple);
+        border-radius: 6px;
+        padding: 0.22rem 0.6rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--purple);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn-bar:hover {
+        background: var(--purple);
+        color: var(--white);
+      }
+      .tabs {
+        display: flex;
+        gap: 0.25rem;
+        padding: 0.5rem 0.6rem 0;
+        background: var(--surface-muted);
+        border-bottom: 1px solid var(--line);
+        overflow-x: auto;
+      }
+      .tab {
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.55rem 0.75rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-light);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .tab[aria-selected='true'] {
+        color: var(--purple-dark);
+        border-bottom-color: var(--pink-hot);
+      }
+      main {
+        flex: 1;
+        padding: 0.9rem 0.75rem 3rem;
+        max-width: 900px;
+        width: 100%;
+        margin: 0 auto;
+      }
+      .status-linha {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.76rem;
+        color: var(--text-light);
+        margin-bottom: 0.7rem;
+        min-height: 1.2rem;
+      }
+      .aviso {
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 0.8rem;
+      }
+      .aviso-erro {
+        background: var(--danger-bg);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+      }
+      .aviso-info {
+        background: var(--warn-bg);
+        border: 1px solid var(--orange);
+        color: var(--warn);
+      }
+      .vazio {
+        padding: 1.2rem;
+        text-align: center;
+        color: var(--text-light);
+        font-size: 0.85rem;
+      }
+      /* ─── FAIXAS DO PAINEL DO DIA ─── */
+      .faixa {
+        margin-bottom: 1rem;
+      }
+      .faixa-titulo {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-light);
+        margin-bottom: 0.4rem;
+      }
+      .bloco {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+      }
+      .bloco-hora {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        padding: 0.5rem 0.8rem;
+        background: var(--surface-muted);
+        font-weight: 800;
+        font-size: 0.95rem;
+      }
+      .bloco-hora small {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-light);
+      }
+      .item {
+        padding: 0.6rem 0.8rem;
+        border-top: 1px solid var(--line);
+      }
+      .item-nome {
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .item-sub {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        margin-top: 0.1rem;
+      }
+      /* AGORA — destaque forte: quem deve chegar neste horário. */
+      .faixa-agora .faixa-titulo {
+        color: var(--pink-hot);
+      }
+      .faixa-agora .bloco {
+        border: 2px solid var(--pink-hot);
+        box-shadow: var(--shadow);
+      }
+      .faixa-agora .bloco-hora {
+        background: var(--pink-hot);
+        color: var(--white);
+        font-size: 1.1rem;
+      }
+      .faixa-agora .bloco-hora small {
+        color: var(--white);
+      }
+      .faixa-agora .item-nome {
+        font-size: 1.05rem;
+      }
+      /* JÁ PASSOU — esmaecido, vira lista de conferência. */
+      .faixa-passou .bloco {
+        opacity: 0.72;
+        background: var(--surface-muted);
+      }
+      /* AINDA VEM — visível e discreto. */
+      .faixa-vem .bloco-hora {
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        font-size: 0.88rem;
+      }
+      .acoes {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.5rem;
+      }
+      .btn-acao {
+        display: inline-block;
+        border: 1.5px solid var(--teal-dark);
+        border-radius: 999px;
+        padding: 0.2rem 0.65rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+        background: none;
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn-acao:hover {
+        background: var(--teal-dark);
+        color: var(--white);
+      }
+      /* Lugar reservado dos botões de ESCRITA — ligados na T6 (ver comentário
+         no JS). Não é botão de propósito: enquanto o write-back da planilha
+         (D3) não existir, clique aqui viraria divergência planilha × Firestore. */
+      .acao-slot {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        border: 1.5px dashed var(--line);
+        border-radius: 999px;
+        padding: 0.2rem 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-light);
+        white-space: nowrap;
+      }
+      .acao-slot.marcado {
+        border-style: solid;
+        border-color: var(--ok);
+        background: var(--ok-bg);
+        color: var(--ok);
+      }
+      /* ─── BADGES DE ESTADO ─── */
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .badge-ok {
+        background: var(--ok-bg);
+        color: var(--ok);
+      }
+      .badge-warn {
+        background: var(--warn-bg);
+        color: var(--warn);
+      }
+      .badge-neutro {
+        background: var(--neutral-bg);
+        color: var(--neutral);
+      }
+      /* ─── TABELA / LISTA COMPLETA ─── */
+      .secao-titulo {
+        font-size: 0.95rem;
+        font-weight: 800;
+        margin: 1.4rem 0 0.5rem;
+      }
+      .tabela-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.8rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.45rem 0.6rem;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        background: var(--surface-muted);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-light);
+        white-space: nowrap;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .dia-titulo {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--purple-dark);
+        margin: 1rem 0 0.4rem;
+      }
+      /* ─── BUSCA ─── */
+      .busca-form {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 0.8rem;
+      }
+      .busca-form input {
+        flex: 1;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.8rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        color: var(--text);
+        background: var(--surface);
+      }
+      .btn-primario {
+        border: none;
+        border-radius: var(--radius-sm);
+        background: var(--purple);
+        color: var(--white);
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 0.6rem 1rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn-primario:hover {
+        background: var(--purple-dark);
+      }
+      /* ─── MODAL (padrão do cfg-modal do proposta.html) ─── */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: var(--overlay);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        z-index: 50;
+      }
+      .modal-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        width: 100%;
+        max-width: 560px;
+        max-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.8rem 1rem;
+        background: var(--purple);
+        color: var(--white);
+      }
+      .modal-header h2 {
+        font-size: 1rem;
+        font-weight: 800;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--white);
+        font-size: 1.4rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0 0.2rem;
+      }
+      .modal-body {
+        padding: 1rem;
+        overflow-y: auto;
+      }
+      .campo {
+        display: flex;
+        gap: 0.4rem;
+        font-size: 0.82rem;
+        padding: 0.25rem 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .campo dt {
+        color: var(--text-light);
+        min-width: 8.5rem;
+        flex-shrink: 0;
+      }
+      .campo dd {
+        font-weight: 600;
+        word-break: break-word;
+      }
+      .bebe-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.5rem;
+        background: var(--surface-muted);
+      }
+      .bebe-nome {
+        font-weight: 800;
+        font-size: 0.92rem;
+        margin-bottom: 0.2rem;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+    </style>
+    <!-- Configuração comum a todas as páginas do projeto (env, allowlist, Firebase) -->
+    <script src="config.js"></script>
+    <!-- URLs da API de leads — arquivo carregado SÓ por esta página (Fase 3, T3) -->
+    <script src="crm-config.js"></script>
+    <script src="constants.js"></script>
+    <script src="shared.js"></script>
+    <script>
+      // Detecta HML pelo URL — mesmo critério do planos.html/proposta.html, e é
+      // dele que `configDocId()` e `apiBaseUrl()` (shared.js) tiram o ambiente.
+      if (window.location.pathname.startsWith('/hml/')) BGL_CONFIG.env = 'hml';
+    </script>
+    <script type="module">
+      // Bootstrap do Firebase Auth por módulo ESM do CDN — mesmo padrão do
+      // proposta.html. Esta tela NÃO usa Firestore: o dado dela vem todo da API
+      // de leads, e o Firebase entra só para autenticar e emitir o ID token que
+      // vai no `Authorization: Bearer` (docs/CRM_FASE3_API.md).
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js';
+      import {
+        getAuth,
+        signInWithPopup,
+        GoogleAuthProvider,
+        signOut,
+      } from 'https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js';
+
+      if (!window.BGL_SKIP_FIREBASE) {
+        const app = initializeApp(BGL_CONFIG.firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        window._fb = { auth, provider, signInWithPopup, signOut };
+      }
+    </script>
+  </head>
+  <body>
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-brand">Baby Gym Londrina</div>
+        <div class="login-title">CRM — acesso restrito</div>
+        <p class="login-desc">
+          Entre com sua conta Google autorizada para ver a agenda do dia e os leads.
+        </p>
+        <button class="btn-google-login" id="btn-google-login">
+          <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path
+              fill="#EA4335"
+              d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+            />
+            <path
+              fill="#4285F4"
+              d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+            />
+            <path
+              fill="#34A853"
+              d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+            />
+          </svg>
+          Entrar com Google
+        </button>
+        <p id="login-error" style="display: none"></p>
+        <div id="inapp-warning" style="display: none"></div>
+        <p class="app-version-badge" id="login-version-badge"></p>
+      </div>
+    </div>
+
+    <div id="crm-app" style="display: none">
+      <div class="user-bar">
+        <span class="user-bar-email" id="user-email"></span>
+        <span id="env-badge"></span>
+        <span class="app-version-badge" id="app-version-badge"></span>
+        <button class="btn-bar" id="btn-atualizar">↻ Atualizar</button>
+        <button class="btn-bar" id="btn-logout">Sair</button>
+      </div>
+
+      <nav class="tabs" id="tabs" role="tablist"></nav>
+
+      <main>
+        <div class="status-linha" id="status-linha"></div>
+        <div id="conteudo"></div>
+      </main>
+    </div>
+
+    <div id="lead-modal" class="modal-backdrop" style="display: none">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="lead-modal-titulo">
+        <div class="modal-header">
+          <h2 id="lead-modal-titulo">Lead</h2>
+          <button class="modal-close" id="btn-fechar-lead" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body" id="lead-modal-body"></div>
+      </div>
+    </div>
+    <script>
+      // ═══════════════════════════════════════════════════════════════════════
+      // CRM BGL — tela da equipe (Fase 3, T4). SOMENTE LEITURA.
+      //
+      // Contratos: docs/CRM_FASE3_PLANO.md (D8 = o Painel do Dia, §3.3 = o que
+      // esta tela consome, §3.4 = como ela é organizada por dentro) e
+      // docs/CRM_FASE3_API.md (auth, CORS, view=agenda).
+      //
+      // NENHUMA ESCRITA parte daqui — o `ApiClient` abaixo só expõe `get`, de
+      // propósito. Os botões "marcar presença"/"marcar fechou" são a T6, atrás
+      // do write-back na planilha (decisão D3): ligá-los antes disso faria cada
+      // clique da equipe virar divergência planilha × Firestore no mesmo dia.
+      // ═══════════════════════════════════════════════════════════════════════
+
+      const ABA = BGL_CONST.CRM.ABA;
+      const FAIXA = BGL_CONST.CRM.FAIXA;
+      const VIEW = BGL_CONST.CRM.VIEW;
+
+      // ─── Helpers de apresentação ─────────────────────────────────────────
+      // Todo texto renderizado abaixo vem da API (nome digitado pela equipe na
+      // planilha, nome de perfil do WhatsApp) — escapar não é opcional.
+      const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      function esc(valor) {
+        return String(valor == null ? '' : valor).replace(/[&<>"']/g, (c) => ESCAPES[c]);
+      }
+
+      /** Valor legível, ou travessão quando a API devolveu `null`. */
+      function ou(valor, vazio) {
+        const v = valor == null || valor === '' ? null : valor;
+        return v === null ? vazio || '—' : v;
+      }
+
+      const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+      /** `YYYY-MM-DD` → `seg 25/08`. Meio-dia UTC evita virada de fuso. */
+      function dataCurta(iso) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return ou(iso);
+        const d = new Date(iso + 'T12:00:00Z');
+        return DIAS_SEMANA[d.getUTCDay()] + ' ' + iso.slice(8, 10) + '/' + iso.slice(5, 7);
+      }
+
+      /** Só os dígitos — é o que o `wa.me` aceita. */
+      function soDigitos(telefone) {
+        return String(telefone || '').replace(/\D/g, '');
+      }
+
+      // ─── Relogio ─────────────────────────────────────────────────────────
+      // O relógio da tela é LOCAL, em America/Sao_Paulo (BGL_CONST.TZ), e NUNCA
+      // chama a API: as faixas do Painel do Dia recalculam do relógio do
+      // browser a cada tique (decisão D8, item b). Só os DADOS precisam de
+      // refetch, e disso cuida o `Atualizador`.
+      const Relogio = (function () {
+        function _partes(opcoes) {
+          const fmt = new Intl.DateTimeFormat('pt-BR', { timeZone: BGL_CONST.TZ, ...opcoes });
+          const partes = {};
+          fmt.formatToParts(new Date()).forEach((p) => {
+            partes[p.type] = p.value;
+          });
+          return partes;
+        }
+
+        /** Hoje em `YYYY-MM-DD`, na timezone da unidade. */
+        function hojeISO() {
+          const p = _partes({ year: 'numeric', month: '2-digit', day: '2-digit' });
+          return p.year + '-' + p.month + '-' + p.day;
+        }
+
+        /** Hora de parede `HH:mm`, na timezone da unidade. */
+        function horaAgora() {
+          const p = _partes({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+          return p.hour + ':' + p.minute;
+        }
+
+        /** Hora cheia corrente (0–23) — é ela que decide a faixa. */
+        function horaCorrente() {
+          return Number(horaAgora().slice(0, 2));
+        }
+
+        /** `YYYY-MM-DD` + n dias, sem depender do fuso do browser. */
+        function somaDias(iso, dias) {
+          const [a, m, d] = iso.split('-').map(Number);
+          const t = new Date(Date.UTC(a, m - 1, d + dias));
+          return (
+            t.getUTCFullYear() +
+            '-' +
+            String(t.getUTCMonth() + 1).padStart(2, '0') +
+            '-' +
+            String(t.getUTCDate()).padStart(2, '0')
+          );
+        }
+
+        /**
+         * Em que faixa do Painel do Dia cai o bloco das `HH:mm`.
+         * Comparação por HORA CHEIA, que é como a agenda da unidade funciona:
+         * às 13:59 o bloco das 14h ainda é `VEM`; às 14:00 vira `AGORA`; às
+         * 15:00 vira `PASSOU`.
+         */
+        function faixaDaHora(hora) {
+          const h = Number(String(hora || '').slice(0, 2));
+          if (!Number.isFinite(h)) return null;
+          const agora = horaCorrente();
+          if (h < agora) return FAIXA.PASSOU;
+          if (h === agora) return FAIXA.AGORA;
+          return FAIXA.VEM;
+        }
+
+        return { hojeISO, horaAgora, horaCorrente, somaDias, faixaDaHora };
+      })();
+
+      // ─── CrmState ────────────────────────────────────────────────────────
+      // Singleton com accessors por namespace, mesmo padrão do `AppState`
+      // (planos.html). Nada em `window.*` — regra 3 do CLAUDE.md.
+      const CrmState = (function () {
+        let _aba = ABA.PAINEL;
+        let _carregando = false;
+        let _erro = null;
+        let _atualizadoEm = null;
+        // Resposta crua da API por aba; `null` = ainda não carregada.
+        const _dados = { [ABA.PAINEL]: null, [ABA.SEMANA]: null, [ABA.FRIOS]: null };
+        let _leadDoc = null;
+        let _leadErro = null;
+        let _leadCarregando = false;
+        let _buscaFeita = false;
+
+        return {
+          ui: {
+            getAba: () => _aba,
+            setAba: (v) => {
+              _aba = v;
+            },
+            isCarregando: () => _carregando,
+            setCarregando: (v) => {
+              _carregando = v;
+            },
+            getErro: () => _erro,
+            setErro: (v) => {
+              _erro = v;
+            },
+            getAtualizadoEm: () => _atualizadoEm,
+            setAtualizadoEm: (v) => {
+              _atualizadoEm = v;
+            },
+          },
+          dados: {
+            get: (aba) => _dados[aba] || null,
+            set: (aba, v) => {
+              _dados[aba] = v;
+            },
+          },
+          lead: {
+            getDoc: () => _leadDoc,
+            getErro: () => _leadErro,
+            isCarregando: () => _leadCarregando,
+            isBuscaFeita: () => _buscaFeita,
+            set: ({ doc, erro, carregando }) => {
+              _leadDoc = doc || null;
+              _leadErro = erro || null;
+              _leadCarregando = !!carregando;
+              _buscaFeita = true;
+            },
+            limpar: () => {
+              _leadDoc = null;
+              _leadErro = null;
+              _leadCarregando = false;
+              _buscaFeita = false;
+            },
+          },
+        };
+      })();
+
+      // ─── ApiClient ───────────────────────────────────────────────────────
+      // ÚNICO ponto do arquivo que fala com a rede (§3.4 do plano). Injeta o
+      // `Authorization: Bearer`, e traduz 401/403/5xx/falha de rede em mensagem
+      // que a recepção entende — a tela nunca fica em branco.
+      //
+      // Só `get`. Escrita é a T6: quando ela chegar, o método novo entra AQUI,
+      // não espalhado pelos renderers.
+      const ApiClient = (function () {
+        function _erro(mensagem, extras) {
+          return Object.assign(new Error(mensagem), { amigavel: true }, extras || {});
+        }
+
+        async function get(caminho, params) {
+          // `apiBaseUrl()` (shared.js) escolhe prod/hml, normaliza a barra final
+          // e ESTOURA quando a URL do ambiente está vazia (a `hml` nasce assim,
+          // até o primeiro deploy da `apiHml`). Erro de configuração, não de
+          // rede — vira mensagem própria, para não parecer API fora do ar.
+          let base;
+          try {
+            base = apiBaseUrl();
+          } catch (e) {
+            console.error('[CRM] Configuração da API ausente:', e.message);
+            throw _erro(
+              'A URL da API do CRM não está configurada para este ambiente. ' +
+                'Avise o Michel — falta preencher o crm-config.js.',
+              { configuracao: true },
+            );
+          }
+
+          const url = new URL(base + caminho);
+          Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+
+          const token = await AuthController.getIdToken();
+          if (!token) {
+            throw _erro('Sua sessão expirou. Entre de novo com o Google.', {
+              sessaoExpirada: true,
+            });
+          }
+
+          let res;
+          try {
+            res = await fetch(url.toString(), {
+              method: 'GET',
+              headers: { Authorization: 'Bearer ' + token },
+            });
+          } catch (e) {
+            console.warn('[CRM] Falha de rede:', e.message);
+            throw _erro('Sem conexão com a API do CRM. Confira a internet e tente de novo.');
+          }
+
+          if (res.status === 401) {
+            throw _erro('Sua sessão expirou. Entre de novo com o Google.', {
+              sessaoExpirada: true,
+            });
+          }
+          if (res.status === 403) {
+            throw _erro('Seu e-mail não tem acesso à API do CRM. Peça para o Michel liberar.', {
+              semAcesso: true,
+            });
+          }
+          if (res.status === 404) {
+            throw _erro('Não encontrado.', { naoEncontrado: true });
+          }
+          if (res.status >= 500) {
+            throw _erro('A API do CRM está fora do ar. Tente de novo em alguns minutos.');
+          }
+
+          let corpo;
+          try {
+            corpo = await res.json();
+          } catch {
+            throw _erro('A API do CRM respondeu num formato inesperado.');
+          }
+          if (!res.ok) {
+            throw _erro(
+              'A API recusou a consulta: ' + ou(corpo && corpo.erro, 'motivo não informado'),
+            );
+          }
+          return corpo;
+        }
+
+        return { get };
+      })();
+
+      // ─── LinkBuilder ─────────────────────────────────────────────────────
+      // Os dois links que a tela produz. Ambos são LEITURA: abrem outra página,
+      // não mudam nada no CRM.
+      const LinkBuilder = (function () {
+        /**
+         * `proposta.html?mae=…&filho=…&sexo=…&turma=…&pe=…` — os mesmos cinco
+         * parâmetros da fórmula `sheets/proposta-autofill.gs`, que este botão
+         * aposenta (mapa da §2 do plano). O caminho é relativo ao da página
+         * atual, então em `/hml/` o link continua apontando para o `/hml/`.
+         */
+        function proposta({ mae, filho, sexo, turma, pePaga }) {
+          const p = new URLSearchParams();
+          if (mae) p.set('mae', mae);
+          if (filho) p.set('filho', filho);
+          const s = String(sexo || '')
+            .trim()
+            .toLowerCase();
+          // Mesma regra do REGEXMATCH da fórmula: começa com "m" é menino.
+          if (s) p.set('sexo', s.startsWith('m') ? 'm' : 'f');
+          const t = String(turma || '')
+            .trim()
+            .toLowerCase();
+          // Turma desconhecida sai do link sem o parâmetro — mesmo efeito do
+          // IFS da fórmula, que também não casava e deixava o campo vazio.
+          if (BGL_CONST.TURMAS.includes(t)) p.set('turma', t);
+          p.set('pe', pePaga ? '1' : '0');
+          return window.location.pathname.replace(/[^/]*$/, 'proposta.html') + '?' + p.toString();
+        }
+
+        /** Conversa no WhatsApp a partir do telefone do lead. */
+        function conversa(telefone) {
+          const digitos = soDigitos(telefone);
+          return digitos ? 'https://wa.me/' + digitos : null;
+        }
+
+        return { proposta, conversa };
+      })();
+
+      // ─── Rótulos de estado ───────────────────────────────────────────────
+      // `status`, `confirmacao` e `pagamentoPE` chegam CRUS da API, sem
+      // interpretação (docs/CRM_FASE3_API.md). A tela só traduz o que conhece;
+      // valor novo aparece como veio, em vez de sumir.
+      const ROTULO_CONFIRMACAO = {
+        [BGL_CONST.CRM.CONFIRMACAO.CONFIRMADO]: 'Confirmado',
+        [BGL_CONST.CRM.CONFIRMACAO.PENDENTE]: 'Pendente',
+        [BGL_CONST.CRM.CONFIRMACAO.A_CONFIRMAR]: 'A confirmar',
+        [BGL_CONST.CRM.CONFIRMACAO.AGUARDANDO_PAGAMENTO]: 'Aguardando pagamento',
+      };
+      const ROTULO_PE = {
+        [BGL_CONST.CRM.PAGAMENTO_PE.PAGO]: 'PE paga',
+        [BGL_CONST.CRM.PAGAMENTO_PE.PIX_GERADO]: 'PIX gerado',
+      };
+      const ROTULO_MOTIVO_FRIO = {
+        [BGL_CONST.CRM.MOTIVO_FRIO.FALTA_AGENDAMENTO]: 'Nunca agendou',
+        [BGL_CONST.CRM.MOTIVO_FRIO.FALTOU]: 'Faltou na PE',
+        [BGL_CONST.CRM.MOTIVO_FRIO.NAO_FECHOU]: 'Não fechou',
+      };
+
+      function badge(texto, tom) {
+        return '<span class="badge badge-' + tom + '">' + esc(texto) + '</span>';
+      }
+
+      function badgeConfirmacao(valor) {
+        if (!valor) return badge('Sem confirmação', 'neutro');
+        const tom = valor === BGL_CONST.CRM.CONFIRMACAO.CONFIRMADO ? 'ok' : 'warn';
+        return badge(ROTULO_CONFIRMACAO[valor] || valor, tom);
+      }
+
+      function badgePagamentoPE(valor) {
+        if (!valor) return badge('PE não paga', 'neutro');
+        const tom = valor === BGL_CONST.CRM.PAGAMENTO_PE.PAGO ? 'ok' : 'warn';
+        return badge(ROTULO_PE[valor] || valor, tom);
+      }
+
+      // ─── AgendaRenderer ──────────────────────────────────────────────────
+      // Sub-renderer compartilhado pelas duas abas de agenda (Painel do Dia e
+      // Semana): as duas consomem `?view=agenda`, e o item é o mesmo.
+      const AgendaRenderer = (function () {
+        /** `[{ hora, itens }]` em ordem crescente de hora. */
+        function agruparPorHora(itens) {
+          const mapa = new Map();
+          itens.forEach((i) => {
+            if (!mapa.has(i.hora)) mapa.set(i.hora, []);
+            mapa.get(i.hora).push(i);
+          });
+          return Array.from(mapa, ([hora, lista]) => ({ hora, itens: lista })).sort((a, b) =>
+            a.hora.localeCompare(b.hora),
+          );
+        }
+
+        /**
+         * Um slot de escrita da T6 — ver o comentário de `acoes` logo abaixo.
+         * Hoje só MOSTRA o booleano que a API devolve.
+         */
+        function slotT6(rotulo, marcado) {
+          return (
+            '<span class="acao-slot' +
+            (marcado ? ' marcado' : '') +
+            '">' +
+            (marcado ? '✓ ' : '') +
+            esc(rotulo) +
+            '</span>'
+          );
+        }
+
+        /** Ações de leitura de um item. Escrita nenhuma — ver o bloco da T6. */
+        function acoes(item, { proposta }) {
+          // ───────────────────────────────────────────────────────────────
+          // LUGAR DOS BOTÕES DE ESCRITA — T6, NÃO ligue aqui.
+          // "Marcar presença" e "marcar fechou" são os eventos `compareceu` e
+          // `fechou` (PATCH /leads/{id}), e dependem do write-back na planilha
+          // (T5 / decisão D3 do CRM_FASE3_PLANO.md). Enquanto ele não existir,
+          // cada clique viraria divergência entre a planilha e o Firestore no
+          // mesmo dia — exatamente o que o D3 impede. Por ora os dois slots só
+          // MOSTRAM o estado que a API devolve.
+          //
+          // Ficam nas TRÊS faixas, não só na "já passou": a presença é marcada
+          // quando a mãe CHEGA, que é dentro do horário corrente, e a equipe
+          // precisa enxergar o estado do agendamento antes mesmo de a hora
+          // chegar. Quem muda por faixa é o layout, não o que se pode marcar.
+          // ───────────────────────────────────────────────────────────────
+          const partes = [slotT6('Presença', item.compareceu), slotT6('Fechou', item.fechou)];
+          // O link de proposta, esse sim, só faz sentido depois da PE — fica na
+          // faixa de conferência (D8: "enviar a proposta por WhatsApp").
+          if (proposta && item.telefone) {
+            partes.push(
+              '<button type="button" class="btn-acao" data-lead="' +
+                esc(item.telefone) +
+                '">📄 Proposta</button>',
+            );
+          }
+          const wpp = LinkBuilder.conversa(item.telefone);
+          if (wpp) {
+            partes.push(
+              '<a class="btn-acao" href="' +
+                esc(wpp) +
+                '" target="_blank" rel="noopener">💬 Conversa</a>',
+            );
+          }
+          return '<div class="acoes">' + partes.join('') + '</div>';
+        }
+
+        /** Um agendamento dentro de um bloco de horário. */
+        function item(dados, opcoes) {
+          return (
+            '<div class="item">' +
+            '<div class="item-nome">' +
+            esc(ou(dados.nome, 'Sem nome')) +
+            '</div>' +
+            '<div class="item-sub">' +
+            esc(ou(dados.bebe, 'bebê não informado')) +
+            ' · ' +
+            esc(ou(dados.turma, 'sem turma')) +
+            '</div>' +
+            '<div class="item-sub">' +
+            badgeConfirmacao(dados.confirmacao) +
+            ' ' +
+            badgePagamentoPE(dados.pagamentoPE) +
+            '</div>' +
+            acoes(dados, opcoes) +
+            '</div>'
+          );
+        }
+
+        function bloco(grupo, opcoes) {
+          const n = grupo.itens.length;
+          return (
+            '<div class="bloco">' +
+            '<div class="bloco-hora">' +
+            esc(grupo.hora) +
+            '<small>' +
+            n +
+            (n === 1 ? ' agendamento' : ' agendamentos') +
+            '</small></div>' +
+            grupo.itens.map((i) => item(i, opcoes)).join('') +
+            '</div>'
+          );
+        }
+
+        /** Tabela com o dia inteiro, estado de confirmação e de pagamento da PE. */
+        function tabela(itens) {
+          const linhas = itens
+            .map(
+              (i) =>
+                '<tr>' +
+                '<td>' +
+                esc(ou(i.hora)) +
+                '</td>' +
+                '<td>' +
+                esc(ou(i.bebe)) +
+                '</td>' +
+                '<td>' +
+                esc(ou(i.nome)) +
+                '</td>' +
+                '<td>' +
+                esc(ou(i.turma)) +
+                '</td>' +
+                '<td>' +
+                badgeConfirmacao(i.confirmacao) +
+                '</td>' +
+                '<td>' +
+                badgePagamentoPE(i.pagamentoPE) +
+                '</td>' +
+                '</tr>',
+            )
+            .join('');
+          return (
+            '<div class="tabela-wrap"><table>' +
+            '<thead><tr><th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th>' +
+            '<th>Confirmação</th><th>PE</th></tr></thead>' +
+            '<tbody>' +
+            linhas +
+            '</tbody></table></div>'
+          );
+        }
+
+        return { agruparPorHora, bloco, tabela };
+      })();
+
+      // ─── PainelRenderer ──────────────────────────────────────────────────
+      // O Painel do Dia (decisão D8): a tela default e a mais usada. Três
+      // faixas decididas pelo relógio LOCAL, e embaixo o dia inteiro com
+      // confirmação e pagamento da PE por agendamento.
+      const PainelRenderer = (function () {
+        const FAIXAS = [
+          {
+            id: FAIXA.AGORA,
+            titulo: 'Agora',
+            legenda: 'quem deve chegar',
+            vazio: 'Ninguém marcado para este horário.',
+            proposta: false,
+          },
+          {
+            id: FAIXA.PASSOU,
+            titulo: 'Já passou',
+            legenda: 'lista de conferência',
+            vazio: 'Nada antes deste horário.',
+            proposta: true,
+          },
+          {
+            id: FAIXA.VEM,
+            titulo: 'Ainda vem',
+            legenda: 'mais tarde hoje',
+            vazio: 'Nada depois deste horário.',
+            proposta: false,
+          },
+        ];
+
+        function _faixa(def, grupos) {
+          const corpo = grupos.length
+            ? grupos.map((g) => AgendaRenderer.bloco(g, { proposta: def.proposta })).join('')
+            : '<div class="vazio">' + esc(def.vazio) + '</div>';
+          return (
+            '<section class="faixa faixa-' +
+            def.id +
+            '" data-faixa="' +
+            def.id +
+            '">' +
+            '<h2 class="faixa-titulo">' +
+            esc(def.titulo) +
+            ' <span>· ' +
+            esc(def.legenda) +
+            '</span></h2>' +
+            corpo +
+            '</section>'
+          );
+        }
+
+        function render(resposta) {
+          const itens = (resposta && resposta.itens) || [];
+          if (!itens.length) {
+            return '<div class="vazio">Nenhum agendamento para hoje.</div>';
+          }
+          const comHora = itens.filter((i) => i.hora);
+          const semHora = itens.filter((i) => !i.hora);
+          const porFaixa = { [FAIXA.PASSOU]: [], [FAIXA.AGORA]: [], [FAIXA.VEM]: [] };
+          AgendaRenderer.agruparPorHora(comHora).forEach((g) => {
+            const faixa = Relogio.faixaDaHora(g.hora);
+            if (faixa) porFaixa[faixa].push(g);
+          });
+
+          const avisoSemHora = semHora.length
+            ? '<div class="aviso aviso-info" id="aviso-sem-hora">' +
+              semHora.length +
+              (semHora.length === 1
+                ? ' agendamento sem horário na planilha — ele não entra nas faixas, confira na lista abaixo.'
+                : ' agendamentos sem horário na planilha — eles não entram nas faixas, confira na lista abaixo.') +
+              '</div>'
+            : '';
+
+          return (
+            FAIXAS.map((def) => _faixa(def, porFaixa[def.id])).join('') +
+            avisoSemHora +
+            '<h2 class="secao-titulo">Todos os agendamentos de hoje (' +
+            itens.length +
+            ')</h2>' +
+            AgendaRenderer.tabela(itens)
+          );
+        }
+
+        return { render };
+      })();
+
+      // ─── SemanaRenderer ──────────────────────────────────────────────────
+      // Aba secundária: hoje..hoje+5, a mesma janela da mensagem das 18h que
+      // ela manda hoje no WhatsApp (mapa da §2 do plano).
+      const SemanaRenderer = (function () {
+        function render(resposta) {
+          const itens = (resposta && resposta.itens) || [];
+          if (!itens.length) {
+            return '<div class="vazio">Nenhum agendamento nos próximos dias.</div>';
+          }
+          const porDia = new Map();
+          itens.forEach((i) => {
+            if (!porDia.has(i.data)) porDia.set(i.data, []);
+            porDia.get(i.data).push(i);
+          });
+          return Array.from(porDia)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(
+              ([data, lista]) =>
+                '<h2 class="dia-titulo">' +
+                esc(dataCurta(data)) +
+                ' · ' +
+                lista.length +
+                (lista.length === 1 ? ' agendamento' : ' agendamentos') +
+                '</h2>' +
+                AgendaRenderer.tabela(lista),
+            )
+            .join('');
+        }
+        return { render };
+      })();
+
+      // ─── FriosRenderer ───────────────────────────────────────────────────
+      // Aba secundária: `?view=frios`, a view da Fase 2 — consumida, não
+      // reimplementada (docs/CRM_FASE2_API.md).
+      const FriosRenderer = (function () {
+        function render(resposta) {
+          const itens = (resposta && resposta.itens) || [];
+          if (!itens.length) {
+            return '<div class="vazio">Nenhum lead na lista de recuperação.</div>';
+          }
+          const linhas = itens
+            .map((i) => {
+              const wpp = LinkBuilder.conversa(i.telefone);
+              const acoes = [];
+              if (i.telefone) {
+                acoes.push(
+                  '<button type="button" class="btn-acao" data-lead="' +
+                    esc(i.telefone) +
+                    '">📄 Detalhe</button>',
+                );
+              }
+              if (wpp) {
+                acoes.push(
+                  '<a class="btn-acao" href="' +
+                    esc(wpp) +
+                    '" target="_blank" rel="noopener">💬 Conversa</a>',
+                );
+              }
+              return (
+                '<tr>' +
+                '<td>' +
+                esc(ou(i.nome)) +
+                '</td>' +
+                '<td>' +
+                esc(ROTULO_MOTIVO_FRIO[i.motivo] || ou(i.motivo)) +
+                '</td>' +
+                '<td>' +
+                esc(dataCurta(i.data)) +
+                '</td>' +
+                '<td>' +
+                (i.travado ? badge('Travado', 'warn') : '') +
+                (i.reengajavel === false ? badge('Sem telefone', 'neutro') : '') +
+                '</td>' +
+                '<td><div class="acoes">' +
+                acoes.join('') +
+                '</div></td>' +
+                '</tr>'
+              );
+            })
+            .join('');
+          return (
+            '<h2 class="secao-titulo">Leads a recuperar (' +
+            itens.length +
+            ')</h2>' +
+            '<div class="tabela-wrap"><table>' +
+            '<thead><tr><th>Nome</th><th>Motivo</th><th>Data</th><th></th><th></th></tr></thead>' +
+            '<tbody>' +
+            linhas +
+            '</tbody></table></div>'
+          );
+        }
+        return { render };
+      })();
+
+      // ─── BuscaRenderer ───────────────────────────────────────────────────
+      const BuscaRenderer = (function () {
+        function render() {
+          const erro = CrmState.lead.getErro();
+          let resultado = '';
+          if (CrmState.lead.isCarregando()) {
+            resultado = '<div class="vazio">Procurando…</div>';
+          } else if (erro) {
+            resultado =
+              '<div class="aviso ' +
+              (erro.naoEncontrado ? 'aviso-info' : 'aviso-erro') +
+              '" id="busca-resultado">' +
+              esc(erro.mensagem) +
+              '</div>';
+          } else if (CrmState.lead.getDoc()) {
+            resultado =
+              '<div class="vazio" id="busca-resultado">Lead aberto no detalhe ao lado.</div>';
+          }
+          return (
+            '<form class="busca-form" id="form-busca">' +
+            '<label class="sr-only" for="inp-telefone">Telefone</label>' +
+            '<input id="inp-telefone" name="telefone" type="tel" autocomplete="off" ' +
+            'placeholder="Telefone: 43 99651-7182" />' +
+            '<button class="btn-primario" type="submit">Buscar</button>' +
+            '</form>' +
+            '<p class="status-linha">Busca pelo telefone do responsável — o mesmo Ctrl+F que ela faz na planilha.</p>' +
+            resultado
+          );
+        }
+        return { render };
+      })();
+
+      // ─── LeadDetailRenderer ──────────────────────────────────────────────
+      // Detalhe do lead no padrão de modal do proposta.html (`cfg-modal`):
+      // bebês, agendamentos e o botão "Gerar proposta" — um por bebê, porque
+      // um responsável pode ter dois filhos com turmas e sexos diferentes (a
+      // fórmula que este botão aposenta só sabia lidar com um).
+      const LeadDetailRenderer = (function () {
+        function _campo(rotulo, valor) {
+          return (
+            '<div class="campo"><dt>' +
+            esc(rotulo) +
+            '</dt><dd>' +
+            (typeof valor === 'string' ? esc(valor) : valor) +
+            '</dd></div>'
+          );
+        }
+
+        /** Agendamentos do bebê, do mais recente para o mais antigo. */
+        function _agendamentosDo(lead, nomeBebe) {
+          const todos = lead.agendamentos || [];
+          const doBebe = todos.filter((a) => a.bebe === nomeBebe);
+          // Lead com um único bebê pode ter agendamento sem o nome preenchido
+          // (linha antiga da planilha) — nesse caso todos são dele.
+          const lista = doBebe.length || (lead.bebes || []).length > 1 ? doBebe : todos;
+          return lista
+            .slice()
+            .sort((a, b) =>
+              String((b.data || '') + ' ' + (b.hora || '')).localeCompare(
+                String((a.data || '') + ' ' + (a.hora || '')),
+              ),
+            );
+        }
+
+        function _bebe(lead, bebe) {
+          const agendamentos = _agendamentosDo(lead, bebe.nome);
+          const ultimo = agendamentos[0] || {};
+          const href = LinkBuilder.proposta({
+            mae: (lead.responsavel && lead.responsavel.nome) || lead.nomeWhatsApp,
+            filho: bebe.nome,
+            sexo: bebe.sexo,
+            turma: ultimo.turma,
+            pePaga:
+              !!ultimo.pagamentoPE && ultimo.pagamentoPE.status === BGL_CONST.CRM.PAGAMENTO_PE.PAGO,
+          });
+          return (
+            '<div class="bebe-card">' +
+            '<div class="bebe-nome">' +
+            esc(ou(bebe.nome, 'Bebê sem nome')) +
+            '</div>' +
+            '<div class="item-sub">' +
+            esc(ou(bebe.nascimento, 'nascimento não informado')) +
+            ' · ' +
+            esc(ou(bebe.sexo, 'sexo não informado')) +
+            (bebe.prematuro ? ' · prematuro' : '') +
+            (bebe.alergia ? ' · alergia: ' + esc(bebe.alergia) : '') +
+            '</div>' +
+            '<div class="acoes">' +
+            '<a class="btn-acao" data-proposta href="' +
+            esc(href) +
+            '" target="_blank" rel="noopener">📄 Gerar proposta</a>' +
+            '</div>' +
+            '</div>'
+          );
+        }
+
+        function _agendamento(a) {
+          return (
+            '<tr>' +
+            '<td>' +
+            esc(dataCurta(a.data)) +
+            '</td>' +
+            '<td>' +
+            esc(ou(a.hora)) +
+            '</td>' +
+            '<td>' +
+            esc(ou(a.bebe)) +
+            '</td>' +
+            '<td>' +
+            esc(ou(a.turma)) +
+            '</td>' +
+            '<td>' +
+            esc(ou(a.status)) +
+            '</td>' +
+            '<td>' +
+            badgeConfirmacao(a.confirmacao && a.confirmacao.status) +
+            '</td>' +
+            '<td>' +
+            badgePagamentoPE(a.pagamentoPE && a.pagamentoPE.status) +
+            '</td>' +
+            '<td>' +
+            (a.compareceu ? badge('Compareceu', 'ok') : '') +
+            (a.fechou ? badge('Fechou', 'ok') : '') +
+            '</td>' +
+            '</tr>'
+          );
+        }
+
+        function render(resposta) {
+          const lead = (resposta && resposta.lead) || {};
+          const wpp = LinkBuilder.conversa(lead.telefone || resposta.id);
+          const bebes = lead.bebes || [];
+          const agendamentos = (lead.agendamentos || [])
+            .slice()
+            .sort((a, b) =>
+              String((b.data || '') + ' ' + (b.hora || '')).localeCompare(
+                String((a.data || '') + ' ' + (a.hora || '')),
+              ),
+            );
+
+          return (
+            '<dl>' +
+            _campo(
+              'Responsável',
+              ou((lead.responsavel && lead.responsavel.nome) || lead.nomeWhatsApp),
+            ) +
+            _campo('Telefone', ou(lead.telefone || resposta.id)) +
+            _campo('E-mail', ou(lead.responsavel && lead.responsavel.email)) +
+            _campo('Canal', ou(lead.canal)) +
+            _campo('Como conheceu', ou(lead.comoConheceu)) +
+            _campo('Primeiro contato', ou(lead.primeiroContatoEm)) +
+            _campo(
+              'Recuperação',
+              (lead.recuperacao && lead.recuperacao.travado ? badge('Travado', 'warn') : '') +
+                (lead.recuperacao && lead.recuperacao.reengajavel === false
+                  ? badge('Não reengajável', 'neutro')
+                  : badge('Reengajável', 'ok')),
+            ) +
+            '</dl>' +
+            (wpp
+              ? '<div class="acoes"><a class="btn-acao" href="' +
+                esc(wpp) +
+                '" target="_blank" rel="noopener">💬 Abrir conversa</a></div>'
+              : '') +
+            '<h3 class="secao-titulo">Bebês (' +
+            bebes.length +
+            ')</h3>' +
+            (bebes.length
+              ? bebes.map((b) => _bebe(lead, b)).join('')
+              : '<div class="vazio">Nenhum bebê cadastrado.</div>') +
+            '<h3 class="secao-titulo">Agendamentos (' +
+            agendamentos.length +
+            ')</h3>' +
+            (agendamentos.length
+              ? '<div class="tabela-wrap"><table><thead><tr>' +
+                '<th>Data</th><th>Hora</th><th>Bebê</th><th>Turma</th><th>Status</th>' +
+                '<th>Confirmação</th><th>PE</th><th></th>' +
+                '</tr></thead><tbody>' +
+                agendamentos.map(_agendamento).join('') +
+                '</tbody></table></div>'
+              : '<div class="vazio">Nenhum agendamento — este lead nunca agendou.</div>')
+          );
+        }
+
+        return { render };
+      })();
+
+      // ─── UIRenderer ──────────────────────────────────────────────────────
+      // Fachada: escolhe o sub-renderer da aba ativa e desenha a barra de
+      // status. Mesmo padrão do `UIRenderer` do planos.html.
+      const UIRenderer = (function () {
+        const ABAS = [
+          { id: ABA.PAINEL, rotulo: '📌 Painel do Dia' },
+          { id: ABA.SEMANA, rotulo: '🗓️ Semana' },
+          { id: ABA.FRIOS, rotulo: '❄️ Frios' },
+          { id: ABA.BUSCA, rotulo: '🔎 Buscar' },
+        ];
+        // Hora cheia usada no último desenho do painel — o tique só redesenha
+        // quando ela muda, para não sacudir a tela a cada minuto à toa.
+        let _horaDesenhada = null;
+
+        function renderTabs() {
+          const nav = document.getElementById('tabs');
+          nav.innerHTML = ABAS.map(
+            (a) =>
+              '<button class="tab" role="tab" data-aba="' +
+              a.id +
+              '" aria-selected="false">' +
+              esc(a.rotulo) +
+              '</button>',
+          ).join('');
+        }
+
+        function _status() {
+          if (CrmState.ui.isCarregando()) return 'Buscando na API…';
+          const em = CrmState.ui.getAtualizadoEm();
+          if (!em) return '';
+          const hora = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: BGL_CONST.TZ,
+            hour: '2-digit',
+            minute: '2-digit',
+            hourCycle: 'h23',
+          }).format(new Date(em));
+          const sufixo =
+            CrmState.ui.getAba() === ABA.PAINEL ? ' · agora são ' + Relogio.horaAgora() : '';
+          return 'Atualizado às ' + hora + sufixo;
+        }
+
+        function render() {
+          const aba = CrmState.ui.getAba();
+          document.querySelectorAll('#tabs .tab').forEach((b) => {
+            b.setAttribute('aria-selected', String(b.dataset.aba === aba));
+          });
+          document.getElementById('status-linha').textContent = _status();
+
+          const erro = CrmState.ui.getErro();
+          const dados = CrmState.dados.get(aba);
+          let html = '';
+          if (erro) {
+            html = '<div class="aviso aviso-erro" id="erro-tela">' + esc(erro.mensagem) + '</div>';
+          }
+          if (aba === ABA.BUSCA) {
+            html = BuscaRenderer.render();
+          } else if (dados) {
+            const sub =
+              aba === ABA.PAINEL
+                ? PainelRenderer
+                : aba === ABA.SEMANA
+                  ? SemanaRenderer
+                  : FriosRenderer;
+            html += sub.render(dados);
+          } else if (!erro) {
+            html = '<div class="vazio">Carregando…</div>';
+          }
+          document.getElementById('conteudo').innerHTML = html;
+          _horaDesenhada = Relogio.horaCorrente();
+        }
+
+        /**
+         * Tique do relógio: redesenha o Painel do Dia quando a hora cheia muda,
+         * SEM chamar a API. É o que faz o bloco das 14h virar "agora" às 14:00
+         * e "já passou" às 15:00 (decisão D8, item b).
+         */
+        function talvezRedesenharPeloRelogio() {
+          if (CrmState.ui.getAba() !== ABA.PAINEL) return;
+          if (Relogio.horaCorrente() === _horaDesenhada) return;
+          render();
+        }
+
+        function renderLead() {
+          const modal = document.getElementById('lead-modal');
+          const doc = CrmState.lead.getDoc();
+          if (!doc) {
+            modal.style.display = 'none';
+            return;
+          }
+          document.getElementById('lead-modal-titulo').textContent =
+            (doc.lead && doc.lead.responsavel && doc.lead.responsavel.nome) ||
+            (doc.lead && doc.lead.nomeWhatsApp) ||
+            doc.id;
+          document.getElementById('lead-modal-body').innerHTML = LeadDetailRenderer.render(doc);
+          modal.style.display = 'flex';
+        }
+
+        return { renderTabs, render, renderLead, talvezRedesenharPeloRelogio };
+      })();
+
+      // ─── Atualizador ─────────────────────────────────────────────────────
+      // Política de refetch da decisão D8 (item c), na ordem de importância que
+      // ela declara — a tela fica aberta o dia inteiro e cada busca varre a
+      // coleção (~2,5k docs), então aba parada não pode gastar leitura:
+      //   1. NÃO busca em aba oculta (Page Visibility API) — o maior corte;
+      //   2. busca ao voltar o foco para a aba;
+      //   3. polling de 5 minutos enquanto visível;
+      //   4. botão "Atualizar" manual.
+      const Atualizador = (function () {
+        const POLL_MS = 5 * 60 * 1000;
+        const TIQUE_MS = 30 * 1000;
+        // Janela curta que evita busca dupla quando `visibilitychange` e
+        // `focus` disparam juntos (voltar para a aba dispara os dois).
+        const DEBOUNCE_MS = 2000;
+        let _ultimaBusca = 0;
+
+        function visivel() {
+          return document.visibilityState !== 'hidden';
+        }
+
+        function marcarBusca() {
+          _ultimaBusca = Date.now();
+        }
+
+        function _tique() {
+          UIRenderer.talvezRedesenharPeloRelogio();
+          if (!visivel()) return;
+          // Passou da meia-noite com a tela aberta: a janela do painel é de
+          // ontem. Busca já, sem esperar os 5 minutos.
+          if (CrmController.janelaVencida()) return CrmController.buscar();
+          if (Date.now() - _ultimaBusca >= POLL_MS) CrmController.buscar();
+        }
+
+        function aoRecuperarFoco() {
+          if (!visivel()) return;
+          if (CrmState.ui.isCarregando()) return;
+          if (Date.now() - _ultimaBusca < DEBOUNCE_MS) return;
+          CrmController.buscar();
+        }
+
+        function iniciar() {
+          setInterval(_tique, TIQUE_MS);
+          document.addEventListener('visibilitychange', aoRecuperarFoco);
+          window.addEventListener('focus', aoRecuperarFoco);
+        }
+
+        return { iniciar, marcarBusca, visivel };
+      })();
+
+      // ─── CrmController ───────────────────────────────────────────────────
+      // Orquestra aba ativa, janela de datas, busca de dados e abertura do
+      // detalhe do lead. Não desenha nada e não fala com a rede direto — quem
+      // desenha é o `UIRenderer`, quem busca é o `ApiClient`.
+      const CrmController = (function () {
+        /** Janela `{ de, ate }` da aba, em `YYYY-MM-DD` na timezone da unidade. */
+        function janelaDaAba(aba) {
+          const hoje = Relogio.hojeISO();
+          // Painel do Dia: só hoje. Semana: hoje..hoje+5, a mesma janela do
+          // `view=resumo-status` (JANELA_RESUMO_DIAS_A_FRENTE em crm-const.js).
+          return aba === ABA.SEMANA
+            ? { de: hoje, ate: Relogio.somaDias(hoje, 5) }
+            : { de: hoje, ate: hoje };
+        }
+
+        /** A janela já carregada envelheceu (a tela passou da meia-noite aberta)? */
+        function janelaVencida() {
+          const aba = CrmState.ui.getAba();
+          if (aba === ABA.BUSCA || aba === ABA.FRIOS) return false;
+          const dados = CrmState.dados.get(aba);
+          if (!dados || !dados.janela) return false;
+          return dados.janela.de !== Relogio.hojeISO();
+        }
+
+        async function buscar() {
+          const aba = CrmState.ui.getAba();
+          if (aba === ABA.BUSCA) return; // a aba de busca só responde a submit
+          Atualizador.marcarBusca();
+          CrmState.ui.setCarregando(true);
+          CrmState.ui.setErro(null);
+          UIRenderer.render();
+          try {
+            const params =
+              aba === ABA.FRIOS ? { view: VIEW.FRIOS } : { view: VIEW.AGENDA, ...janelaDaAba(aba) };
+            CrmState.dados.set(aba, await ApiClient.get('/leads', params));
+            CrmState.ui.setAtualizadoEm(Date.now());
+          } catch (e) {
+            _tratarErro(e);
+          } finally {
+            CrmState.ui.setCarregando(false);
+            UIRenderer.render();
+          }
+        }
+
+        function _tratarErro(e) {
+          if (e.sessaoExpirada) {
+            AuthController.expirar(e.message);
+            return;
+          }
+          CrmState.ui.setErro({ mensagem: e.amigavel ? e.message : 'Erro inesperado na tela.' });
+          if (!e.amigavel) console.error('[CRM]', e);
+        }
+
+        function irPara(aba) {
+          if (aba === CrmState.ui.getAba()) return;
+          CrmState.ui.setAba(aba);
+          CrmState.ui.setErro(null);
+          UIRenderer.render();
+          // Troca de aba REFAZ a chamada com a janela certa — o dado de cada
+          // aba tem validade própria, e a Semana não serve para o Painel.
+          buscar();
+        }
+
+        function atualizarAgora() {
+          if (CrmState.ui.getAba() === ABA.BUSCA) return;
+          buscar();
+        }
+
+        async function abrirLead(telefone) {
+          CrmState.lead.set({ carregando: true });
+          UIRenderer.render();
+          try {
+            const doc = await ApiClient.get('/leads/' + encodeURIComponent(telefone));
+            CrmState.lead.set({ doc });
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              CrmState.lead.limpar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            CrmState.lead.set({
+              erro: {
+                naoEncontrado: !!e.naoEncontrado,
+                mensagem: e.naoEncontrado
+                  ? 'Nenhum lead com esse telefone. Confira o número — ou ele ainda não existe no CRM.'
+                  : e.amigavel
+                    ? e.message
+                    : 'Erro inesperado na busca.',
+              },
+            });
+          }
+          UIRenderer.render();
+          UIRenderer.renderLead();
+        }
+
+        function fecharLead() {
+          CrmState.lead.limpar();
+          UIRenderer.renderLead();
+          UIRenderer.render();
+        }
+
+        function iniciar() {
+          UIRenderer.renderTabs();
+          document.getElementById('tabs').addEventListener('click', (e) => {
+            const botao = e.target.closest('[data-aba]');
+            if (botao) irPara(botao.dataset.aba);
+          });
+          // Delegação em vez de `onclick` no HTML gerado: nome de lead vem da
+          // API e não tem por que virar código.
+          document.getElementById('conteudo').addEventListener('click', (e) => {
+            const alvo = e.target.closest('[data-lead]');
+            if (alvo) abrirLead(alvo.dataset.lead);
+          });
+          document.getElementById('conteudo').addEventListener('submit', (e) => {
+            if (e.target.id !== 'form-busca') return;
+            e.preventDefault();
+            const telefone = e.target.elements.telefone.value.trim();
+            if (telefone) abrirLead(telefone);
+          });
+          document.getElementById('btn-atualizar').addEventListener('click', atualizarAgora);
+          document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
+          document.getElementById('lead-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'lead-modal') fecharLead();
+          });
+
+          UIRenderer.render();
+          buscar();
+          Atualizador.iniciar();
+        }
+
+        return { iniciar, irPara, buscar, atualizarAgora, abrirLead, fecharLead, janelaVencida };
+      })();
+
+      // ─── AuthController ──────────────────────────────────────────────────
+      // Login Google idêntico ao do proposta.html: mesma allowlist
+      // (`BGL_CONFIG.allowedEmails`) e MESMA sessão — as duas páginas dividem a
+      // chave de `localStorage` via `AuthSession` (shared.js), então quem entra
+      // numa já entra na outra. Sem login não se vê nada.
+      //
+      // A diferença: aqui a sessão também guarda o ID token do Firebase, que é
+      // o que a API de leads exige no `Authorization: Bearer`
+      // (docs/CRM_FASE3_API.md). O token vivo vem sempre do
+      // `auth.currentUser.getIdToken()`, que renova sozinho; o guardado é
+      // fallback para o intervalo em que o Firebase ainda não restaurou a
+      // sessão dele — se ele tiver expirado, a API devolve 401 e a tela volta
+      // para o login, que é o comportamento certo.
+      const AuthController = (function () {
+        function _mostrarErro(mensagem) {
+          const el = document.getElementById('login-error');
+          el.textContent = mensagem;
+          el.style.display = 'block';
+        }
+
+        function _travarBotao(travado) {
+          const btn = document.getElementById('btn-google-login');
+          if (btn) btn.disabled = travado;
+        }
+
+        function _mostrarLogin() {
+          document.getElementById('login-version-badge').textContent =
+            'v' + BGL_CONST.APP_VERSION + ' · ' + BGL_CONST.APP_DATE;
+          document.getElementById('login-screen').style.display = 'flex';
+          document.getElementById('crm-app').style.display = 'none';
+          if (BrowserEnv.isInAppBrowser()) _mostrarAvisoWebview();
+        }
+
+        function _mostrarApp(sessao) {
+          document.getElementById('user-email').textContent = sessao.email;
+          document.getElementById('app-version-badge').textContent =
+            'v' + BGL_CONST.APP_VERSION + ' · ' + BGL_CONST.APP_DATE;
+          const isHml = BGL_CONFIG.env === 'hml';
+          const badgeEnv = document.getElementById('env-badge');
+          badgeEnv.textContent = isHml ? 'HML' : 'PROD';
+          badgeEnv.className = isHml ? 'hml' : 'prod';
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('crm-app').style.display = 'flex';
+          CrmController.iniciar();
+        }
+
+        function _mostrarAvisoWebview() {
+          const el = document.getElementById('inapp-warning');
+          if (!el) return;
+          const browser = BrowserEnv.browserRecomendado();
+          el.innerHTML =
+            '<strong class="inapp-title">Browser interno detectado</strong>' +
+            'O login com Google não funciona aqui. Abra esta página no <strong>' +
+            esc(browser) +
+            '</strong> para continuar.' +
+            '<button class="btn-copy-url" id="btn-copiar-url">📋 Copiar link</button>';
+          el.style.display = 'block';
+          document.getElementById('btn-copiar-url').addEventListener('click', copiarUrl);
+          _travarBotao(true);
+        }
+
+        function copiarUrl() {
+          const url = window.location.href;
+          const browser = BrowserEnv.browserRecomendado();
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText(url)
+              .then(() => _mostrarErro('Link copiado! Cole no ' + browser + ' para abrir.'))
+              .catch(() => prompt('Copie este link e abra no ' + browser + ':', url));
+          } else {
+            prompt('Copie este link e abra no ' + browser + ':', url);
+          }
+        }
+
+        function login() {
+          const fb = window._fb;
+          if (!fb) {
+            _mostrarErro('Firebase não disponível. Verifique sua conexão e recarregue a página.');
+            return;
+          }
+          _travarBotao(true);
+          fb.signInWithPopup(fb.auth, fb.provider)
+            .then(async (resultado) => {
+              const email = (resultado.user.email || '').toLowerCase();
+              if (!AuthSession.isAllowed(email)) {
+                fb.signOut(fb.auth).catch(() => {});
+                _mostrarErro('Este e-mail não tem permissão de acesso. Contate o responsável.');
+                _travarBotao(false);
+                return;
+              }
+              let token = null;
+              try {
+                token = await resultado.user.getIdToken();
+              } catch (e) {
+                console.warn('[CRM] Não consegui o ID token no login:', e.message);
+              }
+              AuthSession.save({ email, name: resultado.user.displayName || email, token });
+              _mostrarApp({ email });
+            })
+            .catch((err) => {
+              _travarBotao(false);
+              console.error('[CRM Auth] Erro no login:', err.code, err.message, err);
+              if (
+                err.code !== 'auth/cancelled-by-user' &&
+                err.code !== 'auth/popup-closed-by-user'
+              ) {
+                _mostrarErro(
+                  'Erro ao fazer login. Tente novamente. (código: ' +
+                    (err.code || err.message) +
+                    ')',
+                );
+              }
+            });
+        }
+
+        function logout() {
+          AuthSession.clear();
+          const fb = window._fb;
+          if (fb) fb.signOut(fb.auth).catch(() => {});
+          _mostrarLogin();
+          _travarBotao(false);
+        }
+
+        /** Sessão recusada pela API (401): volta ao login explicando por quê. */
+        function expirar(mensagem) {
+          AuthSession.clear();
+          _mostrarLogin();
+          _travarBotao(false);
+          _mostrarErro(mensagem);
+        }
+
+        /** ID token para o `Authorization: Bearer` — ver o comentário do módulo. */
+        async function getIdToken() {
+          const fb = window._fb;
+          if (fb && fb.auth && fb.auth.currentUser) {
+            try {
+              return await fb.auth.currentUser.getIdToken();
+            } catch (e) {
+              console.warn('[CRM] Falha ao renovar o ID token:', e.message);
+            }
+          }
+          const sessao = AuthSession.get();
+          return (sessao && sessao.token) || null;
+        }
+
+        function init() {
+          document.getElementById('btn-google-login').addEventListener('click', login);
+          document.getElementById('btn-logout').addEventListener('click', logout);
+          const sessao = AuthSession.get();
+          if (!sessao) {
+            _mostrarLogin();
+            return;
+          }
+          // A allowlist é reconferida na ABERTURA, não só no login: quem sai da
+          // equipe pode ter uma sessão de 24h ainda válida no browser. A API
+          // recusaria de qualquer jeito (403), mas a tela não tem por que
+          // desenhar a agenda para depois esvaziar.
+          if (!AuthSession.isAllowed(sessao.email)) {
+            AuthSession.clear();
+            _mostrarLogin();
+            _mostrarErro('Este e-mail não tem permissão de acesso. Contate o responsável.');
+            return;
+          }
+          _mostrarApp(sessao);
+        }
+
+        return { init, login, logout, expirar, getIdToken, copiarUrl };
+      })();
+
+      AuthController.init();
+    </script>
+  </body>
+</html>
