@@ -467,10 +467,6 @@
         background: var(--neutral-bg);
         color: var(--neutral);
       }
-      .badge-erro {
-        background: var(--danger-bg);
-        color: var(--danger);
-      }
       /* ─── TABELA / LISTA COMPLETA ─── */
       .secao-titulo {
         font-size: 0.95rem;
@@ -1056,20 +1052,6 @@
         return '<span class="badge badge-' + tom + '">' + esc(texto) + '</span>';
       }
 
-      /**
-       * Lead sem NENHUM contato — nem telefone nem chatID. Só existe no CRM
-       * porque o `agendamentoId` da linha o segura como chave provisória
-       * (normalize.js:docIdDoLead); antes disso ele ficava fora da tela.
-       *
-       * É estado anômalo: quase toda linha tem ao menos um dos dois. Aparece em
-       * destaque para a equipe corrigir o contato na planilha — sem contato não
-       * dá para confirmar, mandar PIX nem conversar, e o lead se funde ao real
-       * assim que o telefone entrar.
-       */
-      function badgeSemContato(dados) {
-        return !dados.telefone && !dados.chatID ? ' ' + badge('⚠️ sem contato', 'erro') : '';
-      }
-
       function badgeConfirmacao(valor) {
         if (!valor) return badge('Sem confirmação', 'neutro');
         const tom = valor === BGL_CONST.CRM.CONFIRMACAO.CONFIRMADO ? 'ok' : 'warn';
@@ -1165,7 +1147,6 @@
             badgeConfirmacao(dados.confirmacao) +
             ' ' +
             badgePagamentoPE(dados.pagamentoPE) +
-            badgeSemContato(dados) +
             '</div>' +
             acoes(dados, opcoes) +
             '</div>'
