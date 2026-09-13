@@ -179,6 +179,26 @@ PIX = total à vista com 5% de desconto.
 
 ---
 
+## Planilha "Dados de atendimento IA" — ao reagendar, não copie a linha
+
+Para remarcar uma Primeira Experiência, **crie uma linha nova** — não duplique a
+que existe.
+
+Cada linha tem um identificador próprio, numa das últimas colunas. Copiando a
+linha, o identificador vem junto, e aí **duas linhas dizem ser a mesma**. O
+sistema acredita, entende que foi só a data que mudou, e as duas viram um
+agendamento só — o antigo some do CRM.
+
+Se já copiou, o conserto é simples: **apague o conteúdo da coluna do
+identificador** na linha nova (a última preenchida, com um código tipo
+`8f25a6aa-7901-...`). Na passada seguinte ela ganha um identificador próprio e
+as duas passam a existir separadas.
+
+O sistema também percebe sozinho e corrige, mas pode levar até meia hora — e
+nesse meio tempo a agenda fica errada.
+
+---
+
 ## Planilha "Dados de atendimento IA" — não apague linhas
 
 Quando uma Primeira Experiência cai, é reagendada ou entrou errado, **marque o
