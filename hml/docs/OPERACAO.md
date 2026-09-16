@@ -19,8 +19,7 @@ mesma sessão: entrou numa, já está dentro da outra (a sessão vale 24 horas).
 
 ## O CRM (crm.html) — a tela do dia a dia
 
-Substitui abrir a planilha "Dados de atendimento IA" para ver quem chega hoje.
-**Nesta versão ela só MOSTRA — nada do que você faz aqui altera a planilha.**
+Substitui abrir a planilha "Dados de atendimento IA" para ver quem chega hoje **e para marcar as quatro ações do dia a dia** — Compareceu, Fechou, Cancelar e Travar recuperação.
 
 ### Painel do Dia — a tela que abre primeiro
 
@@ -55,13 +54,19 @@ vazia na planilha.
 
 Em **todas as três faixas**, cada linha tem:
 
-- **Presença** e **Fechou** — por enquanto só **mostram** o que a planilha já diz.
-  Ainda **não** são botões: marcar presença e marcar fechamento chegam na próxima
-  entrega, junto com a gravação de volta na planilha. Até lá, continue marcando na
-  planilha como você faz hoje. Eles ficam nas três faixas de propósito: a presença
-  é marcada quando a mãe **chega** — ou seja, dentro do horário corrente, não só
-  depois que ele passa —, e você precisa enxergar como está cada agendamento antes
-  mesmo de a hora chegar.
+- **Marcar presença** — o mesmo que marcar o checkbox `Compareceu` (coluna V) na
+  planilha. Só aparece enquanto a presença ainda não foi marcada: depois de um
+  clique, vira "✓ Presença" e não tem como desmarcar pela tela (se marcou errado,
+  avise o Michel). Fica nas três faixas de propósito: a presença é marcada quando
+  a mãe **chega** — ou seja, dentro do horário corrente, não só depois que ele
+  passa —, e você precisa enxergar como está cada agendamento antes mesmo de a
+  hora chegar.
+- **Marcar fechou** — o mesmo que marcar o checkbox `Fechou` (coluna X). Mesma
+  regra do "Marcar presença": só aparece enquanto ainda não foi marcado.
+- **Cancelar** — o mesmo que escrever `cancelado` na coluna de status
+  (`statusConfirmacao`, coluna T) da planilha. **Pede confirmação** antes de
+  agir, porque é a única das quatro ações difícil de desfazer: o agendamento sai
+  da agenda de hoje e da Semana assim que você confirma.
 - **💬 Conversa** — abre a conversa no WhatsApp com aquele telefone.
 
 Só na faixa **"já passou"** aparece também:
@@ -69,12 +74,36 @@ Só na faixa **"já passou"** aparece também:
 - **📄 Proposta** — abre o detalhe do lead, de onde sai o link de proposta pronto.
   Fica só ali porque proposta é conversa de depois da Primeira Experiência.
 
+Cada clique aparece na tela **na hora** — antes mesmo de a planilha confirmar.
+Se a API recusar a ação (sem internet, sessão expirada, etc.), a tela desfaz
+sozinha o que mostrou e avisa em vermelho o que houve; tente de novo.
+
+### O aviso "não atualizou a planilha"
+
+De vez em quando um clique salva certinho no CRM mas não consegue atualizar a
+célula correspondente na planilha (a planilha caiu, a linha já não existe mais
+lá, etc.). Nesse caso aparece um aviso laranja discreto — **"Isso foi salvo no
+CRM, mas não atualizou a planilha automaticamente"**. O clique não se perdeu:
+**confira a linha correspondente na planilha "Dados de atendimento IA" e
+atualize à mão** (o mesmo checkbox/coluna que a ação mexeria). Se isso
+acontecer com frequência, avise o Michel — pode ser sinal de que a permissão
+de escrita na planilha caiu.
+
+### Travar recuperação (aba ❄️ Frios)
+
+Na lista de leads a recuperar, cada linha tem um botão que alterna entre
+**Travar recuperação** e **Destravar recuperação**, conforme o estado atual —
+o mesmo que marcar/desmarcar o checkbox `Travar` da aba `LeadsFrios` na
+planilha. **Travar um lead assume a recuperação dele: se ele fechar um dia —
+sem prazo — a comissão de quem travou dobra.** Só trave um lead que você está
+de fato trabalhando.
+
 ### As outras abas
 
 | Aba | O que mostra |
 |---|---|
-| **🗓️ Semana** | Os agendamentos de hoje até daqui a 5 dias, dia a dia — o que você mandava na mensagem das 18h |
-| **❄️ Frios** | Os leads a recuperar (mesma regra da aba `LeadsFrios` da planilha) |
+| **🗓️ Semana** | Os agendamentos de hoje até daqui a 5 dias, dia a dia, com telefone e link de conversa — o que você mandava na mensagem das 18h |
+| **❄️ Frios** | Os leads a recuperar (mesma regra da aba `LeadsFrios` da planilha), com o botão de travar/destravar |
 | **🔎 Buscar** | Busca pelo telefone do responsável — o Ctrl+F que você faz na planilha |
 
 ### Detalhe do lead

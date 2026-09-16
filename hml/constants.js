@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.8',
-  APP_DATE: '2026-08-25',
+  APP_VERSION: '3.9',
+  APP_DATE: '2026-09-16',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -93,5 +93,28 @@ const BGL_CONST = {
       FALTOU: 'faltou',
       NAO_FECHOU: 'nao_fechou',
     },
+    /**
+     * Eventos que os botões de escrita da tela disparam via `PATCH
+     * /leads/{id}` — os mesmos nomes de `functions/leads-logic.js:EVENT_HANDLERS`
+     * e de `functions/sheets-write.js:EVENTOS` (Fase 3, T6). "Reagendar" fica
+     * fora de propósito (D5 do `docs/CRM_FASE3_PLANO.md`): é o único botão que
+     * CRIARIA agendamento, e não faz parte desta lista.
+     */
+    EVENTO: {
+      COMPARECEU: 'compareceu',
+      FECHOU: 'fechou',
+      CANCELADO: 'cancelado',
+      TRAVAR_RECUPERACAO: 'travar_recuperacao',
+      DESTRAVAR_RECUPERACAO: 'destravar_recuperacao',
+    },
+    /**
+     * Rollback de 1 minuto da Fase 3B (T6): com a flag desligada, nenhum botão
+     * de escrita é desenhado e a tela volta a ser byte a byte a somente-leitura
+     * da T4 — sem precisar de deploy da API. Nasce DESLIGADA de propósito: o
+     * estado seguro é o que não escreve, e o write-back da planilha (T5) tem a
+     * própria flag (`BGL_SHEETS_WRITEBACK`, no servidor) que também precisa
+     * estar ligada para o clique não virar divergência planilha × Firestore.
+     */
+    FLAG_ACOES_ESCRITA: false,
   },
 };
