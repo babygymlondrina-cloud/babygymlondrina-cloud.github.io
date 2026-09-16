@@ -6,7 +6,7 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.9',
+  APP_VERSION: '3.10',
   APP_DATE: '2026-09-16',
   PLANO: {
     ANUAL: 'anual',
@@ -108,13 +108,16 @@ const BGL_CONST = {
       DESTRAVAR_RECUPERACAO: 'destravar_recuperacao',
     },
     /**
-     * Rollback de 1 minuto da Fase 3B (T6): com a flag desligada, nenhum botão
-     * de escrita é desenhado e a tela volta a ser byte a byte a somente-leitura
-     * da T4 — sem precisar de deploy da API. Nasce DESLIGADA de propósito: o
-     * estado seguro é o que não escreve, e o write-back da planilha (T5) tem a
-     * própria flag (`BGL_SHEETS_WRITEBACK`, no servidor) que também precisa
-     * estar ligada para o clique não virar divergência planilha × Firestore.
+     * Rollback de 1 minuto da Fase 3B (T6): desligar aqui tira todos os botões
+     * de escrita na hora, sem precisar de deploy da API — a tela volta a ser
+     * byte a byte a somente-leitura da T4. Nasceu DESLIGADA (T6, PR #229) até
+     * o write-back na planilha (T5) ser validado ao vivo pela `apiHml`
+     * (`docs/COMANDOS.md`, passos 1–4 da "Primeira ativação"); **ligada desde
+     * 2026-09-16** para a semana paralela em HML (`docs/CRM_FASE3_ADOCAO.md`).
+     * A API tem a própria flag (`BGL_SHEETS_WRITEBACK`, no servidor) — as duas
+     * precisam estar ligadas para o clique chegar até a planilha; só esta aqui
+     * controla se o botão aparece.
      */
-    FLAG_ACOES_ESCRITA: false,
+    FLAG_ACOES_ESCRITA: true,
   },
 };

@@ -738,10 +738,12 @@
       //
       // ESCRITA (T6): quatro ações — Compareceu, Fechou, Cancelar, Travar
       // recuperação — atrás de `BGL_CONST.CRM.FLAG_ACOES_ESCRITA`
-      // (constants.js), que nasce DESLIGADA. Com a flag desligada, esta tela
-      // continua byte a byte a somente-leitura da T4: `AcoesController` não
-      // desenha nenhum botão e `ApiClient.patch` nunca é chamado — é o
-      // rollback de 1 minuto da semana paralela (docs/CRM_FASE3_PLANO.md,
+      // (constants.js). Nasceu DESLIGADA (PR #229) até o write-back na
+      // planilha ser validado ao vivo pela apiHml; ligada desde 2026-09-16
+      // para a semana paralela em HML (docs/CRM_FASE3_ADOCAO.md). Com ela
+      // desligada, esta tela continua byte a byte a somente-leitura da T4:
+      // `AcoesController` não desenha nenhum botão e `ApiClient.patch` nunca
+      // é chamado — é o rollback de 1 minuto (docs/CRM_FASE3_PLANO.md,
       // decisão D4/T6). "Reagendar" fica fora de propósito (decisão D5): é o
       // único botão que CRIARIA um agendamento, e não está nesta lista.
       // ═══════════════════════════════════════════════════════════════════════
