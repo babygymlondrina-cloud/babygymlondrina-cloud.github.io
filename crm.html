@@ -594,6 +594,41 @@
       .btn-primario:hover {
         background: var(--purple-dark);
       }
+      .busca-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .busca-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        padding: 0.6rem 0.8rem;
+        font-family: 'Outfit', sans-serif;
+        cursor: pointer;
+      }
+      .busca-item:hover {
+        border-color: var(--purple);
+        background: var(--surface-muted);
+      }
+      .busca-item-nome {
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: var(--text);
+      }
+      .busca-item-sub {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        margin-top: 0.2rem;
+      }
+      .busca-item-tel {
+        font-size: 0.78rem;
+        color: var(--text-light);
+        margin-top: 0.2rem;
+      }
       /* ─── MODAL (padrão do cfg-modal do proposta.html) ─── */
       .modal-backdrop {
         position: fixed;
@@ -967,6 +1002,14 @@
         let _leadErro = null;
         let _leadCarregando = false;
         let _buscaFeita = false;
+        // Busca única (issue #227) — distinto de `lead` (o modal de detalhe,
+        // aberto a partir de um resultado). `_buscaResultados === null` é
+        // "ainda não buscou"; `[]` é "buscou e não achou nada" — os dois
+        // precisam de textos diferentes.
+        let _buscaQuery = '';
+        let _buscaResultados = null;
+        let _buscaCarregando = false;
+        let _buscaErro = null;
 
         return {
           ui: {
@@ -1022,6 +1065,24 @@
               _leadErro = null;
               _leadCarregando = false;
               _buscaFeita = false;
+            },
+          },
+          busca: {
+            getQuery: () => _buscaQuery,
+            setQuery: (v) => {
+              _buscaQuery = v;
+            },
+            getResultados: () => _buscaResultados,
+            setResultados: (v) => {
+              _buscaResultados = v;
+            },
+            isCarregando: () => _buscaCarregando,
+            setCarregando: (v) => {
+              _buscaCarregando = v;
+            },
+            getErro: () => _buscaErro,
+            setErro: (v) => {
+              _buscaErro = v;
             },
           },
         };
@@ -1937,32 +1998,60 @@
       })();
 
       // ─── BuscaRenderer ───────────────────────────────────────────────────
+      // Busca única (issue #227): telefone, nome do bebê ou do responsável,
+      // com tolerância a erro de digitação e fonética — `?view=busca&q=`
+      // (`functions/busca.js`). Cada resultado é uma LISTA, nunca abre direto:
+      // busca aproximada acha o lead errado com confiança, e a tela leva a
+      // ações (marcar presença, fechou) — o clique é do usuário, com contexto
+      // suficiente pra confirmar antes (bebê que casou, turma, telefone).
       const BuscaRenderer = (function () {
-        function render() {
-          const erro = CrmState.lead.getErro();
-          let resultado = '';
-          if (CrmState.lead.isCarregando()) {
-            resultado = '<div class="vazio">Procurando…</div>';
-          } else if (erro) {
-            resultado =
-              '<div class="aviso ' +
-              (erro.naoEncontrado ? 'aviso-info' : 'aviso-erro') +
-              '" id="busca-resultado">' +
-              esc(erro.mensagem) +
-              '</div>';
-          } else if (CrmState.lead.getDoc()) {
-            resultado =
-              '<div class="vazio" id="busca-resultado">Lead aberto no detalhe ao lado.</div>';
+        function _item(item) {
+          const contexto = [];
+          if (item.bebeCasado) contexto.push('👶 ' + esc(item.bebeCasado));
+          if (item.turma) contexto.push('🏷️ ' + esc(item.turma));
+          return (
+            '<button type="button" class="busca-item" data-lead="' +
+            esc(item.telefone || item.id) +
+            '">' +
+            '<div class="busca-item-nome">' +
+            esc(ou(item.nome, 'Sem nome')) +
+            '</div>' +
+            (contexto.length
+              ? '<div class="busca-item-sub">' + contexto.join(' · ') + '</div>'
+              : '') +
+            '<div class="busca-item-tel">' +
+            esc(ou(item.telefone)) +
+            '</div>' +
+            '</button>'
+          );
+        }
+
+        function _corpo() {
+          const erro = CrmState.busca.getErro();
+          if (CrmState.busca.isCarregando()) return '<div class="vazio">Procurando…</div>';
+          if (erro)
+            return '<div class="aviso aviso-erro" id="busca-resultado">' + esc(erro) + '</div>';
+          const resultados = CrmState.busca.getResultados();
+          if (resultados === null) {
+            return '<div class="vazio">Digite o nome do bebê, do responsável ou o telefone.</div>';
           }
+          if (!resultados.length) {
+            return '<div class="vazio" id="busca-resultado">Nenhum resultado.</div>';
+          }
+          return '<div class="busca-lista">' + resultados.map(_item).join('') + '</div>';
+        }
+
+        function render() {
           return (
             '<form class="busca-form" id="form-busca">' +
-            '<label class="sr-only" for="inp-telefone">Telefone</label>' +
-            '<input id="inp-telefone" name="telefone" type="tel" autocomplete="off" ' +
-            'placeholder="Telefone: 43 99651-7182" />' +
+            '<label class="sr-only" for="inp-busca">Buscar</label>' +
+            '<input id="inp-busca" name="q" type="text" autocomplete="off" value="' +
+            esc(CrmState.busca.getQuery()) +
+            '" placeholder="Nome do bebê, do responsável ou telefone" />' +
             '<button class="btn-primario" type="submit">Buscar</button>' +
             '</form>' +
-            '<p class="status-linha">Busca pelo telefone do responsável — o mesmo Ctrl+F que ela faz na planilha.</p>' +
-            resultado
+            '<p class="status-linha">Aceita erro de digitação e nome parecido — confira o contexto antes de abrir.</p>' +
+            _corpo()
           );
         }
         return { render };
@@ -2386,6 +2475,41 @@
           UIRenderer.render();
         }
 
+        /**
+         * Busca única (issue #227): `?view=busca&q=`. O mínimo de caracteres é
+         * checado aqui ANTES de chamar a API — evita um 400 previsível a cada
+         * tecla e a mensagem sai do cliente, não de um erro de rede.
+         */
+        async function pesquisar(qBruto) {
+          const q = (qBruto || '').trim();
+          CrmState.busca.setQuery(q);
+          if (q.length < BGL_CONST.CRM.MIN_CARACTERES_BUSCA) {
+            CrmState.busca.setResultados(null);
+            CrmState.busca.setErro(
+              'Digite ao menos ' + BGL_CONST.CRM.MIN_CARACTERES_BUSCA + ' caracteres.',
+            );
+            UIRenderer.render();
+            return;
+          }
+          CrmState.busca.setCarregando(true);
+          CrmState.busca.setErro(null);
+          UIRenderer.render();
+          try {
+            const resposta = await ApiClient.get('/leads', { view: VIEW.BUSCA, q });
+            CrmState.busca.setResultados(resposta.itens || []);
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              AuthController.expirar(e.message);
+              return;
+            }
+            CrmState.busca.setResultados(null);
+            CrmState.busca.setErro(e.amigavel ? e.message : 'Erro inesperado na busca.');
+          } finally {
+            CrmState.busca.setCarregando(false);
+            UIRenderer.render();
+          }
+        }
+
         function atualizarAgora() {
           if (CrmState.ui.getAba() === ABA.BUSCA) return;
           buscar();
@@ -2456,8 +2580,7 @@
           document.getElementById('conteudo').addEventListener('submit', (e) => {
             if (e.target.id !== 'form-busca') return;
             e.preventDefault();
-            const telefone = e.target.elements.telefone.value.trim();
-            if (telefone) abrirLead(telefone);
+            pesquisar(e.target.elements.q.value);
           });
           document.getElementById('btn-atualizar').addEventListener('click', atualizarAgora);
           document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
