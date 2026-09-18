@@ -425,6 +425,16 @@
         background: var(--teal-dark);
         color: var(--white);
       }
+      /* Botão de escrita (T6) desabilitado enquanto o PATCH está no ar —
+         evita duplo clique. */
+      .btn-acao:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-acao:disabled:hover {
+        background: none;
+        color: var(--teal-dark);
+      }
       /* Lugar reservado dos botões de ESCRITA — ligados na T6 (ver comentário
          no JS). Não é botão de propósito: enquanto o write-back da planilha
          (D3) não existir, clique aqui viraria divergência planilha × Firestore. */
@@ -507,6 +517,51 @@
         font-weight: 800;
         color: var(--purple-dark);
         margin: 1rem 0 0.4rem;
+      }
+      /* ─── ABA MÊS ─── */
+      .mes-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.9rem;
+        margin-bottom: 0.7rem;
+      }
+      .mes-nav strong {
+        font-size: 1rem;
+        color: var(--purple-dark);
+        min-width: 9rem;
+        text-align: center;
+      }
+      .mes-filtros {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 0.6rem;
+      }
+      .chip-filtro {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: var(--text-light);
+        background: var(--surface);
+        cursor: pointer;
+      }
+      .chip-filtro span {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: inherit;
+        opacity: 0.8;
+      }
+      .chip-filtro.ativo {
+        border-color: var(--pink-hot);
+        background: var(--tint-pink);
+        color: var(--pink-hot);
       }
       /* ─── BUSCA ─── */
       .busca-form {
@@ -720,16 +775,22 @@
     </div>
     <script>
       // ═══════════════════════════════════════════════════════════════════════
-      // CRM BGL — tela da equipe (Fase 3, T4). SOMENTE LEITURA.
+      // CRM BGL — tela da equipe (Fase 3, T4 + T6).
       //
       // Contratos: docs/CRM_FASE3_PLANO.md (D8 = o Painel do Dia, §3.3 = o que
       // esta tela consome, §3.4 = como ela é organizada por dentro) e
-      // docs/CRM_FASE3_API.md (auth, CORS, view=agenda).
+      // docs/CRM_FASE3_API.md (auth, CORS, view=agenda, write-back).
       //
-      // NENHUMA ESCRITA parte daqui — o `ApiClient` abaixo só expõe `get`, de
-      // propósito. Os botões "marcar presença"/"marcar fechou" são a T6, atrás
-      // do write-back na planilha (decisão D3): ligá-los antes disso faria cada
-      // clique da equipe virar divergência planilha × Firestore no mesmo dia.
+      // ESCRITA (T6): quatro ações — Compareceu, Fechou, Cancelar, Travar
+      // recuperação — atrás de `BGL_CONST.CRM.FLAG_ACOES_ESCRITA`
+      // (constants.js). Nasceu DESLIGADA (PR #229) até o write-back na
+      // planilha ser validado ao vivo pela apiHml; ligada desde 2026-09-16
+      // para a semana paralela em HML (docs/CRM_FASE3_ADOCAO.md). Com ela
+      // desligada, esta tela continua byte a byte a somente-leitura da T4:
+      // `AcoesController` não desenha nenhum botão e `ApiClient.patch` nunca
+      // é chamado — é o rollback de 1 minuto (docs/CRM_FASE3_PLANO.md,
+      // decisão D4/T6). "Reagendar" fica fora de propósito (decisão D5): é o
+      // único botão que CRIARIA um agendamento, e não está nesta lista.
       // ═══════════════════════════════════════════════════════════════════════
 
       const ABA = BGL_CONST.CRM.ABA;
@@ -841,7 +902,38 @@
           return FAIXA.VEM;
         }
 
-        return { hojeISO, horaAgora, horaCorrente, somaDias, faixaDaHora };
+        /** Mês corrente em `YYYY-MM`, na timezone da unidade. */
+        function mesAtual() {
+          return hojeISO().slice(0, 7);
+        }
+
+        /** `YYYY-MM` + n meses (n pode ser negativo). */
+        function mesSoma(anoMes, n) {
+          const [a, m] = anoMes.split('-').map(Number);
+          const t = new Date(Date.UTC(a, m - 1 + n, 1));
+          return t.getUTCFullYear() + '-' + String(t.getUTCMonth() + 1).padStart(2, '0');
+        }
+
+        /** `{ de, ate }` do mês inteiro (`YYYY-MM`), primeiro ao último dia. */
+        function janelaDoMes(anoMes) {
+          const [a, m] = anoMes.split('-').map(Number);
+          const de = anoMes + '-01';
+          // Dia 0 do mês seguinte = último dia deste mês.
+          const ultimo = new Date(Date.UTC(a, m, 0));
+          const ate = anoMes + '-' + String(ultimo.getUTCDate()).padStart(2, '0');
+          return { de, ate };
+        }
+
+        return {
+          hojeISO,
+          horaAgora,
+          horaCorrente,
+          somaDias,
+          faixaDaHora,
+          mesAtual,
+          mesSoma,
+          janelaDoMes,
+        };
       })();
 
       // ─── CrmState ────────────────────────────────────────────────────────
@@ -852,8 +944,25 @@
         let _carregando = false;
         let _erro = null;
         let _atualizadoEm = null;
+        // Aviso de espelho falho (T6): distinto de `_erro` — a ação FOI salva,
+        // só a planilha não recebeu. Só o `AcoesController` escreve aqui.
+        let _avisoAcao = null;
         // Resposta crua da API por aba; `null` = ainda não carregada.
-        const _dados = { [ABA.PAINEL]: null, [ABA.SEMANA]: null, [ABA.FRIOS]: null };
+        const _dados = {
+          [ABA.PAINEL]: null,
+          [ABA.SEMANA]: null,
+          [ABA.MES]: null,
+          [ABA.FRIOS]: null,
+        };
+        // Mês navegado na aba Mês (`YYYY-MM`); `null` = ainda não visitada,
+        // resolve para o mês corrente na primeira leitura (`CrmController`).
+        let _mesReferencia = null;
+        // Filtros de estado ATIVOS na aba Mês — client-side, sobre os itens já
+        // carregados (não refaz a chamada). Combináveis: com mais de um
+        // ativo, o item só entra se casar com TODOS (AND), não com qualquer
+        // um — "compareceu" + "confirmado" mostra quem fez as duas coisas.
+        // Vazio = sem filtro, mostra tudo.
+        const _mesFiltros = new Set();
         let _leadDoc = null;
         let _leadErro = null;
         let _leadCarregando = false;
@@ -876,6 +985,19 @@
             getAtualizadoEm: () => _atualizadoEm,
             setAtualizadoEm: (v) => {
               _atualizadoEm = v;
+            },
+            getAvisoAcao: () => _avisoAcao,
+            setAvisoAcao: (v) => {
+              _avisoAcao = v;
+            },
+            getMesReferencia: () => _mesReferencia,
+            setMesReferencia: (v) => {
+              _mesReferencia = v;
+            },
+            getMesFiltros: () => _mesFiltros,
+            toggleMesFiltro: (id) => {
+              if (_mesFiltros.has(id)) _mesFiltros.delete(id);
+              else _mesFiltros.add(id);
             },
           },
           dados: {
@@ -910,14 +1032,15 @@
       // `Authorization: Bearer`, e traduz 401/403/5xx/falha de rede em mensagem
       // que a recepção entende — a tela nunca fica em branco.
       //
-      // Só `get`. Escrita é a T6: quando ela chegar, o método novo entra AQUI,
-      // não espalhado pelos renderers.
+      // `get` (T4) e `patch` (T6) — os únicos dois métodos HTTP que a API de
+      // leads aceita da tela. Compartilham `_request`: nada de fetch fora
+      // daqui, nem espalhado pelos renderers ou pelo `AcoesController`.
       const ApiClient = (function () {
         function _erro(mensagem, extras) {
           return Object.assign(new Error(mensagem), { amigavel: true }, extras || {});
         }
 
-        async function get(caminho, params) {
+        async function _request(metodo, caminho, { params, body } = {}) {
           // `apiBaseUrl()` (shared.js) escolhe prod/hml, normaliza a barra final
           // e ESTOURA quando a URL do ambiente está vazia (a `hml` nasce assim,
           // até o primeiro deploy da `apiHml`). Erro de configuração, não de
@@ -944,12 +1067,16 @@
             });
           }
 
+          const headers = { Authorization: 'Bearer ' + token };
+          const init = { method: metodo, headers };
+          if (body !== undefined) {
+            headers['Content-Type'] = 'application/json; charset=utf-8';
+            init.body = JSON.stringify(body);
+          }
+
           let res;
           try {
-            res = await fetch(url.toString(), {
-              method: 'GET',
-              headers: { Authorization: 'Bearer ' + token },
-            });
+            res = await fetch(url.toString(), init);
           } catch (e) {
             console.warn('[CRM] Falha de rede:', e.message);
             throw _erro('Sem conexão com a API do CRM. Confira a internet e tente de novo.');
@@ -980,13 +1107,215 @@
           }
           if (!res.ok) {
             throw _erro(
-              'A API recusou a consulta: ' + ou(corpo && corpo.erro, 'motivo não informado'),
+              'A API recusou a requisição: ' + ou(corpo && corpo.erro, 'motivo não informado'),
             );
           }
           return corpo;
         }
 
-        return { get };
+        function get(caminho, params) {
+          return _request('GET', caminho, { params });
+        }
+
+        /** `PATCH /leads/{id}` — os eventos de escrita da T6. */
+        function patch(caminho, body) {
+          return _request('PATCH', caminho, { body });
+        }
+
+        return { get, patch };
+      })();
+
+      // ─── AcoesController ─────────────────────────────────────────────────
+      // Fase 3, T6. Clique → PATCH pelo ApiClient → atualização otimista da UI
+      // → rollback visual + mensagem em caso de erro. Nenhum `fetch` aqui —
+      // só `ApiClient.patch`.
+      //
+      // Os quatro eventos (docs/CRM_FASE3_PLANO.md, D3): Compareceu e Fechou só
+      // avançam (não existe evento para "desmarcar"), Cancelar tira o
+      // agendamento da agenda (o servidor filtra `cancelado` do `view=agenda`)
+      // e pede confirmação por ser difícil de desfazer, Travar/destravar
+      // recuperação alterna — os três primeiros são reversíveis e de alta
+      // frequência, sem confirmação. REAGENDAR NÃO ENTRA (decisão D5): é o
+      // único botão que CRIARIA agendamento — não tem lugar aqui.
+      const AcoesController = (function () {
+        const EVENTO = BGL_CONST.CRM.EVENTO;
+        // Chave por AÇÃO (não por evento): travar/destravar são a MESMA ação
+        // de um único botão, e travar a checagem de "já tem um PATCH no ar"
+        // pelo evento deixaria um duplo clique escapar bem no instante em que
+        // a mutação otimista já trocou a direção do próximo clique.
+        const _pendentes = new Set();
+
+        function _chave(acao, id, bebe) {
+          return acao + '|' + id + '|' + (bebe || '');
+        }
+
+        /** Usado pelos renderers para desabilitar o botão enquanto o PATCH está no ar. */
+        function estaPendente(acao, id, bebe) {
+          return _pendentes.has(_chave(acao, id, bebe));
+        }
+
+        /**
+         * Item de agenda (Painel ou Semana) pelo par id+bebe — só na aba
+         * ATIVA: um mesmo agendamento de hoje pode estar nas duas caches
+         * (Painel é sempre hoje, Semana inclui hoje), e mutar a cópia errada
+         * deixaria a tela visível sem se atualizar.
+         */
+        function _itemAgenda(id, bebe) {
+          const dados = CrmState.dados.get(CrmState.ui.getAba());
+          const itens = (dados && dados.itens) || [];
+          const item = itens.find((i) => i.id === id && (i.bebe || '') === (bebe || ''));
+          return item ? { itens, item } : null;
+        }
+
+        function _itemFrio(id) {
+          const dados = CrmState.dados.get(ABA.FRIOS);
+          const itens = (dados && dados.itens) || [];
+          const item = itens.find((i) => i.id === id);
+          return item ? { itens, item } : null;
+        }
+
+        function _mensagemErro(e) {
+          return e.amigavel ? e.message : 'Não consegui salvar essa ação. Tente de novo.';
+        }
+
+        /**
+         * `aplicarOtimista`/`reverter` mutam o item já carregado em `CrmState`
+         * — o mesmo objeto que os renderers leem — e cada mutação é seguida de
+         * `UIRenderer.render()`, então a tela reflete a intenção antes da
+         * resposta chegar.
+         */
+        async function _executar({ acao, evento, id, bebe, aplicarOtimista, reverter }) {
+          const chave = _chave(acao, id, bebe);
+          if (_pendentes.has(chave)) return; // duplo clique: um PATCH só.
+          _pendentes.add(chave);
+          aplicarOtimista();
+          UIRenderer.render();
+          try {
+            const resposta = await ApiClient.patch('/leads/' + encodeURIComponent(id), {
+              evento,
+              bebe,
+            });
+            // Campo `espelho` só existe quando houve TENTATIVA de write-back
+            // (docs/CRM_FASE3_API.md). Sem o campo: flag da API desligada ou
+            // evento fora do mapa — normal, não é erro, não vira aviso.
+            if (resposta && resposta.espelho) {
+              CrmState.ui.setAvisoAcao(
+                resposta.espelho.ok
+                  ? null
+                  : 'Isso foi salvo no CRM, mas não atualizou a planilha automaticamente. ' +
+                      'Confira a planilha para esta ação.',
+              );
+            }
+          } catch (e) {
+            reverter();
+            // Uma ação que falha de ponta a ponta não tem espelho nenhum para
+            // reportar — e um aviso de espelho de uma ação ANTERIOR, ainda na
+            // tela, ficaria lido como se fosse desta aqui. Limpa para não
+            // misturar os dois problemas (achado da revisão da PR #229).
+            CrmState.ui.setAvisoAcao(null);
+            if (e.sessaoExpirada) {
+              AuthController.expirar(e.message);
+            } else {
+              CrmState.ui.setErro({ mensagem: _mensagemErro(e) });
+              if (!e.amigavel) console.error('[CRM]', e);
+            }
+          } finally {
+            _pendentes.delete(chave);
+            UIRenderer.render();
+          }
+        }
+
+        function marcarCompareceu(item) {
+          const antes = item.compareceu;
+          _executar({
+            acao: 'compareceu',
+            evento: EVENTO.COMPARECEU,
+            id: item.id,
+            bebe: item.bebe,
+            aplicarOtimista: () => {
+              item.compareceu = true;
+            },
+            reverter: () => {
+              item.compareceu = antes;
+            },
+          });
+        }
+
+        function marcarFechou(item) {
+          const antes = item.fechou;
+          _executar({
+            acao: 'fechou',
+            evento: EVENTO.FECHOU,
+            id: item.id,
+            bebe: item.bebe,
+            aplicarOtimista: () => {
+              item.fechou = true;
+            },
+            reverter: () => {
+              item.fechou = antes;
+            },
+          });
+        }
+
+        /** Cancelar é a única ação difícil de desfazer — pede confirmação. */
+        function cancelar(item) {
+          const confirmado = window.confirm(
+            'Cancelar o agendamento de ' +
+              (item.bebe || 'este bebê') +
+              '? Ele sai da agenda de hoje/semana.',
+          );
+          if (!confirmado) return;
+          const local = _itemAgenda(item.id, item.bebe);
+          if (!local) return;
+          const indice = local.itens.indexOf(item);
+          _executar({
+            acao: 'cancelado',
+            evento: EVENTO.CANCELADO,
+            id: item.id,
+            bebe: item.bebe,
+            aplicarOtimista: () => {
+              if (indice > -1) local.itens.splice(indice, 1);
+            },
+            reverter: () => {
+              if (indice > -1) local.itens.splice(indice, 0, item);
+            },
+          });
+        }
+
+        /** Alterna travar/destravar — mesmo botão, evento conforme o estado atual. */
+        function travar(item) {
+          const antes = !!item.travado;
+          _executar({
+            acao: 'recuperacao',
+            evento: antes ? EVENTO.DESTRAVAR_RECUPERACAO : EVENTO.TRAVAR_RECUPERACAO,
+            id: item.id,
+            aplicarOtimista: () => {
+              item.travado = !antes;
+            },
+            reverter: () => {
+              item.travado = antes;
+            },
+          });
+        }
+
+        /** Delegado a partir de `[data-acao]` — ver `CrmController.iniciar`. */
+        function aoClicar(botao) {
+          const acao = botao.dataset.acao;
+          const id = botao.dataset.id;
+          const bebe = botao.dataset.bebe || '';
+          if (acao === 'compareceu' || acao === 'fechou' || acao === 'cancelado') {
+            const local = _itemAgenda(id, bebe);
+            if (!local) return;
+            if (acao === 'compareceu') marcarCompareceu(local.item);
+            else if (acao === 'fechou') marcarFechou(local.item);
+            else cancelar(local.item);
+          } else if (acao === 'recuperacao') {
+            const local = _itemFrio(id);
+            if (local) travar(local.item);
+          }
+        }
+
+        return { estaPendente, aoClicar };
       })();
 
       // ─── LinkBuilder ─────────────────────────────────────────────────────
@@ -1064,9 +1393,30 @@
         return badge(ROTULO_PE[valor] || valor, tom);
       }
 
+      /**
+       * Botão de escrita (T6) — delegado por `[data-acao]`
+       * (`CrmController.iniciar`), que repassa para `AcoesController.aoClicar`.
+       * `pendente` desabilita o botão enquanto o PATCH está no ar (evita duplo
+       * clique). Usado só atrás de `BGL_CONST.CRM.FLAG_ACOES_ESCRITA`.
+       */
+      function botaoAcao(acao, rotulo, { id, bebe, pendente }) {
+        return (
+          '<button type="button" class="btn-acao" data-acao="' +
+          esc(acao) +
+          '" data-id="' +
+          esc(id) +
+          '"' +
+          (bebe ? ' data-bebe="' + esc(bebe) + '"' : '') +
+          (pendente ? ' disabled' : '') +
+          '>' +
+          esc(rotulo) +
+          '</button>'
+        );
+      }
+
       // ─── AgendaRenderer ──────────────────────────────────────────────────
-      // Sub-renderer compartilhado pelas duas abas de agenda (Painel do Dia e
-      // Semana): as duas consomem `?view=agenda`, e o item é o mesmo.
+      // Sub-renderer compartilhado pelas três abas de agenda (Painel do Dia,
+      // Semana e Mês): as três consomem `?view=agenda`, e o item é o mesmo.
       const AgendaRenderer = (function () {
         /** `[{ hora, itens }]` em ordem crescente de hora. */
         function agruparPorHora(itens) {
@@ -1081,8 +1431,10 @@
         }
 
         /**
-         * Um slot de escrita da T6 — ver o comentário de `acoes` logo abaixo.
-         * Hoje só MOSTRA o booleano que a API devolve.
+         * Um slot de leitura: mostra o booleano que a API devolve, sem ação
+         * nenhuma. É o que a tela desenha com a flag da T6 desligada, e
+         * também o que ela mostra quando a ação já foi feita (não existe
+         * evento para "desmarcar" `compareceu`/`fechou` — só se marca uma vez).
          */
         function slotT6(rotulo, marcado) {
           return (
@@ -1095,23 +1447,50 @@
           );
         }
 
-        /** Ações de leitura de um item. Escrita nenhuma — ver o bloco da T6. */
+        /**
+         * Presença/Fechou/Cancelar — atrás de `BGL_CONST.CRM.FLAG_ACOES_ESCRITA`
+         * (T6, decisão D3 do CRM_FASE3_PLANO.md). Com a flag desligada, o
+         * comportamento é byte a byte o da T4 (somente leitura): só os slots.
+         *
+         * Ficam nas TRÊS faixas, não só na "já passou": a presença é marcada
+         * quando a mãe CHEGA, que é dentro do horário corrente, e a equipe
+         * precisa enxergar o estado do agendamento antes mesmo de a hora
+         * chegar. Quem muda por faixa é o layout, não o que se pode marcar.
+         */
         function acoes(item, { proposta }) {
-          // ───────────────────────────────────────────────────────────────
-          // LUGAR DOS BOTÕES DE ESCRITA — T6, NÃO ligue aqui.
-          // "Marcar presença" e "marcar fechou" são os eventos `compareceu` e
-          // `fechou` (PATCH /leads/{id}), e dependem do write-back na planilha
-          // (T5 / decisão D3 do CRM_FASE3_PLANO.md). Enquanto ele não existir,
-          // cada clique viraria divergência entre a planilha e o Firestore no
-          // mesmo dia — exatamente o que o D3 impede. Por ora os dois slots só
-          // MOSTRAM o estado que a API devolve.
-          //
-          // Ficam nas TRÊS faixas, não só na "já passou": a presença é marcada
-          // quando a mãe CHEGA, que é dentro do horário corrente, e a equipe
-          // precisa enxergar o estado do agendamento antes mesmo de a hora
-          // chegar. Quem muda por faixa é o layout, não o que se pode marcar.
-          // ───────────────────────────────────────────────────────────────
-          const partes = [slotT6('Presença', item.compareceu), slotT6('Fechou', item.fechou)];
+          const escritaLigada = BGL_CONST.CRM.FLAG_ACOES_ESCRITA;
+          const partes = [];
+          if (escritaLigada && !item.compareceu) {
+            partes.push(
+              botaoAcao('compareceu', 'Marcar presença', {
+                id: item.id,
+                bebe: item.bebe,
+                pendente: AcoesController.estaPendente('compareceu', item.id, item.bebe),
+              }),
+            );
+          } else {
+            partes.push(slotT6('Presença', item.compareceu));
+          }
+          if (escritaLigada && !item.fechou) {
+            partes.push(
+              botaoAcao('fechou', 'Marcar fechou', {
+                id: item.id,
+                bebe: item.bebe,
+                pendente: AcoesController.estaPendente('fechou', item.id, item.bebe),
+              }),
+            );
+          } else {
+            partes.push(slotT6('Fechou', item.fechou));
+          }
+          if (escritaLigada) {
+            partes.push(
+              botaoAcao('cancelado', 'Cancelar', {
+                id: item.id,
+                bebe: item.bebe,
+                pendente: AcoesController.estaPendente('cancelado', item.id, item.bebe),
+              }),
+            );
+          }
           // O link de proposta, esse sim, só faz sentido depois da PE — fica na
           // faixa de conferência (D8: "enviar a proposta por WhatsApp").
           if (proposta && item.telefone) {
@@ -1176,11 +1555,33 @@
           );
         }
 
-        /** Tabela com o dia inteiro, estado de confirmação e de pagamento da PE. */
+        /**
+         * Tabela com o dia inteiro, estado de confirmação e de pagamento da
+         * PE — usada pela aba Semana, pela aba Mês e pela lista completa do
+         * rodapé do Painel (`PainelRenderer`): telefone, link de conversa
+         * (`LinkBuilder.conversa`) e acesso ao detalhe pelo mesmo `data-lead`
+         * que o handler delegado já trata (nenhum caminho novo).
+         */
         function tabela(itens) {
           const linhas = itens
-            .map(
-              (i) =>
+            .map((i) => {
+              const wpp = LinkBuilder.conversa(i.telefone);
+              const acoesCel = [];
+              if (i.telefone) {
+                acoesCel.push(
+                  '<button type="button" class="btn-acao" data-lead="' +
+                    esc(i.telefone) +
+                    '">📄 Detalhe</button>',
+                );
+              }
+              if (wpp) {
+                acoesCel.push(
+                  '<a class="btn-acao" href="' +
+                    esc(wpp) +
+                    '" target="_blank" rel="noopener">💬 Conversa</a>',
+                );
+              }
+              return (
                 '<tr>' +
                 '<td>' +
                 esc(ou(i.hora)) +
@@ -1195,18 +1596,25 @@
                 esc(ou(i.turma)) +
                 '</td>' +
                 '<td>' +
+                esc(ou(i.telefone)) +
+                '</td>' +
+                '<td>' +
                 badgeConfirmacao(i.confirmacao) +
                 '</td>' +
                 '<td>' +
                 badgePagamentoPE(i.pagamentoPE) +
                 '</td>' +
-                '</tr>',
-            )
+                '<td><div class="acoes">' +
+                acoesCel.join('') +
+                '</div></td>' +
+                '</tr>'
+              );
+            })
             .join('');
           return (
             '<div class="tabela-wrap"><table>' +
-            '<thead><tr><th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th>' +
-            '<th>Confirmação</th><th>PE</th></tr></thead>' +
+            '<thead><tr><th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th><th>Telefone</th>' +
+            '<th>Confirmação</th><th>PE</th><th></th></tr></thead>' +
             '<tbody>' +
             linhas +
             '</tbody></table></div>'
@@ -1331,6 +1739,124 @@
         return { render };
       })();
 
+      // ─── MesRenderer ─────────────────────────────────────────────────────
+      // Aba "Mês" (issue #226): os agendados do mês navegado, filtráveis por
+      // estado. Filtro e contadores são client-side sobre os itens JÁ
+      // carregados — só a troca de mês refaz a chamada (`CrmController`).
+      const MesRenderer = (function () {
+        const MESES = [
+          'janeiro',
+          'fevereiro',
+          'março',
+          'abril',
+          'maio',
+          'junho',
+          'julho',
+          'agosto',
+          'setembro',
+          'outubro',
+          'novembro',
+          'dezembro',
+        ];
+
+        /**
+         * Filtros de estado propostos pela issue: compareceu, fechou, PE paga,
+         * confirmação — mais "pesquisa enviada" (barato: só o campo enviadaEm,
+         * ver `functions/views-agenda.js`). "Respondeu pesquisa" fica de fora
+         * de propósito — não existe como dado ainda (ver a issue).
+         */
+        const FILTROS = [
+          { id: 'compareceu', rotulo: 'Compareceu', teste: (i) => i.compareceu },
+          { id: 'fechou', rotulo: 'Fechou', teste: (i) => i.fechou },
+          {
+            id: 'pe-paga',
+            rotulo: 'PE paga',
+            teste: (i) => i.pagamentoPE === BGL_CONST.CRM.PAGAMENTO_PE.PAGO,
+          },
+          {
+            id: 'confirmado',
+            rotulo: 'Confirmado',
+            teste: (i) => i.confirmacao === BGL_CONST.CRM.CONFIRMACAO.CONFIRMADO,
+          },
+          { id: 'pesquisa-enviada', rotulo: 'Pesquisa enviada', teste: (i) => i.pesquisaEnviada },
+        ];
+
+        /** `YYYY-MM` → `Setembro de 2026`. */
+        function _rotuloMes(anoMes) {
+          const [ano, mes] = anoMes.split('-').map(Number);
+          const nome = MESES[mes - 1] || anoMes;
+          return nome.charAt(0).toUpperCase() + nome.slice(1) + ' de ' + ano;
+        }
+
+        function _navegacao(anoMes) {
+          return (
+            '<div class="mes-nav">' +
+            '<button type="button" class="btn-acao" data-mes-nav="anterior" aria-label="Mês anterior">◀</button>' +
+            '<strong>' +
+            esc(_rotuloMes(anoMes)) +
+            '</strong>' +
+            '<button type="button" class="btn-acao" data-mes-nav="seguinte" aria-label="Mês seguinte">▶</button>' +
+            '</div>'
+          );
+        }
+
+        /**
+         * Contador de cada chip é sobre o TOTAL do mês (não sobre o resultado
+         * já filtrado pelos outros chips ativos) — é o que deixa a pessoa ver
+         * "quantos fecharam" mesmo depois de já ter marcado "confirmado".
+         */
+        function _filtros(itens, ativos) {
+          return (
+            '<div class="mes-filtros">' +
+            FILTROS.map((f) => {
+              const n = itens.filter(f.teste).length;
+              return (
+                '<button type="button" class="chip-filtro' +
+                (ativos.has(f.id) ? ' ativo' : '') +
+                '" data-mes-filtro="' +
+                f.id +
+                '" aria-pressed="' +
+                ativos.has(f.id) +
+                '">' +
+                esc(f.rotulo) +
+                ' <span>' +
+                n +
+                '</span></button>'
+              );
+            }).join('') +
+            '</div>'
+          );
+        }
+
+        /** Item passa se casar com TODOS os filtros ativos (AND). Vazio → passa tudo. */
+        function _aplicarFiltros(itens, ativos) {
+          if (!ativos.size) return itens;
+          const testes = FILTROS.filter((f) => ativos.has(f.id)).map((f) => f.teste);
+          return itens.filter((i) => testes.every((teste) => teste(i)));
+        }
+
+        function render(resposta) {
+          const anoMes = CrmState.ui.getMesReferencia() || Relogio.mesAtual();
+          const itens = (resposta && resposta.itens) || [];
+          const ativos = CrmState.ui.getMesFiltros();
+          const filtrados = _aplicarFiltros(itens, ativos);
+
+          const corpo = !itens.length
+            ? '<div class="vazio">Nenhum agendamento neste mês.</div>'
+            : !filtrados.length
+              ? '<div class="vazio">Nenhum agendamento com os filtros marcados.</div>'
+              : '<h2 class="secao-titulo">' +
+                filtrados.length +
+                (filtrados.length === 1 ? ' agendamento' : ' agendamentos') +
+                '</h2>' +
+                AgendaRenderer.tabela(filtrados);
+
+          return _navegacao(anoMes) + _filtros(itens, ativos) + corpo;
+        }
+
+        return { render };
+      })();
+
       // ─── FriosRenderer ───────────────────────────────────────────────────
       // Aba secundária: `?view=frios`, a view da Fase 2 — consumida, não
       // reimplementada (docs/CRM_FASE2_API.md).
@@ -1349,6 +1875,22 @@
                   '<button type="button" class="btn-acao" data-lead="' +
                     esc(i.telefone) +
                     '">📄 Detalhe</button>',
+                );
+              }
+              // Travar/destravar recuperação (T6) — mesmo botão, evento
+              // conforme o estado atual (`AcoesController.travar`). Não tem
+              // simetria de regra de negócio (CLAUDE.md: "lead travado é
+              // comissão dobrada") — só aciona o evento que já existe.
+              if (BGL_CONST.CRM.FLAG_ACOES_ESCRITA) {
+                acoes.push(
+                  botaoAcao(
+                    'recuperacao',
+                    i.travado ? 'Destravar recuperação' : 'Travar recuperação',
+                    {
+                      id: i.id,
+                      pendente: AcoesController.estaPendente('recuperacao', i.id),
+                    },
+                  ),
                 );
               }
               if (wpp) {
@@ -1600,6 +2142,7 @@
         const ABAS = [
           { id: ABA.PAINEL, rotulo: '📌 Painel do Dia' },
           { id: ABA.SEMANA, rotulo: '🗓️ Semana' },
+          { id: ABA.MES, rotulo: '📅 Mês' },
           { id: ABA.FRIOS, rotulo: '❄️ Frios' },
           { id: ABA.BUSCA, rotulo: '🔎 Buscar' },
         ];
@@ -1642,10 +2185,14 @@
           document.getElementById('status-linha').textContent = _status();
 
           const erro = CrmState.ui.getErro();
+          const avisoAcao = CrmState.ui.getAvisoAcao();
           const dados = CrmState.dados.get(aba);
           let html = '';
           if (erro) {
             html = '<div class="aviso aviso-erro" id="erro-tela">' + esc(erro.mensagem) + '</div>';
+          }
+          if (avisoAcao) {
+            html += '<div class="aviso aviso-info" id="aviso-espelho">' + esc(avisoAcao) + '</div>';
           }
           if (aba === ABA.BUSCA) {
             html = BuscaRenderer.render();
@@ -1655,7 +2202,9 @@
                 ? PainelRenderer
                 : aba === ABA.SEMANA
                   ? SemanaRenderer
-                  : FriosRenderer;
+                  : aba === ABA.MES
+                    ? MesRenderer
+                    : FriosRenderer;
             html += sub.render(dados);
           } else if (!erro) {
             html = '<div class="vazio">Carregando…</div>';
@@ -1747,20 +2296,30 @@
       // detalhe do lead. Não desenha nada e não fala com a rede direto — quem
       // desenha é o `UIRenderer`, quem busca é o `ApiClient`.
       const CrmController = (function () {
+        /** Mês navegado da aba Mês, resolvendo o default (mês corrente) na 1ª leitura. */
+        function mesReferenciaAtual() {
+          return CrmState.ui.getMesReferencia() || Relogio.mesAtual();
+        }
+
         /** Janela `{ de, ate }` da aba, em `YYYY-MM-DD` na timezone da unidade. */
         function janelaDaAba(aba) {
           const hoje = Relogio.hojeISO();
           // Painel do Dia: só hoje. Semana: hoje..hoje+5, a mesma janela do
           // `view=resumo-status` (JANELA_RESUMO_DIAS_A_FRENTE em crm-const.js).
-          return aba === ABA.SEMANA
-            ? { de: hoje, ate: Relogio.somaDias(hoje, 5) }
-            : { de: hoje, ate: hoje };
+          // Mês: o mês navegado inteiro (cabe no teto de 31 dias da API).
+          if (aba === ABA.SEMANA) return { de: hoje, ate: Relogio.somaDias(hoje, 5) };
+          if (aba === ABA.MES) return Relogio.janelaDoMes(mesReferenciaAtual());
+          return { de: hoje, ate: hoje };
         }
 
-        /** A janela já carregada envelheceu (a tela passou da meia-noite aberta)? */
+        /**
+         * A janela já carregada envelheceu (a tela passou da meia-noite aberta)?
+         * Só se aplica a abas ancoradas em "hoje" — a Mês é ancorada no mês
+         * NAVEGADO, que pode nem ser o corrente.
+         */
         function janelaVencida() {
           const aba = CrmState.ui.getAba();
-          if (aba === ABA.BUSCA || aba === ABA.FRIOS) return false;
+          if (aba === ABA.BUSCA || aba === ABA.FRIOS || aba === ABA.MES) return false;
           const dados = CrmState.dados.get(aba);
           if (!dados || !dados.janela) return false;
           return dados.janela.de !== Relogio.hojeISO();
@@ -1799,10 +2358,32 @@
           if (aba === CrmState.ui.getAba()) return;
           CrmState.ui.setAba(aba);
           CrmState.ui.setErro(null);
+          CrmState.ui.setAvisoAcao(null);
           UIRenderer.render();
           // Troca de aba REFAZ a chamada com a janela certa — o dado de cada
           // aba tem validade própria, e a Semana não serve para o Painel.
           buscar();
+        }
+
+        /**
+         * ◀/▶ da aba Mês: muda o mês navegado e refaz a chamada (janela nova).
+         * Descarta o cache da aba ANTES de redesenhar — sem isso, `render()`
+         * usa o mês novo no cabeçalho (`CrmState.ui.getMesReferencia()`) mas
+         * os itens do mês ANTERIOR (`CrmState.dados.get(ABA.MES)`, que só
+         * `buscar()` substitui, depois de resolver): cabeçalho e lista ficam
+         * incoerentes até a resposta chegar (achado da revisão da PR #240).
+         */
+        function navegarMes(delta) {
+          CrmState.ui.setMesReferencia(Relogio.mesSoma(mesReferenciaAtual(), delta));
+          CrmState.dados.set(ABA.MES, null);
+          UIRenderer.render();
+          buscar();
+        }
+
+        /** Chip de filtro da aba Mês: liga/desliga, combinável (AND), client-side. */
+        function alternarFiltroMes(id) {
+          CrmState.ui.toggleMesFiltro(id);
+          UIRenderer.render();
         }
 
         function atualizarAgora() {
@@ -1852,6 +2433,23 @@
           // Delegação em vez de `onclick` no HTML gerado: nome de lead vem da
           // API e não tem por que virar código.
           document.getElementById('conteudo').addEventListener('click', (e) => {
+            // Botões de escrita (T6) primeiro: `[data-acao]` nunca carrega
+            // `data-lead` junto, mas checar antes evita qualquer ambiguidade.
+            const botaoAcao = e.target.closest('[data-acao]');
+            if (botaoAcao) {
+              AcoesController.aoClicar(botaoAcao);
+              return;
+            }
+            const navMes = e.target.closest('[data-mes-nav]');
+            if (navMes) {
+              navegarMes(navMes.dataset.mesNav === 'anterior' ? -1 : 1);
+              return;
+            }
+            const filtroMes = e.target.closest('[data-mes-filtro]');
+            if (filtroMes) {
+              alternarFiltroMes(filtroMes.dataset.mesFiltro);
+              return;
+            }
             const alvo = e.target.closest('[data-lead]');
             if (alvo) abrirLead(alvo.dataset.lead);
           });

@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.9',
-  APP_DATE: '2026-09-16',
+  APP_VERSION: '3.11',
+  APP_DATE: '2026-09-18',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -55,6 +55,7 @@ const BGL_CONST = {
     ABA: {
       PAINEL: 'painel',
       SEMANA: 'semana',
+      MES: 'mes',
       FRIOS: 'frios',
       BUSCA: 'busca',
     },
@@ -93,5 +94,31 @@ const BGL_CONST = {
       FALTOU: 'faltou',
       NAO_FECHOU: 'nao_fechou',
     },
+    /**
+     * Eventos que os botões de escrita da tela disparam via `PATCH
+     * /leads/{id}` — os mesmos nomes de `functions/leads-logic.js:EVENT_HANDLERS`
+     * e de `functions/sheets-write.js:EVENTOS` (Fase 3, T6). "Reagendar" fica
+     * fora de propósito (D5 do `docs/CRM_FASE3_PLANO.md`): é o único botão que
+     * CRIARIA agendamento, e não faz parte desta lista.
+     */
+    EVENTO: {
+      COMPARECEU: 'compareceu',
+      FECHOU: 'fechou',
+      CANCELADO: 'cancelado',
+      TRAVAR_RECUPERACAO: 'travar_recuperacao',
+      DESTRAVAR_RECUPERACAO: 'destravar_recuperacao',
+    },
+    /**
+     * Rollback de 1 minuto da Fase 3B (T6): desligar aqui tira todos os botões
+     * de escrita na hora, sem precisar de deploy da API — a tela volta a ser
+     * byte a byte a somente-leitura da T4. Nasceu DESLIGADA (T6, PR #229) até
+     * o write-back na planilha (T5) ser validado ao vivo pela `apiHml`
+     * (`docs/COMANDOS.md`, passos 1–4 da "Primeira ativação"); **ligada desde
+     * 2026-09-16** para a semana paralela em HML (`docs/CRM_FASE3_ADOCAO.md`).
+     * A API tem a própria flag (`BGL_SHEETS_WRITEBACK`, no servidor) — as duas
+     * precisam estar ligadas para o clique chegar até a planilha; só esta aqui
+     * controla se o botão aparece.
+     */
+    FLAG_ACOES_ESCRITA: true,
   },
 };
