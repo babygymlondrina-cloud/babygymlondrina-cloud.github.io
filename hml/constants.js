@@ -72,7 +72,15 @@ const BGL_CONST = {
     VIEW: {
       AGENDA: 'agenda',
       FRIOS: 'frios',
+      BUSCA: 'busca',
     },
+    /**
+     * Mínimo de caracteres de `?q=` antes de disparar a busca (issue #227) —
+     * espelha `MIN_CARACTERES_BUSCA` de `functions/crm-const.js`. Evita chamada
+     * à API a cada tecla e a mensagem de erro de digitação insuficiente vem do
+     * cliente, não de um 400 da API.
+     */
+    MIN_CARACTERES_BUSCA: 2,
     /** `agendamento.confirmacao.status` cru que a tela sabe rotular. */
     CONFIRMACAO: {
       CONFIRMADO: 'confirmado',
