@@ -55,6 +55,7 @@ const BGL_CONST = {
     ABA: {
       PAINEL: 'painel',
       SEMANA: 'semana',
+      MES: 'mes',
       FRIOS: 'frios',
       BUSCA: 'busca',
     },

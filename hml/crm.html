@@ -518,6 +518,51 @@
         color: var(--purple-dark);
         margin: 1rem 0 0.4rem;
       }
+      /* ─── ABA MÊS ─── */
+      .mes-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.9rem;
+        margin-bottom: 0.7rem;
+      }
+      .mes-nav strong {
+        font-size: 1rem;
+        color: var(--purple-dark);
+        min-width: 9rem;
+        text-align: center;
+      }
+      .mes-filtros {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 0.6rem;
+      }
+      .chip-filtro {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border: 1.5px solid var(--line);
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: var(--text-light);
+        background: var(--surface);
+        cursor: pointer;
+      }
+      .chip-filtro span {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: inherit;
+        opacity: 0.8;
+      }
+      .chip-filtro.ativo {
+        border-color: var(--pink-hot);
+        background: var(--tint-pink);
+        color: var(--pink-hot);
+      }
       /* ─── BUSCA ─── */
       .busca-form {
         display: flex;
@@ -857,7 +902,38 @@
           return FAIXA.VEM;
         }
 
-        return { hojeISO, horaAgora, horaCorrente, somaDias, faixaDaHora };
+        /** Mês corrente em `YYYY-MM`, na timezone da unidade. */
+        function mesAtual() {
+          return hojeISO().slice(0, 7);
+        }
+
+        /** `YYYY-MM` + n meses (n pode ser negativo). */
+        function mesSoma(anoMes, n) {
+          const [a, m] = anoMes.split('-').map(Number);
+          const t = new Date(Date.UTC(a, m - 1 + n, 1));
+          return t.getUTCFullYear() + '-' + String(t.getUTCMonth() + 1).padStart(2, '0');
+        }
+
+        /** `{ de, ate }` do mês inteiro (`YYYY-MM`), primeiro ao último dia. */
+        function janelaDoMes(anoMes) {
+          const [a, m] = anoMes.split('-').map(Number);
+          const de = anoMes + '-01';
+          // Dia 0 do mês seguinte = último dia deste mês.
+          const ultimo = new Date(Date.UTC(a, m, 0));
+          const ate = anoMes + '-' + String(ultimo.getUTCDate()).padStart(2, '0');
+          return { de, ate };
+        }
+
+        return {
+          hojeISO,
+          horaAgora,
+          horaCorrente,
+          somaDias,
+          faixaDaHora,
+          mesAtual,
+          mesSoma,
+          janelaDoMes,
+        };
       })();
 
       // ─── CrmState ────────────────────────────────────────────────────────
@@ -872,7 +948,21 @@
         // só a planilha não recebeu. Só o `AcoesController` escreve aqui.
         let _avisoAcao = null;
         // Resposta crua da API por aba; `null` = ainda não carregada.
-        const _dados = { [ABA.PAINEL]: null, [ABA.SEMANA]: null, [ABA.FRIOS]: null };
+        const _dados = {
+          [ABA.PAINEL]: null,
+          [ABA.SEMANA]: null,
+          [ABA.MES]: null,
+          [ABA.FRIOS]: null,
+        };
+        // Mês navegado na aba Mês (`YYYY-MM`); `null` = ainda não visitada,
+        // resolve para o mês corrente na primeira leitura (`CrmController`).
+        let _mesReferencia = null;
+        // Filtros de estado ATIVOS na aba Mês — client-side, sobre os itens já
+        // carregados (não refaz a chamada). Combináveis: com mais de um
+        // ativo, o item só entra se casar com TODOS (AND), não com qualquer
+        // um — "compareceu" + "confirmado" mostra quem fez as duas coisas.
+        // Vazio = sem filtro, mostra tudo.
+        const _mesFiltros = new Set();
         let _leadDoc = null;
         let _leadErro = null;
         let _leadCarregando = false;
@@ -899,6 +989,15 @@
             getAvisoAcao: () => _avisoAcao,
             setAvisoAcao: (v) => {
               _avisoAcao = v;
+            },
+            getMesReferencia: () => _mesReferencia,
+            setMesReferencia: (v) => {
+              _mesReferencia = v;
+            },
+            getMesFiltros: () => _mesFiltros,
+            toggleMesFiltro: (id) => {
+              if (_mesFiltros.has(id)) _mesFiltros.delete(id);
+              else _mesFiltros.add(id);
             },
           },
           dados: {
@@ -1316,8 +1415,8 @@
       }
 
       // ─── AgendaRenderer ──────────────────────────────────────────────────
-      // Sub-renderer compartilhado pelas duas abas de agenda (Painel do Dia e
-      // Semana): as duas consomem `?view=agenda`, e o item é o mesmo.
+      // Sub-renderer compartilhado pelas três abas de agenda (Painel do Dia,
+      // Semana e Mês): as três consomem `?view=agenda`, e o item é o mesmo.
       const AgendaRenderer = (function () {
         /** `[{ hora, itens }]` em ordem crescente de hora. */
         function agruparPorHora(itens) {
@@ -1458,10 +1557,10 @@
 
         /**
          * Tabela com o dia inteiro, estado de confirmação e de pagamento da
-         * PE — usada pela aba Semana e pela lista completa do rodapé do
-         * Painel (`PainelRenderer`), as duas de uma vez: telefone, link de
-         * conversa (`LinkBuilder.conversa`) e acesso ao detalhe pelo mesmo
-         * `data-lead` que o handler delegado já trata (nenhum caminho novo).
+         * PE — usada pela aba Semana, pela aba Mês e pela lista completa do
+         * rodapé do Painel (`PainelRenderer`): telefone, link de conversa
+         * (`LinkBuilder.conversa`) e acesso ao detalhe pelo mesmo `data-lead`
+         * que o handler delegado já trata (nenhum caminho novo).
          */
         function tabela(itens) {
           const linhas = itens
@@ -1637,6 +1736,124 @@
             )
             .join('');
         }
+        return { render };
+      })();
+
+      // ─── MesRenderer ─────────────────────────────────────────────────────
+      // Aba "Mês" (issue #226): os agendados do mês navegado, filtráveis por
+      // estado. Filtro e contadores são client-side sobre os itens JÁ
+      // carregados — só a troca de mês refaz a chamada (`CrmController`).
+      const MesRenderer = (function () {
+        const MESES = [
+          'janeiro',
+          'fevereiro',
+          'março',
+          'abril',
+          'maio',
+          'junho',
+          'julho',
+          'agosto',
+          'setembro',
+          'outubro',
+          'novembro',
+          'dezembro',
+        ];
+
+        /**
+         * Filtros de estado propostos pela issue: compareceu, fechou, PE paga,
+         * confirmação — mais "pesquisa enviada" (barato: só o campo enviadaEm,
+         * ver `functions/views-agenda.js`). "Respondeu pesquisa" fica de fora
+         * de propósito — não existe como dado ainda (ver a issue).
+         */
+        const FILTROS = [
+          { id: 'compareceu', rotulo: 'Compareceu', teste: (i) => i.compareceu },
+          { id: 'fechou', rotulo: 'Fechou', teste: (i) => i.fechou },
+          {
+            id: 'pe-paga',
+            rotulo: 'PE paga',
+            teste: (i) => i.pagamentoPE === BGL_CONST.CRM.PAGAMENTO_PE.PAGO,
+          },
+          {
+            id: 'confirmado',
+            rotulo: 'Confirmado',
+            teste: (i) => i.confirmacao === BGL_CONST.CRM.CONFIRMACAO.CONFIRMADO,
+          },
+          { id: 'pesquisa-enviada', rotulo: 'Pesquisa enviada', teste: (i) => i.pesquisaEnviada },
+        ];
+
+        /** `YYYY-MM` → `Setembro de 2026`. */
+        function _rotuloMes(anoMes) {
+          const [ano, mes] = anoMes.split('-').map(Number);
+          const nome = MESES[mes - 1] || anoMes;
+          return nome.charAt(0).toUpperCase() + nome.slice(1) + ' de ' + ano;
+        }
+
+        function _navegacao(anoMes) {
+          return (
+            '<div class="mes-nav">' +
+            '<button type="button" class="btn-acao" data-mes-nav="anterior" aria-label="Mês anterior">◀</button>' +
+            '<strong>' +
+            esc(_rotuloMes(anoMes)) +
+            '</strong>' +
+            '<button type="button" class="btn-acao" data-mes-nav="seguinte" aria-label="Mês seguinte">▶</button>' +
+            '</div>'
+          );
+        }
+
+        /**
+         * Contador de cada chip é sobre o TOTAL do mês (não sobre o resultado
+         * já filtrado pelos outros chips ativos) — é o que deixa a pessoa ver
+         * "quantos fecharam" mesmo depois de já ter marcado "confirmado".
+         */
+        function _filtros(itens, ativos) {
+          return (
+            '<div class="mes-filtros">' +
+            FILTROS.map((f) => {
+              const n = itens.filter(f.teste).length;
+              return (
+                '<button type="button" class="chip-filtro' +
+                (ativos.has(f.id) ? ' ativo' : '') +
+                '" data-mes-filtro="' +
+                f.id +
+                '" aria-pressed="' +
+                ativos.has(f.id) +
+                '">' +
+                esc(f.rotulo) +
+                ' <span>' +
+                n +
+                '</span></button>'
+              );
+            }).join('') +
+            '</div>'
+          );
+        }
+
+        /** Item passa se casar com TODOS os filtros ativos (AND). Vazio → passa tudo. */
+        function _aplicarFiltros(itens, ativos) {
+          if (!ativos.size) return itens;
+          const testes = FILTROS.filter((f) => ativos.has(f.id)).map((f) => f.teste);
+          return itens.filter((i) => testes.every((teste) => teste(i)));
+        }
+
+        function render(resposta) {
+          const anoMes = CrmState.ui.getMesReferencia() || Relogio.mesAtual();
+          const itens = (resposta && resposta.itens) || [];
+          const ativos = CrmState.ui.getMesFiltros();
+          const filtrados = _aplicarFiltros(itens, ativos);
+
+          const corpo = !itens.length
+            ? '<div class="vazio">Nenhum agendamento neste mês.</div>'
+            : !filtrados.length
+              ? '<div class="vazio">Nenhum agendamento com os filtros marcados.</div>'
+              : '<h2 class="secao-titulo">' +
+                filtrados.length +
+                (filtrados.length === 1 ? ' agendamento' : ' agendamentos') +
+                '</h2>' +
+                AgendaRenderer.tabela(filtrados);
+
+          return _navegacao(anoMes) + _filtros(itens, ativos) + corpo;
+        }
+
         return { render };
       })();
 
@@ -1925,6 +2142,7 @@
         const ABAS = [
           { id: ABA.PAINEL, rotulo: '📌 Painel do Dia' },
           { id: ABA.SEMANA, rotulo: '🗓️ Semana' },
+          { id: ABA.MES, rotulo: '📅 Mês' },
           { id: ABA.FRIOS, rotulo: '❄️ Frios' },
           { id: ABA.BUSCA, rotulo: '🔎 Buscar' },
         ];
@@ -1984,7 +2202,9 @@
                 ? PainelRenderer
                 : aba === ABA.SEMANA
                   ? SemanaRenderer
-                  : FriosRenderer;
+                  : aba === ABA.MES
+                    ? MesRenderer
+                    : FriosRenderer;
             html += sub.render(dados);
           } else if (!erro) {
             html = '<div class="vazio">Carregando…</div>';
@@ -2076,20 +2296,30 @@
       // detalhe do lead. Não desenha nada e não fala com a rede direto — quem
       // desenha é o `UIRenderer`, quem busca é o `ApiClient`.
       const CrmController = (function () {
+        /** Mês navegado da aba Mês, resolvendo o default (mês corrente) na 1ª leitura. */
+        function mesReferenciaAtual() {
+          return CrmState.ui.getMesReferencia() || Relogio.mesAtual();
+        }
+
         /** Janela `{ de, ate }` da aba, em `YYYY-MM-DD` na timezone da unidade. */
         function janelaDaAba(aba) {
           const hoje = Relogio.hojeISO();
           // Painel do Dia: só hoje. Semana: hoje..hoje+5, a mesma janela do
           // `view=resumo-status` (JANELA_RESUMO_DIAS_A_FRENTE em crm-const.js).
-          return aba === ABA.SEMANA
-            ? { de: hoje, ate: Relogio.somaDias(hoje, 5) }
-            : { de: hoje, ate: hoje };
+          // Mês: o mês navegado inteiro (cabe no teto de 31 dias da API).
+          if (aba === ABA.SEMANA) return { de: hoje, ate: Relogio.somaDias(hoje, 5) };
+          if (aba === ABA.MES) return Relogio.janelaDoMes(mesReferenciaAtual());
+          return { de: hoje, ate: hoje };
         }
 
-        /** A janela já carregada envelheceu (a tela passou da meia-noite aberta)? */
+        /**
+         * A janela já carregada envelheceu (a tela passou da meia-noite aberta)?
+         * Só se aplica a abas ancoradas em "hoje" — a Mês é ancorada no mês
+         * NAVEGADO, que pode nem ser o corrente.
+         */
         function janelaVencida() {
           const aba = CrmState.ui.getAba();
-          if (aba === ABA.BUSCA || aba === ABA.FRIOS) return false;
+          if (aba === ABA.BUSCA || aba === ABA.FRIOS || aba === ABA.MES) return false;
           const dados = CrmState.dados.get(aba);
           if (!dados || !dados.janela) return false;
           return dados.janela.de !== Relogio.hojeISO();
@@ -2133,6 +2363,27 @@
           // Troca de aba REFAZ a chamada com a janela certa — o dado de cada
           // aba tem validade própria, e a Semana não serve para o Painel.
           buscar();
+        }
+
+        /**
+         * ◀/▶ da aba Mês: muda o mês navegado e refaz a chamada (janela nova).
+         * Descarta o cache da aba ANTES de redesenhar — sem isso, `render()`
+         * usa o mês novo no cabeçalho (`CrmState.ui.getMesReferencia()`) mas
+         * os itens do mês ANTERIOR (`CrmState.dados.get(ABA.MES)`, que só
+         * `buscar()` substitui, depois de resolver): cabeçalho e lista ficam
+         * incoerentes até a resposta chegar (achado da revisão da PR #240).
+         */
+        function navegarMes(delta) {
+          CrmState.ui.setMesReferencia(Relogio.mesSoma(mesReferenciaAtual(), delta));
+          CrmState.dados.set(ABA.MES, null);
+          UIRenderer.render();
+          buscar();
+        }
+
+        /** Chip de filtro da aba Mês: liga/desliga, combinável (AND), client-side. */
+        function alternarFiltroMes(id) {
+          CrmState.ui.toggleMesFiltro(id);
+          UIRenderer.render();
         }
 
         function atualizarAgora() {
@@ -2187,6 +2438,16 @@
             const botaoAcao = e.target.closest('[data-acao]');
             if (botaoAcao) {
               AcoesController.aoClicar(botaoAcao);
+              return;
+            }
+            const navMes = e.target.closest('[data-mes-nav]');
+            if (navMes) {
+              navegarMes(navMes.dataset.mesNav === 'anterior' ? -1 : 1);
+              return;
+            }
+            const filtroMes = e.target.closest('[data-mes-filtro]');
+            if (filtroMes) {
+              alternarFiltroMes(filtroMes.dataset.mesFiltro);
               return;
             }
             const alvo = e.target.closest('[data-lead]');
