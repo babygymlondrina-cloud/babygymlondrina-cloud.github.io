@@ -187,6 +187,15 @@
         display: flex;
         flex-direction: column;
       }
+      /* Cabeçalho fixo: barra do usuário + abas não somem ao rolar a lista —
+         só #conteudo rola por baixo. Mesmo padrão de .tab-bar em planos.html. */
+      .crm-topo {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--cream);
+        box-shadow: var(--shadow-sm);
+      }
       .user-bar {
         display: flex;
         flex-wrap: wrap;
@@ -783,15 +792,17 @@
     </div>
 
     <div id="crm-app" style="display: none">
-      <div class="user-bar">
-        <span class="user-bar-email" id="user-email"></span>
-        <span id="env-badge"></span>
-        <span class="app-version-badge" id="app-version-badge"></span>
-        <button class="btn-bar" id="btn-atualizar">↻ Atualizar</button>
-        <button class="btn-bar" id="btn-logout">Sair</button>
-      </div>
+      <div class="crm-topo">
+        <div class="user-bar">
+          <span class="user-bar-email" id="user-email"></span>
+          <span id="env-badge"></span>
+          <span class="app-version-badge" id="app-version-badge"></span>
+          <button class="btn-bar" id="btn-atualizar">↻ Atualizar</button>
+          <button class="btn-bar" id="btn-logout">Sair</button>
+        </div>
 
-      <nav class="tabs" id="tabs" role="tablist"></nav>
+        <nav class="tabs" id="tabs" role="tablist"></nav>
+      </div>
 
       <main>
         <div class="status-linha" id="status-linha"></div>
@@ -1216,10 +1227,10 @@
         }
 
         /**
-         * Item de agenda (Painel ou Semana) pelo par id+bebe — só na aba
-         * ATIVA: um mesmo agendamento de hoje pode estar nas duas caches
-         * (Painel é sempre hoje, Semana inclui hoje), e mutar a cópia errada
-         * deixaria a tela visível sem se atualizar.
+         * Item de agenda (Painel, Semana ou Mês) pelo par id+bebe — só na aba
+         * ATIVA: um mesmo agendamento de hoje pode estar em mais de uma cache
+         * (Painel é sempre hoje, Semana inclui hoje, Mês inclui o mês todo),
+         * e mutar a cópia errada deixaria a tela visível sem se atualizar.
          */
         function _itemAgenda(id, bebe) {
           const dados = CrmState.dados.get(CrmState.ui.getAba());
@@ -1321,9 +1332,7 @@
         /** Cancelar é a única ação difícil de desfazer — pede confirmação. */
         function cancelar(item) {
           const confirmado = window.confirm(
-            'Cancelar o agendamento de ' +
-              (item.bebe || 'este bebê') +
-              '? Ele sai da agenda de hoje/semana.',
+            'Cancelar o agendamento de ' + (item.bebe || 'este bebê') + '? Ele sai da agenda.',
           );
           if (!confirmado) return;
           const local = _itemAgenda(item.id, item.bebe);
@@ -1513,44 +1522,56 @@
          * (T6, decisão D3 do CRM_FASE3_PLANO.md). Com a flag desligada, o
          * comportamento é byte a byte o da T4 (somente leitura): só os slots.
          *
-         * Ficam nas TRÊS faixas, não só na "já passou": a presença é marcada
-         * quando a mãe CHEGA, que é dentro do horário corrente, e a equipe
-         * precisa enxergar o estado do agendamento antes mesmo de a hora
-         * chegar. Quem muda por faixa é o layout, não o que se pode marcar.
+         * No Painel do Dia ficam nas TRÊS faixas, não só na "já passou": a
+         * presença é marcada quando a mãe CHEGA, que é dentro do horário
+         * corrente, e a equipe precisa enxergar o estado do agendamento antes
+         * mesmo de a hora chegar. Quem muda por faixa é o layout, não o que
+         * se pode marcar. `_partesAcoes` devolve o array cru (sem o `<div>`
+         * de fora) para `tabela` poder combiná-lo com o botão de Detalhe
+         * (issue #244 — Semana e Mês ganham os mesmos botões do Painel).
+         *
+         * `mostrarAcoesDeEscrita` (default true) existe só para o rodapé do
+         * Painel: os itens de hoje já têm o botão na própria faixa, então
+         * repeti-lo na linha do rodapé seria um segundo "Marcar presença"
+         * clicável para o mesmo bebê na mesma tela (achado da revisão da PR
+         * #245, 2ª rodada) — `tabela()` desliga essa parte só para essa
+         * chamada, mantendo Detalhe/Conversa.
          */
-        function acoes(item, { proposta }) {
-          const escritaLigada = BGL_CONST.CRM.FLAG_ACOES_ESCRITA;
+        function _partesAcoes(item, { proposta, mostrarAcoesDeEscrita = true }) {
+          const escritaLigada = mostrarAcoesDeEscrita && BGL_CONST.CRM.FLAG_ACOES_ESCRITA;
           const partes = [];
-          if (escritaLigada && !item.compareceu) {
-            partes.push(
-              botaoAcao('compareceu', 'Marcar presença', {
-                id: item.id,
-                bebe: item.bebe,
-                pendente: AcoesController.estaPendente('compareceu', item.id, item.bebe),
-              }),
-            );
-          } else {
-            partes.push(slotT6('Presença', item.compareceu));
-          }
-          if (escritaLigada && !item.fechou) {
-            partes.push(
-              botaoAcao('fechou', 'Marcar fechou', {
-                id: item.id,
-                bebe: item.bebe,
-                pendente: AcoesController.estaPendente('fechou', item.id, item.bebe),
-              }),
-            );
-          } else {
-            partes.push(slotT6('Fechou', item.fechou));
-          }
-          if (escritaLigada) {
-            partes.push(
-              botaoAcao('cancelado', 'Cancelar', {
-                id: item.id,
-                bebe: item.bebe,
-                pendente: AcoesController.estaPendente('cancelado', item.id, item.bebe),
-              }),
-            );
+          if (mostrarAcoesDeEscrita) {
+            if (escritaLigada && !item.compareceu) {
+              partes.push(
+                botaoAcao('compareceu', 'Marcar presença', {
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('compareceu', item.id, item.bebe),
+                }),
+              );
+            } else {
+              partes.push(slotT6('Presença', item.compareceu));
+            }
+            if (escritaLigada && !item.fechou) {
+              partes.push(
+                botaoAcao('fechou', 'Marcar fechou', {
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('fechou', item.id, item.bebe),
+                }),
+              );
+            } else {
+              partes.push(slotT6('Fechou', item.fechou));
+            }
+            if (escritaLigada) {
+              partes.push(
+                botaoAcao('cancelado', 'Cancelar', {
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('cancelado', item.id, item.bebe),
+                }),
+              );
+            }
           }
           // O link de proposta, esse sim, só faz sentido depois da PE — fica na
           // faixa de conferência (D8: "enviar a proposta por WhatsApp").
@@ -1569,7 +1590,11 @@
                 '" target="_blank" rel="noopener">💬 Conversa</a>',
             );
           }
-          return '<div class="acoes">' + partes.join('') + '</div>';
+          return partes;
+        }
+
+        function acoes(item, opcoes) {
+          return '<div class="acoes">' + _partesAcoes(item, opcoes).join('') + '</div>';
         }
 
         /** Um agendamento dentro de um bloco de horário. */
@@ -1620,26 +1645,28 @@
          * Tabela com o dia inteiro, estado de confirmação e de pagamento da
          * PE — usada pela aba Semana, pela aba Mês e pela lista completa do
          * rodapé do Painel (`PainelRenderer`): telefone, link de conversa
-         * (`LinkBuilder.conversa`) e acesso ao detalhe pelo mesmo `data-lead`
-         * que o handler delegado já trata (nenhum caminho novo).
+         * (`LinkBuilder.conversa`), acesso ao detalhe pelo mesmo `data-lead`
+         * que o handler delegado já trata, e — na Semana e no Mês — os
+         * mesmos botões de escrita (Presença/Fechou/Cancelar) do Painel:
+         * `AcoesController._itemAgenda` já resolve o item pela aba ATIVA,
+         * então nenhum caminho novo de escrita foi criado aqui, só o botão
+         * (issue #244). O rodapé do Painel passa `comAcoesDeEscrita: false`
+         * — os itens de hoje já têm o botão na própria faixa, e repeti-lo
+         * na linha do rodapé duplicaria o clique na mesma tela (achado da
+         * revisão da PR #245, 2ª rodada).
          */
-        function tabela(itens) {
+        function tabela(itens, { comAcoesDeEscrita = true } = {}) {
           const linhas = itens
             .map((i) => {
-              const wpp = LinkBuilder.conversa(i.telefone);
-              const acoesCel = [];
+              const acoesCel = _partesAcoes(i, {
+                proposta: false,
+                mostrarAcoesDeEscrita: comAcoesDeEscrita,
+              });
               if (i.telefone) {
-                acoesCel.push(
+                acoesCel.unshift(
                   '<button type="button" class="btn-acao" data-lead="' +
                     esc(i.telefone) +
                     '">📄 Detalhe</button>',
-                );
-              }
-              if (wpp) {
-                acoesCel.push(
-                  '<a class="btn-acao" href="' +
-                    esc(wpp) +
-                    '" target="_blank" rel="noopener">💬 Conversa</a>',
                 );
               }
               return (
@@ -1762,7 +1789,9 @@
             '<h2 class="secao-titulo">Todos os agendamentos de hoje (' +
             itens.length +
             ')</h2>' +
-            AgendaRenderer.tabela(itens)
+            // Sem os botões de escrita: cada item já tem o dele na própria
+            // faixa acima — repetir aqui duplicaria o clique (revisão #245).
+            AgendaRenderer.tabela(itens, { comAcoesDeEscrita: false })
           );
         }
 
@@ -1770,13 +1799,19 @@
       })();
 
       // ─── SemanaRenderer ──────────────────────────────────────────────────
-      // Aba secundária: hoje..hoje+5, a mesma janela da mensagem das 18h que
-      // ela manda hoje no WhatsApp (mapa da §2 do plano).
+      // Aba secundária: hoje-7..hoje+7 (issue #244) — os 7 dias pra trás são
+      // para CONTATO E ACOMPANHAMENTO de quem já passou pela PE; os 7 pra
+      // frente são a mesma janela da mensagem das 18h (mapa da §2 do plano).
       const SemanaRenderer = (function () {
         function render(resposta) {
-          const itens = (resposta && resposta.itens) || [];
+          const hoje = Relogio.hojeISO();
+          const todos = (resposta && resposta.itens) || [];
+          // Nos dias PASSADOS, quem já fechou não precisa mais de
+          // acompanhamento — some da lista. Hoje e os dias futuros mostram
+          // tudo, sem filtro (mesma regra confirmada na issue #244).
+          const itens = todos.filter((i) => i.data >= hoje || !i.fechou);
           if (!itens.length) {
-            return '<div class="vazio">Nenhum agendamento nos próximos dias.</div>';
+            return '<div class="vazio">Nenhum agendamento nos últimos ou próximos 7 dias.</div>';
           }
           const porDia = new Map();
           itens.forEach((i) => {
@@ -2393,10 +2428,13 @@
         /** Janela `{ de, ate }` da aba, em `YYYY-MM-DD` na timezone da unidade. */
         function janelaDaAba(aba) {
           const hoje = Relogio.hojeISO();
-          // Painel do Dia: só hoje. Semana: hoje..hoje+5, a mesma janela do
-          // `view=resumo-status` (JANELA_RESUMO_DIAS_A_FRENTE em crm-const.js).
-          // Mês: o mês navegado inteiro (cabe no teto de 31 dias da API).
-          if (aba === ABA.SEMANA) return { de: hoje, ate: Relogio.somaDias(hoje, 5) };
+          // Painel do Dia: só hoje. Semana: hoje-7..hoje+7 (issue #244) — os
+          // 7 pra trás são para contato/acompanhamento, os 7 pra frente são a
+          // mesma janela da mensagem das 18h. Mês: o mês navegado inteiro
+          // (cabe no teto de 31 dias da API).
+          if (aba === ABA.SEMANA) {
+            return { de: Relogio.somaDias(hoje, -7), ate: Relogio.somaDias(hoje, 7) };
+          }
           if (aba === ABA.MES) return Relogio.janelaDoMes(mesReferenciaAtual());
           return { de: hoje, ate: hoje };
         }
@@ -2411,7 +2449,7 @@
           if (aba === ABA.BUSCA || aba === ABA.FRIOS || aba === ABA.MES) return false;
           const dados = CrmState.dados.get(aba);
           if (!dados || !dados.janela) return false;
-          return dados.janela.de !== Relogio.hojeISO();
+          return dados.janela.de !== janelaDaAba(aba).de;
         }
 
         async function buscar() {
