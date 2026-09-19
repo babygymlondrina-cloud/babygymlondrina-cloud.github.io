@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.11',
-  APP_DATE: '2026-09-18',
+  APP_VERSION: '3.12',
+  APP_DATE: '2026-09-19',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
