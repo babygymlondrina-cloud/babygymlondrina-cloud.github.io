@@ -486,6 +486,13 @@
         background: var(--neutral-bg);
         color: var(--neutral);
       }
+      /* Selo do dia corrente na Semana (issue #257). Tom da marca, não o verde
+         de Confirmado/PE paga: numa tela cheia de selo verde, mais um não
+         distinguiria o dia de nada. */
+      .badge-hoje {
+        background: var(--tint-purple-strong);
+        color: var(--purple-dark);
+      }
       /* ─── TABELA / LISTA COMPLETA ─── */
       .secao-titulo {
         font-size: 0.95rem;
@@ -526,6 +533,26 @@
         font-weight: 800;
         color: var(--purple-dark);
         margin: 1rem 0 0.4rem;
+      }
+      .dia-titulo .badge {
+        margin-left: 0.4rem;
+        vertical-align: middle;
+      }
+      /* Dia já passado na aba Semana (issue #248): o realce sai do título e o
+         fundo da tabela recua. O texto das linhas NÃO perde contraste — o que
+         muda é a moldura, porque a lista do passado continua sendo de
+         trabalho (contato e acompanhamento de quem já fez a PE). */
+      .dia-passado .dia-titulo {
+        color: var(--text-light);
+      }
+      .dia-passado .tabela-wrap {
+        background: var(--surface-muted);
+      }
+      /* `th` já usa `--surface-muted`, e `table`/`td` não têm fundo próprio:
+         no grupo recuado o cabeçalho ficaria da mesma cor do corpo e se
+         distinguiria só pela tipografia (achado 3 da revisão da PR #256). */
+      .dia-passado th {
+        background: var(--neutral-bg);
       }
       /* ─── ABA MÊS ─── */
       .mes-nav {
@@ -1654,8 +1681,14 @@
          * — os itens de hoje já têm o botão na própria faixa, e repeti-lo
          * na linha do rodapé duplicaria o clique na mesma tela (achado da
          * revisão da PR #245, 2ª rodada).
+         *
+         * `comData` acrescenta a Data como PRIMEIRA coluna — só o Mês pede
+         * (issue #249), porque ele é o único que lista o período inteiro numa
+         * tabela só. Semana e Painel agrupam por dia antes de chamar aqui, e
+         * ali a coluna repetiria em cada linha o que o cabeçalho do grupo já
+         * diz.
          */
-        function tabela(itens, { comAcoesDeEscrita = true } = {}) {
+        function tabela(itens, { comAcoesDeEscrita = true, comData = false } = {}) {
           const linhas = itens
             .map((i) => {
               const acoesCel = _partesAcoes(i, {
@@ -1671,6 +1704,7 @@
               }
               return (
                 '<tr>' +
+                (comData ? '<td>' + esc(dataCurta(i.data)) + '</td>' : '') +
                 '<td>' +
                 esc(ou(i.hora)) +
                 '</td>' +
@@ -1701,7 +1735,9 @@
             .join('');
           return (
             '<div class="tabela-wrap"><table>' +
-            '<thead><tr><th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th><th>Telefone</th>' +
+            '<thead><tr>' +
+            (comData ? '<th>Data</th>' : '') +
+            '<th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th><th>Telefone</th>' +
             '<th>Confirmação</th><th>PE</th><th></th></tr></thead>' +
             '<tbody>' +
             linhas +
@@ -1820,16 +1856,34 @@
           });
           return Array.from(porDia)
             .sort((a, b) => a[0].localeCompare(b[0]))
-            .map(
-              ([data, lista]) =>
+            .map(([data, lista]) => {
+              // Hoje conta como "vai vir": a PE do dia ainda não aconteceu na
+              // maior parte do dia, e é a mesma fronteira do filtro acima
+              // (`i.data >= hoje`) — duas fronteiras diferentes na mesma aba
+              // fariam o dia de hoje sumir da lista e aparecer como passado.
+              const passado = data < hoje;
+              // `data-dia` é o que a âncora da entrada da aba procura
+              // (`UIRenderer.ancorarHojeNaSemana`, issue #257): ela precisa do
+              // primeiro dia `>= hoje` e o dia de hoje pode não estar
+              // renderizado — dia sem agendamento não gera grupo.
+              return (
+                '<section class="dia-grupo' +
+                (passado ? ' dia-passado' : data === hoje ? ' dia-hoje' : '') +
+                '" data-dia="' +
+                esc(data) +
+                '">' +
                 '<h2 class="dia-titulo">' +
                 esc(dataCurta(data)) +
                 ' · ' +
                 lista.length +
                 (lista.length === 1 ? ' agendamento' : ' agendamentos') +
+                (passado ? badge('já passou', 'neutro') : '') +
+                (data === hoje ? badge('hoje', 'hoje') : '') +
                 '</h2>' +
-                AgendaRenderer.tabela(lista),
-            )
+                AgendaRenderer.tabela(lista) +
+                '</section>'
+              );
+            })
             .join('');
         }
         return { render };
@@ -1945,7 +1999,7 @@
                 filtrados.length +
                 (filtrados.length === 1 ? ' agendamento' : ' agendamentos') +
                 '</h2>' +
-                AgendaRenderer.tabela(filtrados);
+                AgendaRenderer.tabela(filtrados, { comData: true });
 
           return _navegacao(anoMes) + _filtros(itens, ativos) + corpo;
         }
@@ -2348,6 +2402,47 @@
           render();
         }
 
+        /**
+         * Leva a aba Semana para o dia de HOJE (issue #257) — ela mostra
+         * `hoje-7..hoje+7` desde a #244, e sem isso abre no dia mais antigo da
+         * janela, com hoje abaixo da dobra.
+         *
+         * NÃO é chamada por `render()`, de propósito: `render()` roda no
+         * polling de 5 min, ao recuperar o foco, no botão Atualizar e depois de
+         * cada clique de escrita (atualização otimista). Ancorar ali faria a
+         * página pular de volta para hoje no meio da leitura de um dia
+         * passado. Quem chama é `CrmController`, uma vez por ENTRADA na aba.
+         *
+         * O alvo é o primeiro dia `>= hoje`, não o dia de hoje: dia sem
+         * agendamento não gera grupo, então hoje pode não estar na página.
+         * Janela só com passado (nenhum dia `>= hoje`) ancora no último grupo,
+         * que é o mais recente.
+         *
+         * A altura do cabeçalho fixo é MEDIDA, não constante: o `.crm-topo` é
+         * `position: sticky` e pode quebrar em duas linhas em tela estreita —
+         * uma constante duplicada aqui sairia de sincronia com o CSS.
+         */
+        function ancorarHojeNaSemana() {
+          const grupos = document.querySelectorAll('#conteudo .dia-grupo');
+          if (!grupos.length) return;
+          const hoje = Relogio.hojeISO();
+          const alvo =
+            Array.from(grupos).find((g) => g.dataset.dia >= hoje) || grupos[grupos.length - 1];
+          const topo = document.querySelector('.crm-topo');
+          const alturaTopo = topo ? topo.getBoundingClientRect().height : 0;
+          // A folga não é respiro: é a ESPIADA que serve de affordance. Com
+          // folga mínima o título de hoje cola no cabeçalho e nada na tela diz
+          // que existe passado acima — a rolagem vertical não se anuncia
+          // sozinha. Deixando a borda do grupo anterior aparecendo, a própria
+          // lista informa que dá para subir, sem rótulo novo numa tela que já
+          // tem cinco abas e quatro botões por linha.
+          const ESPIADA = 28;
+          const y = alvo.getBoundingClientRect().top + window.scrollY - alturaTopo - ESPIADA;
+          // Instantâneo, não `smooth`: a aba acabou de abrir, então animar a
+          // partir de uma posição que ninguém viu é movimento sem informação.
+          window.scrollTo({ top: Math.max(0, y) });
+        }
+
         function renderLead() {
           const modal = document.getElementById('lead-modal');
           const doc = CrmState.lead.getDoc();
@@ -2363,7 +2458,13 @@
           modal.style.display = 'flex';
         }
 
-        return { renderTabs, render, renderLead, talvezRedesenharPeloRelogio };
+        return {
+          renderTabs,
+          render,
+          renderLead,
+          talvezRedesenharPeloRelogio,
+          ancorarHojeNaSemana,
+        };
       })();
 
       // ─── Atualizador ─────────────────────────────────────────────────────
@@ -2420,6 +2521,13 @@
       // detalhe do lead. Não desenha nada e não fala com a rede direto — quem
       // desenha é o `UIRenderer`, quem busca é o `ApiClient`.
       const CrmController = (function () {
+        /**
+         * Entrada na aba Semana pendente de âncora (issue #257). Consumido uma
+         * vez, no fim do `buscar()` — é o que garante que polling, foco,
+         * Atualizar e escrita otimista NÃO re-ancorem a página.
+         */
+        let _ancorarSemana = false;
+
         /** Mês navegado da aba Mês, resolvendo o default (mês corrente) na 1ª leitura. */
         function mesReferenciaAtual() {
           return CrmState.ui.getMesReferencia() || Relogio.mesAtual();
@@ -2469,6 +2577,18 @@
           } finally {
             CrmState.ui.setCarregando(false);
             UIRenderer.render();
+            // `aba` é a busca QUE ESTÁ TERMINANDO, não a aba de agora: sem
+            // essa checagem, o `finally` de uma busca de OUTRA aba consome a
+            // flag. Acontece sem clique acrobático — a tela abre no Painel e
+            // já busca; quem clica na Semana antes dessa 1ª resposta voltar
+            // faz o `finally` do Painel zerar a flag com o DOM da Semana ainda
+            // vazio, e quando o dado da Semana chega não sobra ninguém para
+            // ancorar (achado 1 da revisão da PR #256).
+            if (_ancorarSemana && aba === ABA.SEMANA) {
+              _ancorarSemana = false;
+              // A aba ainda pode ter mudado durante o request.
+              if (CrmState.ui.getAba() === ABA.SEMANA) UIRenderer.ancorarHojeNaSemana();
+            }
           }
         }
 
@@ -2483,10 +2603,20 @@
 
         function irPara(aba) {
           if (aba === CrmState.ui.getAba()) return;
+          // Só a ENTRADA na aba ancora (issue #257) — ver `_ancorarSemana`.
+          if (aba === ABA.SEMANA) _ancorarSemana = true;
           CrmState.ui.setAba(aba);
           CrmState.ui.setErro(null);
           CrmState.ui.setAvisoAcao(null);
           UIRenderer.render();
+          // RE-entrada com cache: `CrmState.dados` sobrevive à troca de aba,
+          // então a lista já aparece desenhada — e no topo, ou seja, no dia
+          // mais antigo. Esperar a resposta para ancorar deixaria um piscar do
+          // dia errado com a duração da latência (achado 4 da revisão da PR
+          // #256). Sem cache não há grupo no DOM e a função sai sozinha; a
+          // âncora pós-busca continua valendo, para reposicionar quando o dado
+          // novo mudar a altura dos grupos.
+          if (aba === ABA.SEMANA) UIRenderer.ancorarHojeNaSemana();
           // Troca de aba REFAZ a chamada com a janela certa — o dado de cada
           // aba tem validade própria, e a Semana não serve para o Painel.
           buscar();
