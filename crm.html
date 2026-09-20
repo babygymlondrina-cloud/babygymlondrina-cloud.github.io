@@ -1017,8 +1017,9 @@
         let _carregando = false;
         let _erro = null;
         let _atualizadoEm = null;
-        // Aviso de espelho falho (T6): distinto de `_erro` — a ação FOI salva,
-        // só a planilha não recebeu. Só o `AcoesController` escreve aqui.
+        // Aviso de efeito colateral falho (T6): distinto de `_erro` — a ação
+        // FOI salva, só a planilha não recebeu (espelho) ou a mensagem no
+        // WhatsApp não saiu (#269). Só o `AcoesController` escreve aqui.
         let _avisoAcao = null;
         // Resposta crua da API por aba; `null` = ainda não carregada.
         const _dados = {
@@ -1294,16 +1295,27 @@
               evento,
               bebe,
             });
-            // Campo `espelho` só existe quando houve TENTATIVA de write-back
-            // (docs/CRM_FASE3_API.md). Sem o campo: flag da API desligada ou
-            // evento fora do mapa — normal, não é erro, não vira aviso.
-            if (resposta && resposta.espelho) {
-              CrmState.ui.setAvisoAcao(
-                resposta.espelho.ok
-                  ? null
-                  : 'Isso foi salvo no CRM, mas não atualizou a planilha automaticamente. ' +
-                      'Confira a planilha para esta ação.',
-              );
+            // Os campos `espelho` e `whatsapp` só existem quando houve
+            // TENTATIVA (docs/CRM_FASE3_API.md). Sem eles: flag da API
+            // desligada ou evento fora do mapa — normal, não é erro, não vira
+            // aviso. Os dois podem falhar no mesmo clique (a planilha não
+            // recebeu E a mensagem não saiu), e aí a equipe precisa saber das
+            // duas coisas: o aviso é a junção, não o primeiro que falhou.
+            if (resposta && (resposta.espelho || resposta.whatsapp)) {
+              const avisos = [];
+              if (resposta.espelho && !resposta.espelho.ok) {
+                avisos.push(
+                  'Isso foi salvo no CRM, mas não atualizou a planilha automaticamente. ' +
+                    'Confira a planilha para esta ação.',
+                );
+              }
+              if (resposta.whatsapp && !resposta.whatsapp.ok) {
+                avisos.push(
+                  'A mensagem automática no WhatsApp não saiu. ' +
+                    'Se for o caso, fale com a família por lá.',
+                );
+              }
+              CrmState.ui.setAvisoAcao(avisos.length ? avisos.join(' ') : null);
             }
           } catch (e) {
             reverter();
