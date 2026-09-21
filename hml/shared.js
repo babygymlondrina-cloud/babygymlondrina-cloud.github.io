@@ -22,6 +22,40 @@ function configDocId(id) {
   return typeof BGL_CONFIG !== 'undefined' && BGL_CONFIG.env === 'hml' ? id + '_hml' : id;
 }
 
+// ─── normalizeTelefone ───────────────────────────────────────────────────────
+// "43 99651-7182" → "5543996517182" | "+55 (43) 3025-0000" → "554330250000"
+// `null` quando não dá para normalizar com segurança.
+//
+// Mesma regra do `functions/normalize.js:normalizeTelefone` — que decide o
+// `docId` do lead — **para número brasileiro**, que é o caso desta tela. O
+// servidor tem um passo a mais: quando não casa como BR, ele tenta
+// `libphonenumber-js` e aceita internacional. Aqui isso não existe de
+// propósito: o front é sem build e sem dependência externa (`CLAUDE.md`), e
+// carregar a lib só por isso não se paga. **Divergência declarada:** telefone
+// internacional devolve `null` aqui, e o link sai sem destinatário — a equipe
+// escolhe o contato na mão, que é melhor que abrir um número errado.
+//
+// Um teste compara as duas implementações nos casos BR (`tests/proposta.spec.js`):
+// a duplicação é inevitável, mas divergir em silêncio não é.
+//
+// Existe porque a falta dela produziu bug: o `proposta.html` assumia que o
+// campo de telefone NUNCA vinha com DDI e concatenava `'55'` na mão. Verdade
+// para quem digita, falso para o link do `crm.html`, que preenche o campo com
+// o telefone já normalizado do lead — e o WhatsApp abria `555543...` (#295).
+function normalizeTelefone(raw) {
+  if (raw === null || raw === undefined) return null;
+  let digits = String(raw).replace(/\D/g, '');
+  digits = digits.replace(/^0+/, '');
+  if (digits.startsWith('55') && digits.length >= 12 && digits.length <= 13) {
+    return digits;
+  }
+  // DDD + número (fixo 10, celular 11)
+  if (digits.length === 10 || digits.length === 11) {
+    return '55' + digits;
+  }
+  return null;
+}
+
 // ─── apiBaseUrl ───────────────────────────────────────────────────────────────
 // URL da API de leads do CRM para o ambiente em que ESTA página está rodando.
 // São duas Cloud Functions, uma por ambiente (`api` → coleção `leads`,
