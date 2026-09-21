@@ -910,6 +910,31 @@
         return DIAS_SEMANA[d.getUTCDay()] + ' ' + iso.slice(8, 10) + '/' + iso.slice(5, 7);
       }
 
+      /**
+       * `YYYY-MM-DD` → `21/09/2026`, com hora opcional → `21/09/2026 20:00`.
+       *
+       * Distinto do `dataCurta`, que serve às listas de agenda: lá o ano é sempre o
+       * corrente e o dia da semana importa mais. Aqui é histórico — duas propostas
+       * do mesmo dia (regerar link é o caso comum) e de anos diferentes precisam
+       * ficar distinguíveis, senão a coluna não responde qual link é o vigente.
+       */
+      function dataHoraBr(iso, hora) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return ou(iso);
+        const data = iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
+        return /^\d{2}:\d{2}$/.test(String(hora || '')) ? data + ' ' + hora : data;
+      }
+
+      /**
+       * `true` só para URL http(s). O `esc()` escapa `&<>"'` e deixa `javascript:`
+       * passar inteiro, então escapar não basta para um valor que vai virar `href`.
+       * O `linkUrl` vem da coleção `propostas` — escrita restrita pelo
+       * `firestore.rules` a três e-mails —, mas este é um caminho de dado NOVO
+       * (API → `href`) e conferir o esquema custa uma linha.
+       */
+      function linkSeguro(url) {
+        return /^https?:\/\//i.test(String(url || ''));
+      }
+
       /** Só os dígitos — é o que o `wa.me` aceita. */
       function soDigitos(telefone) {
         return String(telefone || '').replace(/\D/g, '');
@@ -1041,6 +1066,11 @@
         let _leadErro = null;
         let _leadCarregando = false;
         let _buscaFeita = false;
+        // Propostas do lead aberto (issue #296). Estado SEPARADO do `_leadDoc`
+        // porque a busca é outra, e pode falhar sozinha: o detalhe do lead abre
+        // do mesmo jeito com a lista de propostas indisponível.
+        let _leadPropostas = null;
+        let _leadPropostasErro = null;
         // Busca única (issue #227) — distinto de `lead` (o modal de detalhe,
         // aberto a partir de um resultado). `_buscaResultados === null` é
         // "ainda não buscou"; `[]` é "buscou e não achou nada" — os dois
@@ -1093,17 +1123,28 @@
             getErro: () => _leadErro,
             isCarregando: () => _leadCarregando,
             isBuscaFeita: () => _buscaFeita,
+            getPropostas: () => _leadPropostas,
+            getPropostasErro: () => _leadPropostasErro,
+            setPropostas: ({ itens, erro }) => {
+              _leadPropostas = itens || null;
+              _leadPropostasErro = erro || null;
+            },
             set: ({ doc, erro, carregando }) => {
               _leadDoc = doc || null;
               _leadErro = erro || null;
               _leadCarregando = !!carregando;
               _buscaFeita = true;
+              // Abrir OUTRO lead não pode herdar as propostas do anterior.
+              _leadPropostas = null;
+              _leadPropostasErro = null;
             },
             limpar: () => {
               _leadDoc = null;
               _leadErro = null;
               _leadCarregando = false;
               _buscaFeita = false;
+              _leadPropostas = null;
+              _leadPropostasErro = null;
             },
           },
           busca: {
@@ -1437,11 +1478,16 @@
          * aposenta (mapa da §2 do plano). O caminho é relativo ao da página
          * atual, então em `/hml/` o link continua apontando para o `/hml/`.
          */
-        function proposta({ mae, filho, sexo, turma, pePaga, telefone }) {
+        function proposta({ mae, filho, sexo, turma, pePaga, telefone, leadId }) {
           const p = new URLSearchParams();
           if (mae) p.set('mae', mae);
           if (filho) p.set('filho', filho);
           if (telefone) p.set('telefone', telefone);
+          // `lead` é o ELO declarado entre a proposta e o lead (issue #296), e
+          // vai separado do `telefone` de propósito: telefone é chave de
+          // junção, que quebra quando a família troca de número; o docId não.
+          // É o mesmo `resposta.id` que o modal já usa — telefone OU chatID.
+          if (leadId) p.set('lead', leadId);
           const s = String(sexo || '')
             .trim()
             .toLowerCase();
@@ -2211,6 +2257,7 @@
             // (`resposta.id`, sempre o telefone OU o chatID) é o melhor
             // valor que dá pra pré-preencher no proposta.html.
             telefone: lead.telefone || telefoneFallback,
+            leadId: telefoneFallback,
           });
           return (
             '<div class="bebe-card">' +
@@ -2318,7 +2365,69 @@
                 '</tr></thead><tbody>' +
                 agendamentos.map(_agendamento).join('') +
                 '</tbody></table></div>'
-              : '<div class="vazio">Nenhum agendamento — este lead nunca agendou.</div>')
+              : '<div class="vazio">Nenhum agendamento — este lead nunca agendou.</div>') +
+            _propostas()
+          );
+        }
+
+        /**
+         * Propostas geradas para este lead (issue #296) — é aqui que a equipe
+         * pergunta "já mandaram proposta para essa mãe?".
+         *
+         * Só aparecem as propostas com `leadId`, ou seja, as geradas pelo botão
+         * daqui depois desta versão. Proposta antiga, e proposta aberta direto
+         * no `proposta.html` sem vir do CRM, não tem elo e não entra: lista
+         * vazia aqui não quer dizer que ninguém mandou proposta.
+         */
+        function _propostas() {
+          const itens = CrmState.lead.getPropostas();
+          const erro = CrmState.lead.getPropostasErro();
+          const titulo =
+            '<h3 class="secao-titulo">Propostas' +
+            (itens ? ' (' + itens.length + ')' : '') +
+            '</h3>';
+          if (erro) return titulo + '<div class="vazio">' + esc(erro) + '</div>';
+          if (!itens) return titulo + '<div class="vazio">Carregando…</div>';
+          if (!itens.length) {
+            return (
+              titulo +
+              '<div class="vazio">Nenhuma proposta registrada — as geradas antes desta ' +
+              'versão não aparecem aqui.</div>'
+            );
+          }
+          return (
+            titulo +
+            '<div class="tabela-wrap"><table><thead><tr>' +
+            '<th>Gerada em</th><th>Bebê</th><th>Operador</th><th>Validade</th><th></th>' +
+            '</tr></thead><tbody>' +
+            itens.map(_proposta).join('') +
+            '</tbody></table></div>'
+          );
+        }
+
+        function _proposta(p) {
+          return (
+            '<tr>' +
+            '<td>' +
+            esc(dataHoraBr(p.criadoEm, p.criadoEmHora)) +
+            '</td>' +
+            '<td>' +
+            esc(ou(p.filho)) +
+            '</td>' +
+            '<td>' +
+            esc(ou(p.operatorEmail)) +
+            '</td>' +
+            '<td>' +
+            esc(dataHoraBr(p.linkExp)) +
+            '</td>' +
+            '<td>' +
+            (linkSeguro(p.linkUrl)
+              ? '<a class="btn-acao" data-proposta-link href="' +
+                esc(p.linkUrl) +
+                '" target="_blank" rel="noopener">🔗 Abrir</a>'
+              : '') +
+            '</td>' +
+            '</tr>'
           );
         }
 
@@ -2540,6 +2649,9 @@
          */
         let _ancorarSemana = false;
 
+        /** Sequência das buscas de proposta — ver `carregarPropostas`. */
+        let _propostasToken = 0;
+
         /** Mês navegado da aba Mês, resolvendo o default (mês corrente) na 1ª leitura. */
         function mesReferenciaAtual() {
           return CrmState.ui.getMesReferencia() || Relogio.mesAtual();
@@ -2720,6 +2832,48 @@
           }
           UIRenderer.render();
           UIRenderer.renderLead();
+          // Propostas DEPOIS de desenhar o detalhe, e sem `await` no caminho
+          // acima: o que a equipe veio ver é o lead, e ele não espera por uma
+          // lista acessória. A seção desenha "carregando" e se completa sozinha.
+          //
+          // Só quando o lead existe: no 404 (telefone digitado errado, o erro
+          // mais comum daqui) o `renderLead` sai cedo por `!getDoc()` e a
+          // resposta não teria onde ser desenhada — seria round-trip jogado fora
+          // justamente no caminho de erro.
+          if (CrmState.lead.getDoc()) carregarPropostas(telefone);
+        }
+
+        /**
+         * Busca as propostas do lead (issue #296). Falha aqui NUNCA derruba o
+         * detalhe — mesma convenção do espelho e do WhatsApp no `PATCH`: o
+         * acessório avisa, não quebra. Sessão expirada é a exceção e sobe,
+         * porque aí o problema não é acessório nenhum.
+         */
+        async function carregarPropostas(telefone) {
+          // Abrir o lead A e logo o B deixa as duas buscas no ar. Sem isto, a
+          // resposta de A chegando por último escreveria as propostas de A no
+          // modal de B — o token descarta toda resposta que não seja da ÚLTIMA
+          // abertura.
+          const token = ++_propostasToken;
+          let resultado;
+          try {
+            const resposta = await ApiClient.get(
+              '/leads/' + encodeURIComponent(telefone) + '/propostas',
+            );
+            resultado = { itens: resposta.propostas || [] };
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              CrmState.lead.limpar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            resultado = { erro: 'Não deu para carregar as propostas deste lead agora.' };
+          }
+          if (token !== _propostasToken) return;
+          CrmState.lead.setPropostas(resultado);
+          // Só redesenha se o modal ainda estiver aberto: a equipe pode ter
+          // fechado enquanto a busca corria.
+          if (CrmState.lead.getDoc()) UIRenderer.renderLead();
         }
 
         function fecharLead() {

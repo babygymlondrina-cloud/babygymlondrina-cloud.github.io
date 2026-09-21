@@ -2093,6 +2093,13 @@
           // não normaliza vira `null` e o link sai sem número — melhor que
           // abrir o WhatsApp num número inventado.
           const telefone = normalizeTelefone(document.getElementById('inp-telefone').value);
+          // Elo com o lead (issue #296). Vem do `?lead=` que o botão Gerar
+          // proposta do `crm.html` põe no link — é o docId do lead (telefone OU
+          // chatID). Proposta aberta direto, sem vir do CRM, nasce sem elo e
+          // grava `null`: melhor um elo ausente que um elo adivinhado por
+          // telefone, que é justamente a chave que o #295 mostrou ser frágil.
+          // NÃO é campo de formulário — a equipe não digita nem corrige isto.
+          const leadId = (_urlParams.get('lead') || '').trim() || null;
           const sexo = document.getElementById('inp-sexo').value;
           const turmaId = document.getElementById('inp-turma').value || undefined;
           const destaque = document.getElementById('inp-destaque').value;
@@ -2233,6 +2240,7 @@
                 mae,
                 filho,
                 telefone: telefone || null,
+                leadId,
                 sexo,
                 turma: turmaId || null,
                 tipo: data.tipo || 'primeira-experiencia',
