@@ -2093,13 +2093,22 @@
           // não normaliza vira `null` e o link sai sem número — melhor que
           // abrir o WhatsApp num número inventado.
           const telefone = normalizeTelefone(document.getElementById('inp-telefone').value);
-          // Elo com o lead (issue #296). Vem do `?lead=` que o botão Gerar
-          // proposta do `crm.html` põe no link — é o docId do lead (telefone OU
-          // chatID). Proposta aberta direto, sem vir do CRM, nasce sem elo e
-          // grava `null`: melhor um elo ausente que um elo adivinhado por
-          // telefone, que é justamente a chave que o #295 mostrou ser frágil.
-          // NÃO é campo de formulário — a equipe não digita nem corrige isto.
-          const leadId = (_urlParams.get('lead') || '').trim() || null;
+          // Elo com o lead (issues #296 e #313). NÃO é campo de formulário — a
+          // equipe não digita nem corrige isto. Duas origens, as duas vindas do
+          // LINK, gerado pelo sistema:
+          //  - `?lead=`: docId explícito (botão do `crm.html`, ou a fórmula da
+          //    planilha para lead que só tem chatID). Sempre vence.
+          //  - `?telefone=` sem `?lead=`: o link da planilha manda só o telefone,
+          //    e o docId de todo lead com telefone É o telefone normalizado
+          //    (`backfill-map.js:docIdDoLead`). Lido da URL, nunca do campo: o
+          //    que a equipe digita ou corrige no formulário não vira elo.
+          // Proposta aberta direto, sem nenhum dos dois, grava `null` — elo
+          // ausente é melhor que elo adivinhado. Telefone que não normaliza
+          // (inclusive internacional, que o front não trata) também.
+          const leadId =
+            (_urlParams.get('lead') || '').trim() ||
+            normalizeTelefone(_urlParams.get('telefone') || '') ||
+            null;
           const sexo = document.getElementById('inp-sexo').value;
           const turmaId = document.getElementById('inp-turma').value || undefined;
           const destaque = document.getElementById('inp-destaque').value;
