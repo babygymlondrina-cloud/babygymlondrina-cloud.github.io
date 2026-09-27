@@ -674,7 +674,9 @@
         align-items: center;
         justify-content: center;
         padding: 1rem;
-        z-index: 50;
+        /* Acima do .crm-topo (sticky, z-index 100): com o detalhe alto o card
+           encosta no topo da janela e a barra cobria o nome e o × (issue #319). */
+        z-index: 200;
       }
       .modal-card {
         background: var(--surface);
