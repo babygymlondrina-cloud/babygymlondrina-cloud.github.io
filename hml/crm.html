@@ -741,6 +741,58 @@
         font-size: 0.92rem;
         margin-bottom: 0.2rem;
       }
+      /* ─── OBSERVAÇÕES PÓS-PE (issue #308) ─── */
+      .pospe-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.5rem;
+        background: var(--surface-muted);
+      }
+      .pospe-cabecalho {
+        font-weight: 800;
+        font-size: 0.85rem;
+        margin-bottom: 0.3rem;
+      }
+      .pospe-campo {
+        margin-top: 0.45rem;
+      }
+      .pospe-rotulo {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--text-light);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .pospe-texto {
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .pospe-texto.pospe-vazio {
+        color: var(--text-light);
+      }
+      .pospe-editor {
+        width: 100%;
+        min-height: 5rem;
+        margin-top: 0.3rem;
+        padding: 0.5rem 0.6rem;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        font-family: inherit;
+        font-size: 0.85rem;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+      .pospe-editor:focus {
+        outline: none;
+        border-color: var(--teal-dark);
+      }
+      .pospe-nota {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        margin-top: 0.3rem;
+      }
       .sr-only {
         position: absolute;
         width: 1px;
@@ -1071,6 +1123,15 @@
         // do mesmo jeito com a lista de propostas indisponível.
         let _leadPropostas = null;
         let _leadPropostasErro = null;
+        // Anotação pós-PE em edição no modal (issue #308): `{ agendamentoId,
+        // campo, rascunho }` ou `null`. O RASCUNHO mora aqui, não só no
+        // `<textarea>`, porque o modal é redesenhado por `innerHTML` (a lista de
+        // propostas chega depois e redesenha) — sem isso o texto digitado sumia.
+        let _posPEEdicao = null;
+        // Aviso do MODAL (efeito colateral falho ou erro ao salvar a
+        // anotação): o `_avisoAcao` é desenhado em `#conteudo`, atrás do
+        // modal, e ninguém o veria.
+        let _leadAviso = null;
         // Busca única (issue #227) — distinto de `lead` (o modal de detalhe,
         // aberto a partir de um resultado). `_buscaResultados === null` é
         // "ainda não buscou"; `[]` é "buscou e não achou nada" — os dois
@@ -1129,6 +1190,14 @@
               _leadPropostas = itens || null;
               _leadPropostasErro = erro || null;
             },
+            getPosPEEdicao: () => _posPEEdicao,
+            setPosPEEdicao: (v) => {
+              _posPEEdicao = v || null;
+            },
+            getAviso: () => _leadAviso,
+            setAviso: (v) => {
+              _leadAviso = v || null;
+            },
             set: ({ doc, erro, carregando }) => {
               _leadDoc = doc || null;
               _leadErro = erro || null;
@@ -1137,6 +1206,8 @@
               // Abrir OUTRO lead não pode herdar as propostas do anterior.
               _leadPropostas = null;
               _leadPropostasErro = null;
+              _posPEEdicao = null;
+              _leadAviso = null;
             },
             limpar: () => {
               _leadDoc = null;
@@ -1145,6 +1216,8 @@
               _buscaFeita = false;
               _leadPropostas = null;
               _leadPropostasErro = null;
+              _posPEEdicao = null;
+              _leadAviso = null;
             },
           },
           busca: {
@@ -1320,6 +1393,32 @@
         }
 
         /**
+         * Aviso dos efeitos colaterais do `PATCH`, ou `null`. Os campos
+         * `espelho` e `whatsapp` só existem quando houve TENTATIVA
+         * (docs/CRM_FASE3_API.md). Sem eles: flag da API desligada ou evento
+         * fora do mapa — normal, não é erro, não vira aviso. Os dois podem
+         * falhar no mesmo clique (a planilha não recebeu E a mensagem não
+         * saiu), e aí a equipe precisa saber das duas coisas: o aviso é a
+         * junção, não o primeiro que falhou.
+         */
+        function _avisoDosEfeitos(resposta) {
+          const avisos = [];
+          if (resposta && resposta.espelho && !resposta.espelho.ok) {
+            avisos.push(
+              'Isso foi salvo no CRM, mas não atualizou a planilha automaticamente. ' +
+                'Confira a planilha para esta ação.',
+            );
+          }
+          if (resposta && resposta.whatsapp && !resposta.whatsapp.ok) {
+            avisos.push(
+              'A mensagem automática no WhatsApp não saiu. ' +
+                'Se for o caso, fale com a família por lá.',
+            );
+          }
+          return avisos.length ? avisos.join(' ') : null;
+        }
+
+        /**
          * `aplicarOtimista`/`reverter` mutam o item já carregado em `CrmState`
          * — o mesmo objeto que os renderers leem — e cada mutação é seguida de
          * `UIRenderer.render()`, então a tela reflete a intenção antes da
@@ -1336,27 +1435,10 @@
               evento,
               bebe,
             });
-            // Os campos `espelho` e `whatsapp` só existem quando houve
-            // TENTATIVA (docs/CRM_FASE3_API.md). Sem eles: flag da API
-            // desligada ou evento fora do mapa — normal, não é erro, não vira
-            // aviso. Os dois podem falhar no mesmo clique (a planilha não
-            // recebeu E a mensagem não saiu), e aí a equipe precisa saber das
-            // duas coisas: o aviso é a junção, não o primeiro que falhou.
+            // Sem `espelho`/`whatsapp` na resposta não houve tentativa — o
+            // aviso anterior fica como está (ver `_avisoDosEfeitos`).
             if (resposta && (resposta.espelho || resposta.whatsapp)) {
-              const avisos = [];
-              if (resposta.espelho && !resposta.espelho.ok) {
-                avisos.push(
-                  'Isso foi salvo no CRM, mas não atualizou a planilha automaticamente. ' +
-                    'Confira a planilha para esta ação.',
-                );
-              }
-              if (resposta.whatsapp && !resposta.whatsapp.ok) {
-                avisos.push(
-                  'A mensagem automática no WhatsApp não saiu. ' +
-                    'Se for o caso, fale com a família por lá.',
-                );
-              }
-              CrmState.ui.setAvisoAcao(avisos.length ? avisos.join(' ') : null);
+              CrmState.ui.setAvisoAcao(_avisoDosEfeitos(resposta));
             }
           } catch (e) {
             reverter();
@@ -1448,6 +1530,103 @@
           });
         }
 
+        // ─── Anotação pós-PE no modal do lead (issue #308) ───
+        // Uma anotação por vez em edição, e o alvo é o AGENDAMENTO pelo
+        // `agendamentoId` — a anotação é escrita depois da PE, e "o
+        // agendamento corrente do bebê" pode já ser outro. Não passa por
+        // `_executar`: aquele muta itens da agenda e avisa em `#conteudo`,
+        // atrás do modal.
+
+        function _agendamentoDoLead(agendamentoId) {
+          const doc = CrmState.lead.getDoc();
+          const lista = (doc && doc.lead && doc.lead.agendamentos) || [];
+          return lista.find((a) => a.agendamentoId === agendamentoId) || null;
+        }
+
+        function editarPosPE(agendamentoId, campo) {
+          const ag = _agendamentoDoLead(agendamentoId);
+          if (!ag) return;
+          CrmState.lead.setPosPEEdicao({
+            agendamentoId,
+            campo,
+            rascunho: (ag.posPE && ag.posPE[campo]) || '',
+          });
+          CrmState.lead.setAviso(null);
+          UIRenderer.renderLead();
+          const editor = document.getElementById('pospe-editor');
+          if (editor) editor.focus();
+        }
+
+        function cancelarPosPE() {
+          CrmState.lead.setPosPEEdicao(null);
+          UIRenderer.renderLead();
+        }
+
+        /** Guarda o rascunho a cada tecla — ver `_posPEEdicao` no `CrmState`. */
+        function digitarPosPE(texto) {
+          const edicao = CrmState.lead.getPosPEEdicao();
+          if (edicao) edicao.rascunho = texto;
+        }
+
+        async function salvarPosPE() {
+          const edicao = CrmState.lead.getPosPEEdicao();
+          const doc = CrmState.lead.getDoc();
+          if (!edicao || !doc) return;
+          const ag = _agendamentoDoLead(edicao.agendamentoId);
+          if (!ag) return;
+          const chave = _chave('pospe', doc.id, edicao.agendamentoId + '|' + edicao.campo);
+          if (_pendentes.has(chave)) return; // duplo clique: um PATCH só.
+          _pendentes.add(chave);
+
+          // Otimista: o texto aparece salvo e o editor fecha na hora. O mesmo
+          // `trim` do servidor (`aplicarPosPE`), para a tela não mostrar outra
+          // coisa do que ficou gravado.
+          const antes = ag.posPE ? Object.assign({}, ag.posPE) : undefined;
+          const texto = String(edicao.rascunho || '').trim();
+          const posPE = Object.assign({}, ag.posPE);
+          if (texto) posPE[edicao.campo] = texto;
+          else delete posPE[edicao.campo];
+          if (Object.keys(posPE).length) ag.posPE = posPE;
+          else delete ag.posPE;
+          CrmState.lead.setPosPEEdicao(null);
+          CrmState.lead.setAviso(null);
+          UIRenderer.renderLead();
+
+          try {
+            const resposta = await ApiClient.patch('/leads/' + encodeURIComponent(doc.id), {
+              evento: EVENTO.OBSERVACAO_POS_PE,
+              agendamentoId: edicao.agendamentoId,
+              dados: { campo: edicao.campo, texto },
+            });
+            CrmState.lead.setAviso(_avisoDosEfeitos(resposta));
+          } catch (e) {
+            // Rollback E o editor de volta com o que foi digitado: texto livre
+            // perdido num erro de rede é trabalho perdido da equipe.
+            if (antes) ag.posPE = antes;
+            else delete ag.posPE;
+            if (e.sessaoExpirada) {
+              CrmState.lead.limpar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            CrmState.lead.setPosPEEdicao(edicao);
+            CrmState.lead.setAviso(_mensagemErro(e));
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _pendentes.delete(chave);
+          }
+          // A equipe pode ter fechado o modal enquanto o PATCH corria.
+          if (CrmState.lead.getDoc() === doc) UIRenderer.renderLead();
+        }
+
+        /** Delegado a partir de `[data-pospe]` no modal — ver `CrmController.iniciar`. */
+        function aoClicarNoLead(botao) {
+          const acao = botao.dataset.pospe;
+          if (acao === 'editar') editarPosPE(botao.dataset.agendamento, botao.dataset.campo);
+          else if (acao === 'cancelar') cancelarPosPE();
+          else if (acao === 'salvar') salvarPosPE();
+        }
+
         /** Delegado a partir de `[data-acao]` — ver `CrmController.iniciar`. */
         function aoClicar(botao) {
           const acao = botao.dataset.acao;
@@ -1465,7 +1644,7 @@
           }
         }
 
-        return { estaPendente, aoClicar };
+        return { estaPendente, aoClicar, aoClicarNoLead, digitarPosPE };
       })();
 
       // ─── LinkBuilder ─────────────────────────────────────────────────────
@@ -2313,9 +2492,104 @@
           );
         }
 
+        /**
+         * Anotações pós-PE (issue #308) — o que aconteceu depois da Primeira
+         * Experiência, em texto livre, um cartão por agendamento. Espelha as
+         * colunas Y/Z/AA da planilha.
+         *
+         * Entra o agendamento ainda em jogo (não reagendado/cancelado) e todo
+         * o que já tem anotação: um lead com três reagendamentos não precisa
+         * de três cartões vazios.
+         *
+         * Editar só com a flag de escrita ligada e com `agendamentoId`: sem a
+         * identidade da linha o write-back não tem onde escrever, e o texto
+         * seria apagado pelo próximo sync da planilha.
+         */
+        function _observacoes(agendamentos) {
+          const encerrados = ['reagendado', 'cancelado'];
+          const lista = agendamentos.filter(
+            (a) => !encerrados.includes(a.status) || (a.posPE && Object.keys(a.posPE).length > 0),
+          );
+          if (!lista.length) return '';
+          return (
+            '<h3 class="secao-titulo">Anotações pós-PE</h3>' +
+            '<div id="pospe">' +
+            lista.map(_observacaoDoAgendamento).join('') +
+            '</div>'
+          );
+        }
+
+        function _observacaoDoAgendamento(a) {
+          const editavel = BGL_CONST.CRM.FLAG_ACOES_ESCRITA && !!a.agendamentoId;
+          const edicao = CrmState.lead.getPosPEEdicao();
+          const campos = BGL_CONST.CRM.POS_PE.map(({ campo, rotulo }) => {
+            const texto = a.posPE && a.posPE[campo];
+            const emEdicao =
+              editavel &&
+              edicao &&
+              edicao.agendamentoId === a.agendamentoId &&
+              edicao.campo === campo;
+            let corpo;
+            if (emEdicao) {
+              corpo =
+                '<textarea id="pospe-editor" class="pospe-editor" aria-label="' +
+                esc(rotulo) +
+                '">' +
+                esc(edicao.rascunho) +
+                '</textarea>' +
+                '<div class="acoes">' +
+                '<button type="button" class="btn-acao" data-pospe="salvar">Salvar</button>' +
+                '<button type="button" class="btn-acao" data-pospe="cancelar">Cancelar</button>' +
+                '</div>';
+            } else {
+              corpo =
+                '<div class="pospe-texto' +
+                (texto ? '' : ' pospe-vazio') +
+                '">' +
+                esc(texto || '—') +
+                '</div>' +
+                (editavel
+                  ? '<div class="acoes"><button type="button" class="btn-acao" data-pospe="editar"' +
+                    ' data-agendamento="' +
+                    esc(a.agendamentoId) +
+                    '" data-campo="' +
+                    esc(campo) +
+                    '">✏️ Editar</button></div>'
+                  : '');
+            }
+            return (
+              '<div class="pospe-campo" data-campo-pospe="' +
+              esc(campo) +
+              '"><div class="pospe-rotulo">' +
+              esc(rotulo) +
+              '</div>' +
+              corpo +
+              '</div>'
+            );
+          }).join('');
+          return (
+            '<div class="pospe-card" data-agendamento-pospe="' +
+            esc(a.agendamentoId || '') +
+            '"><div class="pospe-cabecalho">' +
+            esc(dataCurta(a.data)) +
+            ' · ' +
+            esc(ou(a.hora)) +
+            ' · ' +
+            esc(ou(a.bebe)) +
+            '</div>' +
+            campos +
+            (BGL_CONST.CRM.FLAG_ACOES_ESCRITA && !a.agendamentoId
+              ? '<div class="pospe-nota">Agendamento antigo, sem identificação da linha: ' +
+                'edite estas anotações direto na planilha.</div>'
+              : '') +
+            '</div>'
+          );
+        }
+
         function render(resposta) {
           const lead = (resposta && resposta.lead) || {};
           const wpp = LinkBuilder.conversa(lead.telefone || resposta.id);
+          const aviso = CrmState.lead.getAviso();
           const bebes = lead.bebes || [];
           const agendamentos = (lead.agendamentos || [])
             .slice()
@@ -2326,6 +2600,9 @@
             );
 
           return (
+            (aviso
+              ? '<div class="aviso aviso-info" id="aviso-lead">' + esc(aviso) + '</div>'
+              : '') +
             '<dl>' +
             _campo(
               'Responsável',
@@ -2366,6 +2643,7 @@
                 agendamentos.map(_agendamento).join('') +
                 '</tbody></table></div>'
               : '<div class="vazio">Nenhum agendamento — este lead nunca agendou.</div>') +
+            _observacoes(agendamentos) +
             _propostas()
           );
         }
@@ -2920,6 +3198,16 @@
           document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
           document.getElementById('lead-modal').addEventListener('click', (e) => {
             if (e.target.id === 'lead-modal') fecharLead();
+          });
+          // Anotações pós-PE (issue #308): mesma delegação dos botões de
+          // escrita da agenda, dentro do modal.
+          const corpoLead = document.getElementById('lead-modal-body');
+          corpoLead.addEventListener('click', (e) => {
+            const botao = e.target.closest('[data-pospe]');
+            if (botao) AcoesController.aoClicarNoLead(botao);
+          });
+          corpoLead.addEventListener('input', (e) => {
+            if (e.target.id === 'pospe-editor') AcoesController.digitarPosPE(e.target.value);
           });
 
           UIRenderer.render();

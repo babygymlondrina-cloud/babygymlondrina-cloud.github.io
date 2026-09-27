@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.11',
-  APP_DATE: '2026-09-18',
+  APP_VERSION: '3.12',
+  APP_DATE: '2026-09-24',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -115,7 +115,19 @@ const BGL_CONST = {
       CANCELADO: 'cancelado',
       TRAVAR_RECUPERACAO: 'travar_recuperacao',
       DESTRAVAR_RECUPERACAO: 'destravar_recuperacao',
+      /** Anotação pós-PE (issue #308) — `dados: { campo, texto }` + `agendamentoId`. */
+      OBSERVACAO_POS_PE: 'observacao_pos_pe',
     },
+    /**
+     * Anotações pós-PE (issue #308), na ordem da planilha — `campo` espelha
+     * `CAMPOS_POS_PE` de `functions/crm-const.js` (colunas Y, Z e AA de
+     * `DadosAgendamento`); um teste compara as duas listas.
+     */
+    POS_PE: [
+      { campo: 'analise', rotulo: 'Análise pós-PE' },
+      { campo: 'contato1', rotulo: '1º contato pós-PE' },
+      { campo: 'contato2', rotulo: '2º contato pós-PE' },
+    ],
     /**
      * Rollback de 1 minuto da Fase 3B (T6): desligar aqui tira todos os botões
      * de escrita na hora, sem precisar de deploy da API — a tela volta a ser
