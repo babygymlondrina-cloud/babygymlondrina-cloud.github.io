@@ -8,8 +8,8 @@
 const BGL_CONFIG = {
   // Ambiente: 'prod' em produção, 'hml' injetado pelo CI no deploy de homologação
   env: 'prod',
-  deployVersion: '556fd00', // substituído pelo CI: hash curto do commit
-  deployAt: '2026-09-27T15:30:51Z', // substituído pelo CI: ISO timestamp do deploy
+  deployVersion: 'f4f28ae', // substituído pelo CI: hash curto do commit
+  deployAt: '2026-09-27T20:16:47Z', // substituído pelo CI: ISO timestamp do deploy
 
   // Google Analytics 4
   gaId: 'G-QPB21Y8RKP',
