@@ -1972,7 +1972,10 @@
           return parseFloat(str.replace(/\./g, '').replace(',', '.'));
         }
         function formatBRL(n) {
-          return n.toFixed(2).replace('.', ',');
+          // toLocaleString em vez de toFixed().replace() — o antigo não colocava
+          // separador de milhar (achado 20/09/2026: calcPixEfetivo já usava o
+          // jeito certo, formatBRL não).
+          return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         function parseInstallments(str) {
           const m = str.match(/(\d+)x de R\$([\d,.]+)/);

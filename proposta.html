@@ -2087,7 +2087,28 @@
         async function gerarLink() {
           const mae = document.getElementById('inp-mae').value.trim();
           const filho = document.getElementById('inp-filho').value.trim();
-          const telefone = document.getElementById('inp-telefone').value.replace(/\D/g, '');
+          // Normalizado aqui, uma vez: o campo pode vir digitado pela equipe (sem
+          // DDI) ou preenchido pelo link do `crm.html` (com DDI, do lead). Sem
+          // isso o caminho do CRM virava `phone=5555...` (#295). Telefone que
+          // não normaliza vira `null` e o link sai sem número — melhor que
+          // abrir o WhatsApp num número inventado.
+          const telefone = normalizeTelefone(document.getElementById('inp-telefone').value);
+          // Elo com o lead (issues #296 e #313). NÃO é campo de formulário — a
+          // equipe não digita nem corrige isto. Duas origens, as duas vindas do
+          // LINK, gerado pelo sistema:
+          //  - `?lead=`: docId explícito (botão do `crm.html`, ou a fórmula da
+          //    planilha para lead que só tem chatID). Sempre vence.
+          //  - `?telefone=` sem `?lead=`: o link da planilha manda só o telefone,
+          //    e o docId de todo lead com telefone É o telefone normalizado
+          //    (`backfill-map.js:docIdDoLead`). Lido da URL, nunca do campo: o
+          //    que a equipe digita ou corrige no formulário não vira elo.
+          // Proposta aberta direto, sem nenhum dos dois, grava `null` — elo
+          // ausente é melhor que elo adivinhado. Telefone que não normaliza
+          // (inclusive internacional, que o front não trata) também.
+          const leadId =
+            (_urlParams.get('lead') || '').trim() ||
+            normalizeTelefone(_urlParams.get('telefone') || '') ||
+            null;
           const sexo = document.getElementById('inp-sexo').value;
           const turmaId = document.getElementById('inp-turma').value || undefined;
           const destaque = document.getElementById('inp-destaque').value;
@@ -2196,7 +2217,8 @@
             const wppUrl = telefone
               ? // wa.me redireciona para api.whatsapp.com/send corrompendo emoji de 4 bytes.
                 // Usar api.whatsapp.com/send direto preserva o encoding correto.
-                'https://api.whatsapp.com/send/?phone=55' + telefone + '&text=' + encodedText
+                // `telefone` já vem com DDI do `normalizeTelefone` — nada a concatenar.
+                'https://api.whatsapp.com/send/?phone=' + telefone + '&text=' + encodedText
               : 'https://wa.me/?text=' + encodedText;
             return { url: wppUrl, message };
           };
@@ -2227,6 +2249,7 @@
                 mae,
                 filho,
                 telefone: telefone || null,
+                leadId,
                 sexo,
                 turma: turmaId || null,
                 tipo: data.tipo || 'primeira-experiencia',
