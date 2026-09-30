@@ -330,6 +330,31 @@
       .btn-copy:hover {
         background: var(--teal-dark);
       }
+      /* Envio pela Alice (issue #298): só aparece em proposta ligada a um lead. */
+      .btn-alice {
+        width: 100%;
+        background: var(--purple);
+        color: var(--white);
+        border: none;
+        border-radius: 10px;
+        padding: 0.7rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin-bottom: 0.5rem;
+      }
+      .btn-alice:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .alice-status {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 0.5rem;
+        text-align: center;
+      }
       .btn-wpp {
         width: 100%;
         background: #25d366;
@@ -1039,6 +1064,8 @@
     </style>
     <!-- Configuração do app (inlined — sem dependência de arquivo externo) -->
     <script src="config.js"></script>
+    <!-- URL da API de leads: o "Enviar pela Alice" (issue #298) chama a API -->
+    <script src="crm-config.js"></script>
     <script src="constants.js"></script>
     <script src="shared.js"></script>
     <!-- Stubs: preenchidos pelo RemoteConfig (Firestore) antes do uso -->
@@ -1816,6 +1843,10 @@
             <div class="link-url" id="link-url" style="font-size: 0.7rem"></div>
           </div>
           <button class="btn-copy" onclick="copiarLink()">📋 Copiar link</button>
+          <button class="btn-alice" id="btn-alice-share" type="button" style="display: none">
+            🤖 Enviar pela Alice
+          </button>
+          <div class="alice-status" id="alice-status" style="display: none"></div>
           <a class="btn-wpp" id="btn-wpp-share" href="#" rel="noopener noreferrer">
             📲 Abrir no WhatsApp
           </a>
@@ -2190,6 +2221,7 @@
             precos: _capturarSnapshotPrecos(),
           };
           const longUrl = LinkEncoder.buildUrl(data);
+          AliceShare.esconder(); // o botão volta só se ESTA proposta for gravada com lead
           document.getElementById('link-full-wrap').style.display = 'block';
           document.getElementById('link-box').style.display = 'block';
           const expDate = new Date(exp);
@@ -2267,6 +2299,9 @@
               var _wShort = buildWpp(shortUrl);
               document.getElementById('btn-wpp-share').dataset.wppUrl = _wShort.url;
               document.getElementById('btn-wpp-share').dataset.wppMsg = _wShort.message;
+              // Só com a proposta GRAVADA e ligada a um lead: a API manda a
+              // partir do doc (`leadId` + `proposalId`), nunca de um link solto.
+              AliceShare.preparar({ leadId, proposalId });
             } catch (err) {
               console.warn('[BGL Firestore]', err);
               AppState.setLastLongUrl(longUrl);
@@ -2313,6 +2348,7 @@
           document.getElementById('link-box').style.display = 'none';
           document.getElementById('btn-wpp-share').dataset.wppUrl = '';
           document.getElementById('btn-wpp-share').dataset.wppMsg = '';
+          AliceShare.esconder();
           sincronizarDescDias();
           _atualizarAvulsaVisibility();
           _atualizarPeRow();
@@ -2395,6 +2431,104 @@
           preencherDaUrl,
           init,
         };
+      })();
+
+      // ─── AliceShare ───────────────────────────────────────────────────────────
+      // Issue #298 (épico #329): manda a proposta gerada pela Alice, pela API de
+      // leads (`POST /leads/{id}/propostas/{proposalId}/enviar`), em vez de abrir
+      // o WhatsApp Web. O botão do WhatsApp continua ao lado — é o escape quando
+      // a mensagem automática não sai. Só aparece em proposta gravada E ligada a
+      // um lead (`leadId`): sem lead não há para quem mandar com segurança.
+      // A API é idempotente — o segundo clique responde `jaEnviada`.
+      const AliceShare = (function () {
+        let _alvo = null;
+
+        function _botao() {
+          return document.getElementById('btn-alice-share');
+        }
+
+        function _status(texto) {
+          const el = document.getElementById('alice-status');
+          el.textContent = texto || '';
+          el.style.display = texto ? 'block' : 'none';
+        }
+
+        function preparar({ leadId, proposalId }) {
+          _alvo = leadId && proposalId ? { leadId, proposalId } : null;
+          _botao().style.display = _alvo ? 'block' : 'none';
+          _botao().disabled = false;
+          _status('');
+        }
+
+        function esconder() {
+          preparar({});
+        }
+
+        async function _token() {
+          const fb = window._fb;
+          return fb && fb.auth && fb.auth.currentUser ? fb.auth.currentUser.getIdToken() : null;
+        }
+
+        async function enviar() {
+          if (!_alvo) return;
+          const { leadId, proposalId } = _alvo;
+          _botao().disabled = true;
+          _status('Enviando…');
+          try {
+            const token = await _token();
+            const res = await fetch(
+              apiBaseUrl() +
+                '/leads/' +
+                encodeURIComponent(leadId) +
+                '/propostas/' +
+                encodeURIComponent(proposalId) +
+                '/enviar',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { Authorization: 'Bearer ' + token } : {}),
+                },
+                body: '{}',
+              },
+            );
+            const corpo = await res.json().catch(() => ({}));
+            // A API autoriza pelo `EMAILS_CRM` (servidor), não pelo
+            // `allowedEmails` que libera esta tela: se as listas divergirem, a
+            // pessoa vê o botão e leva 403 — diz isso em vez de "não consegui".
+            if (res.status === 403) {
+              _botao().disabled = false;
+              _status(
+                'Seu e-mail não tem acesso ao envio pela Alice — peça para o Michel liberar. ' +
+                  'Use o botão do WhatsApp abaixo.',
+              );
+              return;
+            }
+            if (!res.ok) throw new Error(corpo.erro || 'HTTP ' + res.status);
+            if (corpo.jaEnviada) {
+              _status('Esta proposta já tinha sido enviada pela Alice. ✓');
+            } else if (corpo.whatsapp && corpo.whatsapp.ok) {
+              // A Alice manda para o WhatsApp do CADASTRO do lead (o elo é o
+              // `leadId`, nunca o telefone digitado — issue #296). Se a equipe
+              // corrigiu o número no formulário, o botão do WhatsApp abaixo
+              // usa o número corrigido: o texto deixa claro qual foi.
+              _status('Enviada pela Alice para o WhatsApp do cadastro do lead. ✓');
+            } else {
+              _botao().disabled = false;
+              _status('A mensagem automática não saiu — use o botão do WhatsApp abaixo.');
+            }
+          } catch (e) {
+            console.warn('[BGL Alice]', e);
+            _botao().disabled = false;
+            _status('Não consegui enviar pela Alice — use o botão do WhatsApp abaixo.');
+          }
+        }
+
+        function init() {
+          _botao().addEventListener('click', enviar);
+        }
+
+        return { preparar, esconder, init };
       })();
 
       // ─── HistoricoController ──────────────────────────────────────────────────
@@ -2878,6 +3012,7 @@
       // ─── INIT ─────────────────────────────────────────────────────────────────
       (function () {
         FormController.init();
+        AliceShare.init();
         AuthController.init();
       })();
 
