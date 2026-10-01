@@ -1909,8 +1909,14 @@
          */
         function proposta({ mae, filho, sexo, turma, pePaga, telefone, leadId }) {
           const p = new URLSearchParams();
-          if (mae) p.set('mae', mae);
-          if (filho) p.set('filho', filho);
+          // PRIMEIRO nome, como o link da planilha (`views.js:linkProposta`)
+          // sempre mandou: o cadastro traz o nome completo, e a página de
+          // planos da família não é ficha ("Ana Cecilia Cordeiro Barros" vira
+          // "Ana" — issue #343, mesma decisão da boas-vindas, #328).
+          const m = _primeiroNome(mae);
+          const f = _primeiroNome(filho);
+          if (m) p.set('mae', m);
+          if (f) p.set('filho', f);
           if (telefone) p.set('telefone', telefone);
           // `lead` é o ELO declarado entre a proposta e o lead (issue #296), e
           // vai separado do `telefone` de propósito: telefone é chave de
@@ -1930,6 +1936,14 @@
           if (BGL_CONST.TURMAS.includes(t)) p.set('turma', t);
           p.set('pe', pePaga ? '1' : '0');
           return window.location.pathname.replace(/[^/]*$/, 'proposta.html') + '?' + p.toString();
+        }
+
+        function _primeiroNome(nome) {
+          return (
+            String(nome || '')
+              .trim()
+              .split(/\s+/)[0] || ''
+          );
         }
 
         /** Conversa no WhatsApp a partir do telefone do lead. */
@@ -2328,11 +2342,10 @@
       const SemanaRenderer = (function () {
         function render(resposta) {
           const hoje = Relogio.hojeISO();
-          const todos = (resposta && resposta.itens) || [];
-          // Nos dias PASSADOS, quem já fechou não precisa mais de
-          // acompanhamento — some da lista. Hoje e os dias futuros mostram
-          // tudo, sem filtro (mesma regra confirmada na issue #244).
-          const itens = todos.filter((i) => i.data >= hoje || !i.fechou);
+          // Todos os agendamentos da janela, inclusive quem já fechou nos dias
+          // passados (issue #344, revendo a #244): esconder fazia o item sumir
+          // no clique de "Marcar fechou", junto com o aviso do que aconteceu.
+          const itens = (resposta && resposta.itens) || [];
           if (!itens.length) {
             return '<div class="vazio">Nenhum agendamento nos últimos ou próximos 7 dias.</div>';
           }
@@ -2345,9 +2358,7 @@
             .sort((a, b) => a[0].localeCompare(b[0]))
             .map(([data, lista]) => {
               // Hoje conta como "vai vir": a PE do dia ainda não aconteceu na
-              // maior parte do dia, e é a mesma fronteira do filtro acima
-              // (`i.data >= hoje`) — duas fronteiras diferentes na mesma aba
-              // fariam o dia de hoje sumir da lista e aparecer como passado.
+              // maior parte do dia.
               const passado = data < hoje;
               // `data-dia` é o que a âncora da entrada da aba procura
               // (`UIRenderer.ancorarHojeNaSemana`, issue #257): ela precisa do
