@@ -715,6 +715,46 @@
         padding: 1rem;
         overflow-y: auto;
       }
+      /* ─── Diálogo do Marcar presença (issue #331) ─── */
+      .presenca-card {
+        max-width: 400px;
+      }
+      .presenca-opcoes {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .presenca-pergunta {
+        font-size: 0.85rem;
+        color: var(--text-light);
+      }
+      .btn-presenca {
+        display: block;
+        border: 1.5px solid var(--teal-dark);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.8rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+        background: none;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .btn-presenca:hover {
+        background: var(--teal-dark);
+        color: var(--white);
+      }
+      .btn-presenca-cancelar {
+        border: none;
+        background: none;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        color: var(--text-light);
+        cursor: pointer;
+        padding: 0.3rem;
+      }
       .campo {
         display: flex;
         gap: 0.4rem;
@@ -889,6 +929,42 @@
         <div class="status-linha" id="status-linha"></div>
         <div id="conteudo"></div>
       </main>
+    </div>
+
+    <div id="presenca-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card presenca-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="presenca-modal-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="presenca-modal-titulo">Presença</h2>
+          <button class="modal-close" data-presenca="cancelar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body presenca-opcoes">
+          <p class="presenca-pergunta">Marcar presença e…</p>
+          <button type="button" class="btn-presenca" data-presenca="padrao">
+            📤 Enviar a proposta padrão pelo WhatsApp
+          </button>
+          <a
+            class="btn-presenca"
+            id="presenca-editar"
+            data-presenca="editar"
+            href="#"
+            target="_blank"
+            rel="noopener"
+          >
+            ✏️ Editar a proposta antes de enviar
+          </a>
+          <button type="button" class="btn-presenca" data-presenca="so">
+            ✅ Só marcar presença, sem proposta
+          </button>
+          <button type="button" class="btn-presenca-cancelar" data-presenca="cancelar">
+            Cancelar
+          </button>
+        </div>
+      </div>
     </div>
 
     <div id="lead-modal" class="modal-backdrop" style="display: none">
@@ -1324,6 +1400,7 @@
           if (!res.ok) {
             throw _erro(
               'A API recusou a requisição: ' + ou(corpo && corpo.erro, 'motivo não informado'),
+              { motivo: (corpo && corpo.motivo) || null },
             );
           }
           return corpo;
@@ -1338,7 +1415,12 @@
           return _request('PATCH', caminho, { body });
         }
 
-        return { get, patch };
+        /** `POST /leads/{id}/propostas` — a proposta padrão do Compareceu (#331). */
+        function post(caminho, body) {
+          return _request('POST', caminho, { body });
+        }
+
+        return { get, patch, post };
       })();
 
       // ─── AcoesController ─────────────────────────────────────────────────
@@ -1428,7 +1510,7 @@
          */
         async function _executar({ acao, evento, id, bebe, aplicarOtimista, reverter }) {
           const chave = _chave(acao, id, bebe);
-          if (_pendentes.has(chave)) return; // duplo clique: um PATCH só.
+          if (_pendentes.has(chave)) return { ok: false }; // duplo clique: um PATCH só.
           _pendentes.add(chave);
           aplicarOtimista();
           UIRenderer.render();
@@ -1439,9 +1521,14 @@
             });
             // Sem `espelho`/`whatsapp` na resposta não houve tentativa — o
             // aviso anterior fica como está (ver `_avisoDosEfeitos`).
+            const aviso = _avisoDosEfeitos(resposta);
             if (resposta && (resposta.espelho || resposta.whatsapp)) {
-              CrmState.ui.setAvisoAcao(_avisoDosEfeitos(resposta));
+              CrmState.ui.setAvisoAcao(aviso);
             }
+            // O aviso volta junto para quem encadeia outra ação no mesmo
+            // clique (a proposta padrão do diálogo de presença) — senão o
+            // aviso seguinte apagaria este (revisão da PR #339).
+            return { ok: true, aviso };
           } catch (e) {
             reverter();
             // Uma ação que falha de ponta a ponta não tem espelho nenhum para
@@ -1455,15 +1542,18 @@
               CrmState.ui.setErro({ mensagem: _mensagemErro(e) });
               if (!e.amigavel) console.error('[CRM]', e);
             }
+            return { ok: false };
           } finally {
             _pendentes.delete(chave);
             UIRenderer.render();
           }
         }
 
+        /** Devolve (Promise) `{ok, aviso}` — o diálogo de presença só pede a
+         *  proposta padrão depois da presença gravada, e junta os avisos. */
         function marcarCompareceu(item) {
           const antes = item.compareceu;
-          _executar({
+          return _executar({
             acao: 'compareceu',
             evento: EVENTO.COMPARECEU,
             id: item.id,
@@ -1475,6 +1565,100 @@
               item.compareceu = antes;
             },
           });
+        }
+
+        /** Por que a proposta padrão não saiu, em linguagem da recepção. */
+        const MOTIVO_PROPOSTA = {
+          sem_turma: 'o agendamento está sem turma',
+          sem_nome: 'falta o nome do responsável ou do bebê no cadastro',
+          sem_texto: 'o texto da proposta não está configurado',
+          sem_agendamento: 'não achei o agendamento',
+        };
+
+        /**
+         * Link do WhatsApp Web com o texto pronto — o escape quando a Alice
+         * não mandou (#297). `api.whatsapp.com/send` e não `wa.me`: o `wa.me`
+         * redireciona e corrompe emoji de 4 bytes (mesma nota do proposta.html).
+         */
+        function _linkWhatsAppWeb(telefone, texto) {
+          const digitos = soDigitos(telefone);
+          return (
+            'https://api.whatsapp.com/send/?' +
+            (digitos ? 'phone=' + digitos + '&' : '') +
+            'text=' +
+            encodeURIComponent(texto)
+          );
+        }
+
+        /**
+         * Proposta padrão do diálogo do Compareceu (issue #331): a API gera,
+         * grava e manda pela Alice (`POST /leads/{id}/propostas`). O resultado
+         * vira o aviso da tela — com o WhatsApp Web pronto quando a mensagem
+         * automática não saiu, porque a proposta foi gerada de qualquer jeito.
+         */
+        /**
+         * Junta o aviso da proposta ao aviso que o PATCH do Compareceu já
+         * deixou no MESMO clique (planilha não atualizada, mensagem que não
+         * saiu). Regra do projeto: com os dois falhando, o aviso é a junção —
+         * substituir escondia da equipe que a planilha mestre ficou sem a
+         * presença (revisão da PR #339, bloqueante).
+         */
+        function _juntarAviso(anterior, aviso) {
+          if (!anterior) return aviso;
+          if (typeof aviso === 'string') return anterior + ' ' + aviso;
+          return { texto: anterior + ' ' + aviso.texto, link: aviso.link };
+        }
+
+        async function enviarPropostaPadrao(item, avisoAnterior) {
+          const chave = _chave('proposta', item.id, item.bebe);
+          if (_pendentes.has(chave)) return;
+          _pendentes.add(chave);
+          const avisar = (aviso) => CrmState.ui.setAvisoAcao(_juntarAviso(avisoAnterior, aviso));
+          try {
+            const r = await ApiClient.post('/leads/' + encodeURIComponent(item.id) + '/propostas', {
+              bebe: item.bebe,
+              agendamentoId: item.agendamentoId || undefined,
+            });
+            const quem = ou(item.nome, 'a família');
+            // `jaEnviada`: a Alice já tinha mandado esta proposta. Proposta que
+            // já existia mas NÃO saiu cai nos dois ramos de baixo — a API tenta
+            // de novo e devolve o texto, então a tela nunca diz "não mandei de
+            // novo" para uma família que não recebeu nada.
+            if (r.jaEnviada) {
+              avisar({
+                texto:
+                  'A proposta padrão deste agendamento já tinha sido enviada — não mandei de novo.',
+                link: { href: r.proposta.linkUrl, rotulo: 'Ver proposta' },
+              });
+            } else if (r.whatsapp && r.whatsapp.ok) {
+              avisar('Proposta enviada para ' + quem + ' pelo WhatsApp. ✓');
+            } else {
+              avisar({
+                texto: 'Proposta gerada, mas a mensagem automática não saiu.',
+                link: {
+                  href: _linkWhatsAppWeb(item.telefone, r.mensagem),
+                  rotulo: 'Enviar pelo WhatsApp',
+                },
+              });
+            }
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              AuthController.expirar(e.message);
+              return;
+            }
+            const motivo = MOTIVO_PROPOSTA[e.motivo];
+            avisar(
+              motivo
+                ? 'Presença marcada, mas a proposta padrão não foi gerada: ' +
+                    motivo +
+                    '. Use "Gerar proposta" no detalhe do lead.'
+                : 'Presença marcada, mas não consegui gerar a proposta padrão. Tente pelo detalhe do lead.',
+            );
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _pendentes.delete(chave);
+            UIRenderer.render();
+          }
         }
 
         function marcarFechou(item) {
@@ -1637,7 +1821,7 @@
           if (acao === 'compareceu' || acao === 'fechou' || acao === 'cancelado') {
             const local = _itemAgenda(id, bebe);
             if (!local) return;
-            if (acao === 'compareceu') marcarCompareceu(local.item);
+            if (acao === 'compareceu') PresencaDialog.abrir(local.item);
             else if (acao === 'fechou') marcarFechou(local.item);
             else cancelar(local.item);
           } else if (acao === 'recuperacao') {
@@ -1646,7 +1830,71 @@
           }
         }
 
-        return { estaPendente, aoClicar, aoClicarNoLead, digitarPosPE };
+        return {
+          estaPendente,
+          aoClicar,
+          aoClicarNoLead,
+          digitarPosPE,
+          marcarCompareceu,
+          enviarPropostaPadrao,
+        };
+      })();
+
+      // ─── PresencaDialog ──────────────────────────────────────────────────
+      // Issue #331 (épico #329): "Marcar presença" pergunta o que fazer com a
+      // proposta antes do PATCH. Só DOM e roteamento da escolha — quem fala com
+      // a API é o `AcoesController`.
+      //
+      // "Editar proposta" é um `<a target=_blank>` de verdade, com o href já
+      // montado quando o diálogo abre: `window.open` depois de um `await` é
+      // bloqueado como pop-up, e o clique no link não é.
+      const PresencaDialog = (function () {
+        let _item = null;
+
+        function _hrefProposta(item) {
+          return LinkBuilder.proposta({
+            mae: item.nome,
+            filho: item.bebe,
+            sexo: item.sexo,
+            turma: item.turma,
+            pePaga: item.pagamentoPE === BGL_CONST.CRM.PAGAMENTO_PE.PAGO,
+            telefone: item.telefone || item.id,
+            leadId: item.id,
+          });
+        }
+
+        function abrir(item) {
+          _item = item;
+          document.getElementById('presenca-modal-titulo').textContent =
+            'Presença de ' + ou(item.bebe, 'bebê sem nome');
+          document.getElementById('presenca-editar').href = _hrefProposta(item);
+          document.getElementById('presenca-modal').style.display = 'flex';
+        }
+
+        function fechar() {
+          _item = null;
+          document.getElementById('presenca-modal').style.display = 'none';
+        }
+
+        async function escolher(opcao) {
+          const item = _item;
+          fechar();
+          if (!item || opcao === 'cancelar') return;
+          const r = await AcoesController.marcarCompareceu(item);
+          if (r.ok && opcao === 'padrao') await AcoesController.enviarPropostaPadrao(item, r.aviso);
+        }
+
+        function iniciar() {
+          const modal = document.getElementById('presenca-modal');
+          modal.addEventListener('click', (e) => {
+            if (e.target.id === 'presenca-modal') return escolher('cancelar');
+            const botao = e.target.closest('[data-presenca]');
+            // Sem `preventDefault` no "editar": o link abre a aba sozinho.
+            if (botao) escolher(botao.dataset.presenca);
+          });
+        }
+
+        return { abrir, iniciar };
       })();
 
       // ─── LinkBuilder ─────────────────────────────────────────────────────
@@ -1661,8 +1909,14 @@
          */
         function proposta({ mae, filho, sexo, turma, pePaga, telefone, leadId }) {
           const p = new URLSearchParams();
-          if (mae) p.set('mae', mae);
-          if (filho) p.set('filho', filho);
+          // PRIMEIRO nome, como o link da planilha (`views.js:linkProposta`)
+          // sempre mandou: o cadastro traz o nome completo, e a página de
+          // planos da família não é ficha ("Ana Cecilia Cordeiro Barros" vira
+          // "Ana" — issue #343, mesma decisão da boas-vindas, #328).
+          const m = _primeiroNome(mae);
+          const f = _primeiroNome(filho);
+          if (m) p.set('mae', m);
+          if (f) p.set('filho', f);
           if (telefone) p.set('telefone', telefone);
           // `lead` é o ELO declarado entre a proposta e o lead (issue #296), e
           // vai separado do `telefone` de propósito: telefone é chave de
@@ -1682,6 +1936,14 @@
           if (BGL_CONST.TURMAS.includes(t)) p.set('turma', t);
           p.set('pe', pePaga ? '1' : '0');
           return window.location.pathname.replace(/[^/]*$/, 'proposta.html') + '?' + p.toString();
+        }
+
+        function _primeiroNome(nome) {
+          return (
+            String(nome || '')
+              .trim()
+              .split(/\s+/)[0] || ''
+          );
         }
 
         /** Conversa no WhatsApp a partir do telefone do lead. */
@@ -2080,11 +2342,10 @@
       const SemanaRenderer = (function () {
         function render(resposta) {
           const hoje = Relogio.hojeISO();
-          const todos = (resposta && resposta.itens) || [];
-          // Nos dias PASSADOS, quem já fechou não precisa mais de
-          // acompanhamento — some da lista. Hoje e os dias futuros mostram
-          // tudo, sem filtro (mesma regra confirmada na issue #244).
-          const itens = todos.filter((i) => i.data >= hoje || !i.fechou);
+          // Todos os agendamentos da janela, inclusive quem já fechou nos dias
+          // passados (issue #344, revendo a #244): esconder fazia o item sumir
+          // no clique de "Marcar fechou", junto com o aviso do que aconteceu.
+          const itens = (resposta && resposta.itens) || [];
           if (!itens.length) {
             return '<div class="vazio">Nenhum agendamento nos últimos ou próximos 7 dias.</div>';
           }
@@ -2097,9 +2358,7 @@
             .sort((a, b) => a[0].localeCompare(b[0]))
             .map(([data, lista]) => {
               // Hoje conta como "vai vir": a PE do dia ainda não aconteceu na
-              // maior parte do dia, e é a mesma fronteira do filtro acima
-              // (`i.data >= hoje`) — duas fronteiras diferentes na mesma aba
-              // fariam o dia de hoje sumir da lista e aparecer como passado.
+              // maior parte do dia.
               const passado = data < hoje;
               // `data-dia` é o que a âncora da entrada da aba procura
               // (`UIRenderer.ancorarHojeNaSemana`, issue #257): ela precisa do
@@ -2771,7 +3030,25 @@
             html = '<div class="aviso aviso-erro" id="erro-tela">' + esc(erro.mensagem) + '</div>';
           }
           if (avisoAcao) {
-            html += '<div class="aviso aviso-info" id="aviso-espelho">' + esc(avisoAcao) + '</div>';
+            // Texto, ou `{texto, link}` quando a ação deixa um próximo passo
+            // (a proposta padrão que não saiu pela Alice — issue #331).
+            const texto = typeof avisoAcao === 'string' ? avisoAcao : avisoAcao.texto;
+            const link =
+              typeof avisoAcao === 'object' &&
+              avisoAcao.link &&
+              linkSeguro(avisoAcao.link.href) &&
+              avisoAcao.link.href;
+            html +=
+              '<div class="aviso aviso-info" id="aviso-espelho">' +
+              esc(texto) +
+              (link
+                ? ' <a href="' +
+                  esc(link) +
+                  '" target="_blank" rel="noopener">' +
+                  esc(avisoAcao.link.rotulo) +
+                  '</a>'
+                : '') +
+              '</div>';
           }
           if (aba === ABA.BUSCA) {
             html = BuscaRenderer.render();
@@ -3198,6 +3475,7 @@
           });
           document.getElementById('btn-atualizar').addEventListener('click', atualizarAgora);
           document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
+          PresencaDialog.iniciar();
           document.getElementById('lead-modal').addEventListener('click', (e) => {
             if (e.target.id === 'lead-modal') fecharLead();
           });
