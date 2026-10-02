@@ -244,7 +244,11 @@
         cursor: pointer;
         white-space: nowrap;
       }
-      .btn-bar:hover {
+      .btn-bar:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn-bar:hover:not(:disabled) {
         background: var(--purple);
         color: var(--white);
       }
@@ -843,11 +847,82 @@
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
       }
+      /* ─── ABA AJUDA ─── */
+      .ajuda-topo {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+      }
+      .ajuda-versao-atual {
+        font-size: 0.76rem;
+        color: var(--text-light);
+        margin-left: auto;
+      }
+      .ajuda-indice {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+      }
+      .ajuda-secao,
+      .ajuda-versao {
+        scroll-margin-top: 8rem;
+        margin-bottom: 1.6rem;
+      }
+      .ajuda-secao .secao-titulo .badge {
+        margin-left: 0.4rem;
+        vertical-align: middle;
+      }
+      .ajuda-corpo {
+        font-size: 0.86rem;
+        line-height: 1.6;
+      }
+      .ajuda-corpo p,
+      .ajuda-corpo ul,
+      .ajuda-corpo ol,
+      .ajuda-corpo blockquote,
+      .ajuda-corpo .tabela-wrap,
+      .ajuda-corpo .aviso {
+        margin-bottom: 0.7rem;
+      }
+      .ajuda-corpo ul,
+      .ajuda-corpo ol {
+        padding-left: 1.4rem;
+      }
+      .ajuda-corpo h4,
+      .ajuda-versao h4 {
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: var(--purple-dark);
+        margin: 0.9rem 0 0.3rem;
+      }
+      .ajuda-versao ul {
+        padding-left: 1.4rem;
+        font-size: 0.86rem;
+        line-height: 1.6;
+      }
+      .ajuda-corpo blockquote {
+        border-left: 4px solid var(--pink-hot);
+        background: var(--surface-muted);
+        padding: 0.6rem 0.9rem;
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      }
+      .ajuda-corpo blockquote p:last-child {
+        margin-bottom: 0;
+      }
+      .ajuda-corpo small,
+      .ajuda-versao small {
+        font-weight: 600;
+        color: var(--text-light);
+      }
     </style>
     <!-- Configuração comum a todas as páginas do projeto (env, allowlist, Firebase) -->
     <script src="config.js"></script>
     <!-- URLs da API de leads — arquivo carregado SÓ por esta página (Fase 3, T3) -->
     <script src="crm-config.js"></script>
+    <script src="crm-ajuda.js"></script>
     <script src="constants.js"></script>
     <script src="shared.js"></script>
     <script>
@@ -2973,6 +3048,129 @@
         return { render };
       })();
 
+      // ─── AjudaRenderer ───────────────────────────────────────────────────
+      // Aba 📖 Ajuda (issue #348): o manual do CRM e as novidades de cada
+      // versão, vindos de `crm-ajuda.js` (`BGL_CRM_AJUDA`). Estático: não chama
+      // a API, não entra no polling. O `html` das seções é conteúdo escrito no
+      // repositório (nunca dado de lead), por isso entra sem `esc()`; já o
+      // changelog é texto puro e passa por `esc()`.
+      const AjudaRenderer = (function () {
+        const VISAO = BGL_CONST.CRM.AJUDA_VISAO;
+        // Chaves de `mudancas` no formato Keep a Changelog, na ordem de leitura.
+        const GRUPOS = [
+          ['adicionado', 'Adicionado'],
+          ['alterado', 'Alterado'],
+          ['corrigido', 'Corrigido'],
+          ['removido', 'Removido'],
+        ];
+        // Visão escolhida: estado de apresentação, vive só enquanto a página
+        // está aberta (mesmo critério do `_horaDesenhada` do UIRenderer).
+        let _visao = VISAO.MANUAL;
+
+        function _chip(visao, rotulo) {
+          return (
+            '<button type="button" class="chip-filtro' +
+            (_visao === visao ? ' ativo' : '') +
+            '" data-ajuda-visao="' +
+            visao +
+            '">' +
+            rotulo +
+            '</button>'
+          );
+        }
+
+        function _manual(ajuda) {
+          const indice = ajuda.manual
+            .map(
+              (s) =>
+                '<button type="button" class="chip-filtro" data-ajuda-ir="' +
+                esc(s.id) +
+                '">' +
+                esc(s.titulo) +
+                '</button>',
+            )
+            .join('');
+          const secoes = ajuda.manual
+            .map(
+              (s) =>
+                '<section class="ajuda-secao" id="ajuda-' +
+                esc(s.id) +
+                '"><h2 class="secao-titulo">' +
+                esc(s.titulo) +
+                (s.desde
+                  ? ' <span class="badge badge-neutro">desde a versão ' + esc(s.desde) + '</span>'
+                  : '') +
+                '</h2><div class="ajuda-corpo">' +
+                s.html +
+                '</div></section>',
+            )
+            .join('');
+          return (
+            '<nav class="ajuda-indice" aria-label="Índice do manual">' + indice + '</nav>' + secoes
+          );
+        }
+
+        function _novidades(ajuda) {
+          return ajuda.novidades
+            .map((v) => {
+              const grupos = GRUPOS.filter(([chave]) => (v.mudancas[chave] || []).length)
+                .map(
+                  ([chave, rotulo]) =>
+                    '<h4>' +
+                    rotulo +
+                    '</h4><ul>' +
+                    v.mudancas[chave].map((i) => '<li>' + esc(i) + '</li>').join('') +
+                    '</ul>',
+                )
+                .join('');
+              return (
+                '<section class="ajuda-versao"><h2 class="secao-titulo">Versão ' +
+                esc(v.versao) +
+                ' <small>' +
+                esc(dataHoraBr(v.data)) +
+                '</small>' +
+                (v.versao === BGL_CONST.APP_VERSION ? ' ' + badge('versão atual', 'ok') : '') +
+                '</h2>' +
+                grupos +
+                '</section>'
+              );
+            })
+            .join('');
+        }
+
+        function render() {
+          if (typeof BGL_CRM_AJUDA === 'undefined') {
+            return '<div class="aviso aviso-erro">O manual não carregou (crm-ajuda.js). Avise o Michel.</div>';
+          }
+          return (
+            '<div class="ajuda"><div class="ajuda-topo">' +
+            _chip(VISAO.MANUAL, '📘 Manual') +
+            _chip(VISAO.NOVIDADES, '🆕 Novidades') +
+            '<span class="ajuda-versao-atual">versão ' +
+            esc(BGL_CONST.APP_VERSION) +
+            ' · ' +
+            esc(dataHoraBr(BGL_CONST.APP_DATE)) +
+            '</span></div>' +
+            (_visao === VISAO.NOVIDADES ? _novidades(BGL_CRM_AJUDA) : _manual(BGL_CRM_AJUDA)) +
+            '</div>'
+          );
+        }
+
+        function mostrar(visao) {
+          if (visao !== VISAO.MANUAL && visao !== VISAO.NOVIDADES) return;
+          _visao = visao;
+          UIRenderer.render();
+        }
+
+        /** Rola até a seção do índice. Sem `location.hash`: a tela não usa rota. */
+        function irPara(id) {
+          const alvo = document.getElementById('ajuda-' + id);
+          if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        return { render, mostrar, irPara };
+      })();
+
       // ─── UIRenderer ──────────────────────────────────────────────────────
       // Fachada: escolhe o sub-renderer da aba ativa e desenha a barra de
       // status. Mesmo padrão do `UIRenderer` do planos.html.
@@ -2983,6 +3181,7 @@
           { id: ABA.MES, rotulo: '📅 Mês' },
           { id: ABA.FRIOS, rotulo: '❄️ Frios' },
           { id: ABA.BUSCA, rotulo: '🔎 Buscar' },
+          { id: ABA.AJUDA, rotulo: '📖 Ajuda' },
         ];
         // Hora cheia usada no último desenho do painel — o tique só redesenha
         // quando ela muda, para não sacudir a tela a cada minuto à toa.
@@ -3001,6 +3200,8 @@
         }
 
         function _status() {
+          if (CrmState.ui.getAba() === ABA.AJUDA)
+            return 'Manual da versão ' + BGL_CONST.APP_VERSION;
           if (CrmState.ui.isCarregando()) return 'Buscando na API…';
           const em = CrmState.ui.getAtualizadoEm();
           if (!em) return '';
@@ -3021,6 +3222,8 @@
             b.setAttribute('aria-selected', String(b.dataset.aba === aba));
           });
           document.getElementById('status-linha').textContent = _status();
+          // A Ajuda é estática: Atualizar não teria o que recarregar.
+          document.getElementById('btn-atualizar').disabled = aba === ABA.AJUDA;
 
           const erro = CrmState.ui.getErro();
           const avisoAcao = CrmState.ui.getAvisoAcao();
@@ -3052,6 +3255,8 @@
           }
           if (aba === ABA.BUSCA) {
             html = BuscaRenderer.render();
+          } else if (aba === ABA.AJUDA) {
+            html = AjudaRenderer.render();
           } else if (dados) {
             const sub =
               aba === ABA.PAINEL
@@ -3235,7 +3440,8 @@
          */
         function janelaVencida() {
           const aba = CrmState.ui.getAba();
-          if (aba === ABA.BUSCA || aba === ABA.FRIOS || aba === ABA.MES) return false;
+          if (aba === ABA.BUSCA || aba === ABA.AJUDA || aba === ABA.FRIOS || aba === ABA.MES)
+            return false;
           const dados = CrmState.dados.get(aba);
           if (!dados || !dados.janela) return false;
           return dados.janela.de !== janelaDaAba(aba).de;
@@ -3244,6 +3450,7 @@
         async function buscar() {
           const aba = CrmState.ui.getAba();
           if (aba === ABA.BUSCA) return; // a aba de busca só responde a submit
+          if (aba === ABA.AJUDA) return; // o manual é estático: nenhuma chamada à API
           Atualizador.marcarBusca();
           CrmState.ui.setCarregando(true);
           CrmState.ui.setErro(null);
@@ -3360,7 +3567,7 @@
         }
 
         function atualizarAgora() {
-          if (CrmState.ui.getAba() === ABA.BUSCA) return;
+          if (CrmState.ui.getAba() === ABA.BUSCA || CrmState.ui.getAba() === ABA.AJUDA) return;
           buscar();
         }
 
@@ -3463,6 +3670,16 @@
             const filtroMes = e.target.closest('[data-mes-filtro]');
             if (filtroMes) {
               alternarFiltroMes(filtroMes.dataset.mesFiltro);
+              return;
+            }
+            const visaoAjuda = e.target.closest('[data-ajuda-visao]');
+            if (visaoAjuda) {
+              AjudaRenderer.mostrar(visaoAjuda.dataset.ajudaVisao);
+              return;
+            }
+            const irAjuda = e.target.closest('[data-ajuda-ir]');
+            if (irAjuda) {
+              AjudaRenderer.irPara(irAjuda.dataset.ajudaIr);
               return;
             }
             const alvo = e.target.closest('[data-lead]');
