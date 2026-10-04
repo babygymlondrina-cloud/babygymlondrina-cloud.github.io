@@ -1987,7 +1987,11 @@
           if (!m) return null;
           return parseBRL(m[1]);
         }
-        return { parseBRL, formatBRL, parseInstallments, parsePorAula };
+        // Valor da PE nos textos: inteiro fica "47", promoção fica "23,50" (não "23.5").
+        function formatPE(n) {
+          return Number.isInteger(n) ? String(n) : formatBRL(n);
+        }
+        return { parseBRL, formatBRL, formatPE, parseInstallments, parsePorAula };
       })();
 
       // ─── AppState ─────────────────────────────────────────────────────────────
@@ -2427,7 +2431,9 @@
           const el = document.getElementById('pe-note');
           if (!el) return;
           if (pePaga && BGL_PLANOS.primeiraExp) {
-            el.textContent = msg(BGL_MESSAGES.peNote, { valor: BGL_PLANOS.primeiraExp.valor });
+            el.textContent = msg(BGL_MESSAGES.peNote, {
+              valor: PriceFormatter.formatPE(BGL_PLANOS.primeiraExp.valor),
+            });
             el.style.display = 'block';
           } else {
             el.style.display = 'none';
@@ -2665,7 +2671,9 @@
           );
           if (_isPePaga) {
             linhas.push(
-              msg(BGL_MESSAGES.wppLinhaPeAbatido, { valor: BGL_PLANOS.primeiraExp.valor }),
+              msg(BGL_MESSAGES.wppLinhaPeAbatido, {
+                valor: PriceFormatter.formatPE(BGL_PLANOS.primeiraExp.valor),
+              }),
             );
           }
           const selectedExtras = AppState.getSelectedExtras();
@@ -2706,7 +2714,7 @@
             : BGL_MESSAGES.ctaSubPrimeira;
           const peHtml =
             isPePaga && BGL_PLANOS.primeiraExp
-              ? `<br><span class="cta-pe-inline">${msg(BGL_MESSAGES.ctaPeLinha, { valor: BGL_PLANOS.primeiraExp.valor })}</span>`
+              ? `<br><span class="cta-pe-inline">${msg(BGL_MESSAGES.ctaPeLinha, { valor: PriceFormatter.formatPE(BGL_PLANOS.primeiraExp.valor) })}</span>`
               : '';
           document.getElementById('cta-sub').innerHTML =
             `<strong>${subText}</strong>${peHtml}<br>${ctaSubTexto}`;
@@ -3154,6 +3162,10 @@
           );
           if (precos.avulsa && BGL_PLANOS.avulsa && precos.avulsa.preco !== undefined) {
             BGL_PLANOS.avulsa.preco = precos.avulsa.preco;
+          }
+          if (precos.primeiraExp && precos.primeiraExp.valor !== undefined) {
+            BGL_PLANOS.primeiraExp = BGL_PLANOS.primeiraExp || {};
+            BGL_PLANOS.primeiraExp.valor = precos.primeiraExp.valor;
           }
         }
 
