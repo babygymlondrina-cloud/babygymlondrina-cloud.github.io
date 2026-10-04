@@ -1934,6 +1934,7 @@
             turma: item.turma,
             pePaga: item.pagamentoPE === BGL_CONST.CRM.PAGAMENTO_PE.PAGO,
             valorPE: item.valorPE,
+            agendamentoId: item.agendamentoId,
             telefone: item.telefone || item.id,
             leadId: item.id,
           });
@@ -1983,7 +1984,17 @@
          * aposenta (mapa da §2 do plano). O caminho é relativo ao da página
          * atual, então em `/hml/` o link continua apontando para o `/hml/`.
          */
-        function proposta({ mae, filho, sexo, turma, pePaga, valorPE, telefone, leadId }) {
+        function proposta({
+          mae,
+          filho,
+          sexo,
+          turma,
+          pePaga,
+          valorPE,
+          agendamentoId,
+          telefone,
+          leadId,
+        }) {
           const p = new URLSearchParams();
           // PRIMEIRO nome, como o link da planilha (`views.js:linkProposta`)
           // sempre mandou: o cadastro traz o nome completo, e a página de
@@ -2015,6 +2026,10 @@
           // finito (zero conta — PE cortesia). O formulário o deixa editável.
           if (pePaga && typeof valorPE === 'number' && Number.isFinite(valorPE))
             p.set('pev', String(valorPE));
+          // Identidade do agendamento que este botão usa (UUID da coluna AL, #321/#324).
+          // Agendamento ainda sem UUID sai sem `ag` — nunca se inventa ID.
+          const ag = String(agendamentoId || '').trim();
+          if (ag) p.set('ag', ag);
           return window.location.pathname.replace(/[^/]*$/, 'proposta.html') + '?' + p.toString();
         }
 
@@ -2773,6 +2788,7 @@
             pePaga:
               !!ultimo.pagamentoPE && ultimo.pagamentoPE.status === BGL_CONST.CRM.PAGAMENTO_PE.PAGO,
             valorPE: ultimo.pagamentoPE ? ultimo.pagamentoPE.valor : undefined,
+            agendamentoId: ultimo.agendamentoId,
             // `lead.telefone` é `null` no lead que só resolve por chatID
             // (LID do WhatsApp/Instagram/Telegram) — nesse caso o docId
             // (`resposta.id`, sempre o telefone OU o chatID) é o melhor

@@ -2174,6 +2174,9 @@
             (_urlParams.get('lead') || '').trim() ||
             normalizeTelefone(_urlParams.get('telefone') || '') ||
             null;
+          // Identidade do agendamento (#321/#323): vem do LINK, como o leadId — a
+          // equipe não digita. Vazio/ausente grava `null`, nunca string vazia.
+          const agendamentoId = (_urlParams.get('ag') || '').trim() || null;
           const sexo = document.getElementById('inp-sexo').value;
           const turmaId = document.getElementById('inp-turma').value || undefined;
           const destaque = document.getElementById('inp-destaque').value;
@@ -2326,6 +2329,7 @@
                 filho,
                 telefone: telefone || null,
                 leadId,
+                agendamentoId,
                 sexo,
                 turma: turmaId || null,
                 tipo: data.tipo || 'primeira-experiencia',
