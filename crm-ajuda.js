@@ -236,7 +236,7 @@ const BGL_CRM_AJUDA = {
           </tbody>
         </table></div>
         <h4>Gerar proposta</h4>
-        <p>Abre o proposta.html em outra aba, já preenchido com mãe, bebê, sexo, turma, telefone e se a PE está paga. Como o botão é por bebê, a família com dois filhos em turmas diferentes recebe a proposta certa de cada um. Gere o link e envie; a proposta gerada volta a aparecer na lista Propostas do lead.</p>
+        <p>Abre o proposta.html em outra aba, já preenchido com mãe, bebê, sexo, turma, telefone, se a PE está paga e <b>quanto a família pagou na PE</b> (campo "valor pago", que aparece com "PE foi paga" marcado; dá para corrigir antes de gerar, e vazio usa o valor padrão da PE). O abatimento no plano é esse valor, não o preço do dia. Como o botão é por bebê, a família com dois filhos em turmas diferentes recebe a proposta certa de cada um. Gere o link e envie; a proposta gerada volta a aparecer na lista Propostas do lead.</p>
         <h4>Lista de Propostas <small>(desde a versão 3.12)</small></h4>
         <ul>
           <li>É onde se responde "já mandaram proposta para essa mãe?". Se houver mais de uma, vale a mais recente: a hora de geração sai junto da data.</li>
@@ -339,6 +339,9 @@ const BGL_CRM_AJUDA = {
             <tr><td>AG a AI</td><td>data_hora_geracao, expiracao e pagamento</td><td>Guardado</td><td>Nenhuma tela mostra; a tela mostra só o status (AB).</td></tr>
             <tr><td>AJ, AK</td><td>(controle do sync)</td><td>Interno</td><td>Sincronização planilha para CRM. Não mexer.</td></tr>
             <tr><td>AL</td><td>agendamentoId (UUID)</td><td>Interno</td><td>Não aparece, mas é a identidade do agendamento: é como cada botão acha a linha certa da planilha. Sem ela, as anotações pós-PE ficam só para leitura. Nunca copiar linha (o UUID vai junto).</td></tr>
+            <tr><td>AM</td><td>(sem uso)</td><td>Não lido</td><td>Coluna antiga, vazia. Não preencher.</td></tr>
+            <tr><td>AN</td><td>valorPE</td><td>Guardado</td><td>Quanto a família pagou na Primeira Experiência, em reais (ex.: 47 ou 23,50). O Make preenche no PIX do Mercado Pago; <b>na PE paga por PIX direto, digite o valor recebido junto do "pago" na AB</b>. É o número que a proposta abate do plano. Sem valor, ou com valor acima de R$200 (provável erro de digitação), a proposta usa o valor padrão da PE.</td></tr>
+            <tr><td>AO</td><td>comprovanteConferidoPor</td><td>Guardado</td><td>Só no PIX direto: o nome (ou iniciais) de quem conferiu o comprovante que a mãe mandou. Preenchida significa conferido. No Mercado Pago fica vazia.</td></tr>
           </tbody>
         </table></div>
         <p>Outras abas: <b>DadosPrimeiroAtendimento</b> alimenta Primeiro contato (A), nome de reserva (D), telefone (E), Canal (F) e chatID (G). <b>LeadsFrios</b> coluna A (Travar) alimenta a etiqueta Travado e o botão Travar/Destravar. O campo "Reengajável" do detalhe é calculado (lead com telefone válido), não vem de coluna.</p>
@@ -413,6 +416,23 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.15',
+      data: '2026-10-04',
+      mudancas: {
+        adicionado: [
+          'A proposta abate o valor que a família PAGOU na Primeira Experiência (coluna AN da planilha), e não o preço do dia: promoção de PE não muda o abatimento de quem já pagou (#354, #358).',
+          'Campo "valor pago" no formulário da proposta, preenchido pelo CRM e pela planilha, editável antes de gerar o link.',
+          'Colunas novas na DadosAgendamento: AN (valor da PE) e AO (quem conferiu o comprovante do PIX direto) (#355).',
+          'O link da proposta vindo da planilha passa a levar o id do agendamento (#321).',
+        ],
+        alterado: [
+          'Na PE paga por PIX direto, a equipe passa a digitar na AN o valor recebido, junto do "pago" na AB.',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.14',
       data: '2026-10-02',

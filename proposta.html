@@ -145,6 +145,19 @@
         background: var(--white);
         box-shadow: 0 0 0 3px rgba(98, 95, 183, 0.1);
       }
+      /* Valor pago da PE (#358): só aparece com "PE foi paga" marcado. Os dois
+         seletores batem em `.field input`, então precisam de mais especificidade. */
+      .field .pe-valor {
+        display: none;
+        width: 7.5rem;
+        margin-left: auto;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.85rem;
+        border-radius: 8px;
+      }
+      #chk-pe-paga:checked ~ .pe-valor {
+        display: block;
+      }
       .field-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -1343,8 +1356,17 @@
                 margin: 0;
               "
             >
-              PE foi paga — R$47 abatidos no plano
+              PE foi paga — valor da PE abatido no plano
             </label>
+            <input
+              type="text"
+              id="inp-pe-valor"
+              class="pe-valor"
+              inputmode="decimal"
+              placeholder="valor pago"
+              title="Valor que a família PAGOU na PE (R$). Vazio = valor padrão da PE na configuração."
+              autocomplete="off"
+            />
           </div>
         </div>
         <div class="field">
@@ -2021,6 +2043,7 @@
             _urlParams.has('filho') ||
             _urlParams.has('telefone') ||
             _urlParams.has('pe') ||
+            _urlParams.has('pev') ||
             _urlParams.has('descpct') ||
             _urlParams.has('descmotivo');
           if (!hasAny) return;
@@ -2030,6 +2053,7 @@
           const sexo = (_urlParams.get('sexo') || '').toLowerCase();
           const tipo = (_urlParams.get('tipo') || '').toLowerCase();
           const pe = _urlParams.get('pe');
+          const pev = _urlParams.get('pev');
           const descpct = _urlParams.get('descpct');
           const descmotivo = _urlParams.get('descmotivo');
           if (mae) document.getElementById('inp-mae').value = mae;
@@ -2038,6 +2062,10 @@
           if (sexo === 'm' || sexo === 'f') document.getElementById('inp-sexo').value = sexo;
           if (tipo === BGL_CONST.TIPO.RENOVACAO) document.getElementById('inp-tipo').value = tipo;
           if (pe !== null) document.getElementById('chk-pe-paga').checked = pe === '1';
+          // Valor PAGO da PE (#358): só vale com PE paga, e o formulário deixa a
+          // equipe corrigir. Ilegível não preenche — vazio cai no valor da config.
+          if (pev !== null && parseValorPE(pev) !== null)
+            document.getElementById('inp-pe-valor').value = pev;
           if (descpct !== null || descmotivo !== null) {
             document.getElementById('chk-desconto').checked = true;
             toggleDesconto();
@@ -2074,7 +2102,10 @@
             document.getElementById('inp-tipo').value === BGL_CONST.TIPO.RENOVACAO;
           const row = document.getElementById('pe-paga-row');
           row.style.display = isRenovacao ? 'none' : 'flex';
-          if (isRenovacao) document.getElementById('chk-pe-paga').checked = false;
+          if (isRenovacao) {
+            document.getElementById('chk-pe-paga').checked = false;
+            document.getElementById('inp-pe-valor').value = '';
+          }
         }
 
         function sincronizarDescDias() {
@@ -2111,6 +2142,9 @@
           );
           if (BGL_PLANOS.avulsa && BGL_PLANOS.avulsa.preco !== undefined) {
             snap.avulsa = { preco: BGL_PLANOS.avulsa.preco };
+          }
+          if (BGL_PLANOS.primeiraExp && BGL_PLANOS.primeiraExp.valor !== undefined) {
+            snap.primeiraExp = { valor: BGL_PLANOS.primeiraExp.valor };
           }
           return snap;
         }
@@ -2192,6 +2226,15 @@
             descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000, planos };
           }
           const pePaga = document.getElementById('chk-pe-paga').checked;
+          // Valor que a família PAGOU na PE (#358). Vazio = o da config, que é o
+          // que o snapshot já leva; preenchido e ilegível trava, em vez de
+          // abater um número que ninguém digitou.
+          const peValorTxt = document.getElementById('inp-pe-valor').value.trim();
+          const peValor = pePaga && peValorTxt ? parseValorPE(peValorTxt) : null;
+          if (pePaga && peValorTxt && peValor === null) {
+            alert('Valor da PE inválido. Use um número de 0 a 200, ex.: 47 ou 23,50 \uD83D\uDE0A');
+            return;
+          }
           const extrasAtivos = [
             BGL_CONST.EXTRA.AVENTAL,
             BGL_CONST.EXTRA.CAMISETA,
@@ -2220,6 +2263,7 @@
             desconto: descontoObj || undefined,
             precos: _capturarSnapshotPrecos(),
           };
+          if (peValor !== null) data.precos.primeiraExp = { valor: peValor };
           const longUrl = LinkEncoder.buildUrl(data);
           AliceShare.esconder(); // o botão volta só se ESTA proposta for gravada com lead
           document.getElementById('link-full-wrap').style.display = 'block';
@@ -2342,6 +2386,7 @@
             },
           );
           document.getElementById('chk-pe-paga').checked = false;
+          document.getElementById('inp-pe-valor').value = '';
           document.getElementById('desconto-fields').style.display = 'none';
           document.getElementById('inp-desc-pct').value = '';
           document.getElementById('inp-desc-motivo').value = '';

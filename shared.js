@@ -56,6 +56,32 @@ function normalizeTelefone(raw) {
   return null;
 }
 
+// ─── parseValorBRL ───────────────────────────────────────────────────────────
+// Valor em reais digitado/vindo de URL -> número, ou `null` se ilegível. Aceita
+// `47`, `23,5`, `23.5`, `R$ 47,00`, `1.234,50`. Zero é válido (PE cortesia):
+// quem testar presença usa `!== null`. Mesma regra do
+// `functions/normalize.js:parseValorBRL` (valor da PE, épico #355) — um teste
+// compara as duas implementações, porque a duplicação é inevitável (o front é
+// sem build) mas divergir em silêncio não é.
+function parseValorBRL(v) {
+  if (typeof v === 'number') return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : null;
+  if (v === null || v === undefined) return null;
+  let s = String(v).replace(/R\$/gi, '').replace(/\s/g, '');
+  if (!s) return null;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(s)) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
+}
+
+// Teto do valor da PE (R$): o valor pago vem de célula digitada e vira abatimento
+// numa proposta enviada sem revisão — acima de 200 é tratado como ilegível.
+// Mesma regra do `functions/normalize.js:parseValorPE`.
+function parseValorPE(v) {
+  const n = parseValorBRL(v);
+  return n !== null && n <= 200 ? n : null;
+}
+
 // ─── apiBaseUrl ───────────────────────────────────────────────────────────────
 // URL da API de leads do CRM para o ambiente em que ESTA página está rodando.
 // São duas Cloud Functions, uma por ambiente (`api` → coleção `leads`,
