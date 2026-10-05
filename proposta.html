@@ -2029,6 +2029,190 @@
         }
         return { LINK_VERSION, LINK_MIN_VERSION, encode, decode, buildUrl };
       })();
+      // ─── LeadPrefill ──────────────────────────────────────────────────────────
+      // Issue #323 (épico #320): com o elo do link (`?lead=`, ou o telefone do link
+      // da planilha) e o `?ag=`, busca `GET /leads/{id}` e preenche o formulário
+      // pelo AGENDAMENTO com aquele `agendamentoId`. É SUGESTÃO, nunca trava:
+      //  - sem `ag`, ou `ag` que o lead não tem → NÃO adivinha (o "mais recente"
+      //    erraria com irmãos e gêmeos): fica o que os parâmetros do link já
+      //    preencheram (plano B, obrigatório enquanto a planilha for mestre);
+      //  - API fora do ar, 401/403/404, sem token ou lenta demais (`TIMEOUT_MS`)
+      //    → mesmo plano B, em silêncio: falha da API nunca impede gerar proposta;
+      //  - campo que a equipe já mexeu NÃO é sobrescrito (`_editados`).
+      // Nome sai pelo PRIMEIRO nome, como o link do CRM e da planilha (#343); o
+      // nome completo fica no cadastro.
+      const LeadPrefill = (function () {
+        const TIMEOUT_MS = 4000;
+        // Campos que a API pode sugerir; mexeu à mão, deixa de ser sugestão.
+        const CAMPOS = [
+          'inp-mae',
+          'inp-filho',
+          'inp-sexo',
+          'inp-turma',
+          'chk-pe-paga',
+          'inp-pe-valor',
+        ];
+        const _editados = new Set();
+        let _turma = null;
+
+        // Token do Firebase Auth. NÃO basta ler `currentUser` na hora: com sessão
+        // restaurada o `showForm` roda no INIT, ANTES do módulo do `<head>` definir
+        // `window._fb`, e mesmo depois o `currentUser` fica `null` até o Firebase
+        // restaurar a sessão (`authStateReady`). Sem esperar, o prefill caía no
+        // plano B em silêncio no caso mais comum (CRM → nova aba). O teto de
+        // `TIMEOUT_MS` do `carregar` vale também para esta espera.
+        async function _token() {
+          if (!window._fb) {
+            await new Promise((resolve) => {
+              // Firebase já terminou sem criar `_fb` (BGL_SKIP_FIREBASE, import
+              // que falhou): não há o que esperar, o plano B entra já.
+              if (window._fbReady) return resolve();
+              if (!Array.isArray(window._fbReadyCb)) {
+                window._fbReadyCb = window._fbReadyCb ? [window._fbReadyCb] : [];
+              }
+              window._fbReadyCb.push(resolve);
+            });
+          }
+          const auth = window._fb && window._fb.auth;
+          if (!auth) return null;
+          if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+          return auth.currentUser ? auth.currentUser.getIdToken() : null;
+        }
+
+        const _api = ApiHttp.criar({ tag: '[Proposta]', getToken: _token });
+
+        /**
+         * Elo com o lead, vindo só do LINK (nunca do que a equipe digita): `?lead=`
+         * vence; sem ele, o telefone do link normalizado é o docId de todo lead
+         * com telefone (#313). Sem nenhum dos dois, `null`.
+         */
+        function leadIdDoLink(params) {
+          return (
+            (params.get('lead') || '').trim() ||
+            normalizeTelefone(params.get('telefone') || '') ||
+            null
+          );
+        }
+
+        function _primeiroNome(nome) {
+          return (
+            String(nome || '')
+              .trim()
+              .split(/\s+/)[0] || ''
+          );
+        }
+
+        const _chave = (nome) =>
+          String(nome || '')
+            .trim()
+            .toLowerCase();
+
+        /** Sugestão do formulário para o agendamento `ag` do lead, ou `null` sem ele. */
+        function sugestaoDe(lead, agendamentoId) {
+          const id = String(agendamentoId || '').trim();
+          if (!lead || !id) return null;
+          const ag = (lead.agendamentos || []).find(
+            (a) => String(a.agendamentoId || '').trim() === id,
+          );
+          if (!ag) return null;
+          const bebe = (lead.bebes || []).find((b) => _chave(b.nome) === _chave(ag.bebe));
+          const sexoCru = _chave(bebe && bebe.sexo);
+          const turma = _chave(ag.turma);
+          const pg = ag.pagamentoPE || {};
+          const pePaga = _chave(pg.status) === 'pago';
+          return {
+            mae: _primeiroNome((lead.responsavel && lead.responsavel.nome) || lead.nomeWhatsApp),
+            filho: _primeiroNome(ag.bebe),
+            sexo: sexoCru.startsWith('m') ? 'm' : sexoCru.startsWith('f') ? 'f' : '',
+            turma: BGL_CONST.TURMAS.includes(turma) ? turma : '',
+            pePaga,
+            valorPE: pePaga ? parseValorPE(pg.valor) : null,
+          };
+        }
+
+        function _livre(id) {
+          return !_editados.has(id);
+        }
+
+        function _aplicarTurma() {
+          const sel = document.getElementById('inp-turma');
+          if (
+            _turma &&
+            _livre('inp-turma') &&
+            Array.from(sel.options).some((o) => o.value === _turma)
+          )
+            sel.value = _turma;
+        }
+
+        function aplicar(sug) {
+          const set = (id, valor) => {
+            if (valor && _livre(id)) document.getElementById(id).value = valor;
+          };
+          set('inp-mae', sug.mae);
+          set('inp-filho', sug.filho);
+          set('inp-sexo', sug.sexo);
+          _turma = sug.turma || null;
+          _aplicarTurma();
+          // PE: a API só ACRESCENTA. Nunca desmarca o `pe=1` do link (a planilha é
+          // a mestre e o Firestore pode estar até 30 min atrás: desmarcar tiraria
+          // o abatimento de quem já pagou), e renovação não tem PE.
+          const renovacao = document.getElementById('inp-tipo').value === BGL_CONST.TIPO.RENOVACAO;
+          if (sug.pePaga && !renovacao) {
+            if (_livre('chk-pe-paga')) document.getElementById('chk-pe-paga').checked = true;
+            if (sug.valorPE !== null && _livre('inp-pe-valor'))
+              document.getElementById('inp-pe-valor').value = String(sug.valorPE);
+          }
+        }
+
+        /** Marca como "da equipe" tudo o que ela digitar/escolher a partir de agora. */
+        function observarEdicao() {
+          CAMPOS.forEach((id) => {
+            const el = document.getElementById(id);
+            const marcar = () => _editados.add(id);
+            el.addEventListener('input', marcar);
+            el.addEventListener('change', marcar);
+          });
+        }
+
+        /** Busca o lead e aplica a sugestão. Nunca rejeita: qualquer falha é o plano B. */
+        async function carregar(params) {
+          const leadId = leadIdDoLink(params);
+          const ag = (params.get('ag') || '').trim();
+          if (!leadId || !ag) return false;
+          let expirou = false;
+          let timer;
+          try {
+            const resposta = await Promise.race([
+              _api.get('/leads/' + encodeURIComponent(leadId)),
+              new Promise((_, rej) => {
+                timer = setTimeout(() => {
+                  expirou = true;
+                  rej(new Error('timeout'));
+                }, TIMEOUT_MS);
+              }),
+            ]);
+            if (expirou) return false;
+            const sug = sugestaoDe(resposta && resposta.lead, ag);
+            if (!sug) return false;
+            aplicar(sug);
+            return true;
+          } catch (e) {
+            console.warn('[BGL LeadPrefill] plano B pelos parâmetros do link:', e.message);
+            return false;
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+
+        return {
+          leadIdDoLink,
+          sugestaoDe,
+          observarEdicao,
+          carregar,
+          reaplicarTurma: _aplicarTurma,
+        };
+      })();
+
       // ─── FormController ───────────────────────────────────────────────────────
       // Controller MVC — orquestra operações do modo form (equipe).
       const FormController = (function () {
@@ -2170,10 +2354,10 @@
           // Proposta aberta direto, sem nenhum dos dois, grava `null` — elo
           // ausente é melhor que elo adivinhado. Telefone que não normaliza
           // (inclusive internacional, que o front não trata) também.
-          const leadId =
-            (_urlParams.get('lead') || '').trim() ||
-            normalizeTelefone(_urlParams.get('telefone') || '') ||
-            null;
+          const leadId = LeadPrefill.leadIdDoLink(_urlParams);
+          // Identidade do agendamento (#321/#323): vem do LINK, como o leadId — a
+          // equipe não digita. Vazio/ausente grava `null`, nunca string vazia.
+          const agendamentoId = (_urlParams.get('ag') || '').trim() || null;
           const sexo = document.getElementById('inp-sexo').value;
           const turmaId = document.getElementById('inp-turma').value || undefined;
           const destaque = document.getElementById('inp-destaque').value;
@@ -2326,6 +2510,7 @@
                 filho,
                 telefone: telefone || null,
                 leadId,
+                agendamentoId,
                 sexo,
                 turma: turmaId || null,
                 tipo: data.tipo || 'primeira-experiencia',
@@ -2427,6 +2612,7 @@
           // Aplica turma da URL após popular o select (respeita timing do Firestore)
           const turma = (_urlParams.get('turma') || '').toLowerCase();
           if (turma) turmaSel.value = turma;
+          LeadPrefill.reaplicarTurma();
         }
         function _showWppToast() {
           var t = document.getElementById('wpp-toast');
@@ -2725,6 +2911,8 @@
           document.getElementById('form-mode').style.display = 'flex';
           HistoricoController.init(session.email);
           FormController.preencherDaUrl();
+          LeadPrefill.observarEdicao();
+          LeadPrefill.carregar(new URLSearchParams(window.location.search));
         }
 
         function showLogin() {
