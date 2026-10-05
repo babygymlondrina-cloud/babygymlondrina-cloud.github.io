@@ -119,6 +119,103 @@ function apiBaseUrl() {
   return url;
 }
 
+// ─── ApiHttp ─────────────────────────────────────────────────────────────────
+// Cliente HTTP da API de leads, sem DOM — extraído do `ApiClient` do crm.html
+// (issue #322) para o `proposta.html` poder buscar o lead (#323) sem uma segunda
+// implementação. Monta a URL por `apiBaseUrl()` (nunca uma segunda detecção de
+// /hml/), anexa o `Authorization: Bearer` e traduz 401/403/404/5xx e falha de
+// rede em erro `amigavel` com a flag da causa (`sessaoExpirada`, `semAcesso`,
+// `naoEncontrado`, `configuracao`). O que cada tela FAZ com o erro (redesenhar,
+// expirar a sessão) continua nela.
+//
+// `getToken` é injetado: cada página guarda o ID token de um jeito (o crm.html
+// pelo `AuthController`, o proposta.html direto no `window._fb`). Sem token, é
+// sessão expirada.
+const ApiHttp = (function () {
+  function criar({ getToken, tag = '[API]' }) {
+    function _erro(mensagem, extras) {
+      return Object.assign(new Error(mensagem), { amigavel: true }, extras || {});
+    }
+
+    async function _request(metodo, caminho, { params, body } = {}) {
+      // `apiBaseUrl()` ESTOURA quando a URL do ambiente está vazia (a `hml`
+      // nasce assim até o primeiro deploy da `apiHml`): erro de configuração,
+      // não de rede — mensagem própria, para não parecer API fora do ar.
+      let base;
+      try {
+        base = apiBaseUrl();
+      } catch (e) {
+        console.error(tag + ' Configuração da API ausente:', e.message);
+        throw _erro(
+          'A URL da API do CRM não está configurada para este ambiente. ' +
+            'Avise o Michel — falta preencher o crm-config.js.',
+          { configuracao: true },
+        );
+      }
+
+      const url = new URL(base + caminho);
+      Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
+
+      const token = await getToken();
+      if (!token) {
+        throw _erro('Sua sessão expirou. Entre de novo com o Google.', { sessaoExpirada: true });
+      }
+
+      const headers = { Authorization: 'Bearer ' + token };
+      const init = { method: metodo, headers };
+      if (body !== undefined) {
+        headers['Content-Type'] = 'application/json; charset=utf-8';
+        init.body = JSON.stringify(body);
+      }
+
+      let res;
+      try {
+        res = await fetch(url.toString(), init);
+      } catch (e) {
+        console.warn(tag + ' Falha de rede:', e.message);
+        throw _erro('Sem conexão com a API do CRM. Confira a internet e tente de novo.');
+      }
+
+      if (res.status === 401) {
+        throw _erro('Sua sessão expirou. Entre de novo com o Google.', { sessaoExpirada: true });
+      }
+      if (res.status === 403) {
+        throw _erro('Seu e-mail não tem acesso à API do CRM. Peça para o Michel liberar.', {
+          semAcesso: true,
+        });
+      }
+      if (res.status === 404) {
+        throw _erro('Não encontrado.', { naoEncontrado: true });
+      }
+      if (res.status >= 500) {
+        throw _erro('A API do CRM está fora do ar. Tente de novo em alguns minutos.');
+      }
+
+      let corpo;
+      try {
+        corpo = await res.json();
+      } catch {
+        throw _erro('A API do CRM respondeu num formato inesperado.');
+      }
+      if (!res.ok) {
+        const motivo = corpo && corpo.erro ? corpo.erro : 'motivo não informado';
+        throw _erro('A API recusou a requisição: ' + motivo, {
+          motivo: (corpo && corpo.motivo) || null,
+        });
+      }
+      return corpo;
+    }
+
+    return {
+      get: (caminho, params) => _request('GET', caminho, { params }),
+      patch: (caminho, body) => _request('PATCH', caminho, { body }),
+      post: (caminho, body) => _request('POST', caminho, { body }),
+    };
+  }
+
+  return { criar };
+})();
+
 // ─── DiscountStrategy ────────────────────────────────────────────────────────
 // Strategy pattern — resolve qual desconto está ativo e se aplica ao plano.
 // Depende de BGL_CONST (constants.js deve ser carregado antes).

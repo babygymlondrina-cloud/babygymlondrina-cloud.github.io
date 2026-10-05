@@ -1402,101 +1402,12 @@
       // `get` (T4) e `patch` (T6) — os únicos dois métodos HTTP que a API de
       // leads aceita da tela. Compartilham `_request`: nada de fetch fora
       // daqui, nem espalhado pelos renderers ou pelo `AcoesController`.
-      const ApiClient = (function () {
-        function _erro(mensagem, extras) {
-          return Object.assign(new Error(mensagem), { amigavel: true }, extras || {});
-        }
-
-        async function _request(metodo, caminho, { params, body } = {}) {
-          // `apiBaseUrl()` (shared.js) escolhe prod/hml, normaliza a barra final
-          // e ESTOURA quando a URL do ambiente está vazia (a `hml` nasce assim,
-          // até o primeiro deploy da `apiHml`). Erro de configuração, não de
-          // rede — vira mensagem própria, para não parecer API fora do ar.
-          let base;
-          try {
-            base = apiBaseUrl();
-          } catch (e) {
-            console.error('[CRM] Configuração da API ausente:', e.message);
-            throw _erro(
-              'A URL da API do CRM não está configurada para este ambiente. ' +
-                'Avise o Michel — falta preencher o crm-config.js.',
-              { configuracao: true },
-            );
-          }
-
-          const url = new URL(base + caminho);
-          Object.entries(params || {}).forEach(([k, v]) => url.searchParams.set(k, v));
-
-          const token = await AuthController.getIdToken();
-          if (!token) {
-            throw _erro('Sua sessão expirou. Entre de novo com o Google.', {
-              sessaoExpirada: true,
-            });
-          }
-
-          const headers = { Authorization: 'Bearer ' + token };
-          const init = { method: metodo, headers };
-          if (body !== undefined) {
-            headers['Content-Type'] = 'application/json; charset=utf-8';
-            init.body = JSON.stringify(body);
-          }
-
-          let res;
-          try {
-            res = await fetch(url.toString(), init);
-          } catch (e) {
-            console.warn('[CRM] Falha de rede:', e.message);
-            throw _erro('Sem conexão com a API do CRM. Confira a internet e tente de novo.');
-          }
-
-          if (res.status === 401) {
-            throw _erro('Sua sessão expirou. Entre de novo com o Google.', {
-              sessaoExpirada: true,
-            });
-          }
-          if (res.status === 403) {
-            throw _erro('Seu e-mail não tem acesso à API do CRM. Peça para o Michel liberar.', {
-              semAcesso: true,
-            });
-          }
-          if (res.status === 404) {
-            throw _erro('Não encontrado.', { naoEncontrado: true });
-          }
-          if (res.status >= 500) {
-            throw _erro('A API do CRM está fora do ar. Tente de novo em alguns minutos.');
-          }
-
-          let corpo;
-          try {
-            corpo = await res.json();
-          } catch {
-            throw _erro('A API do CRM respondeu num formato inesperado.');
-          }
-          if (!res.ok) {
-            throw _erro(
-              'A API recusou a requisição: ' + ou(corpo && corpo.erro, 'motivo não informado'),
-              { motivo: (corpo && corpo.motivo) || null },
-            );
-          }
-          return corpo;
-        }
-
-        function get(caminho, params) {
-          return _request('GET', caminho, { params });
-        }
-
-        /** `PATCH /leads/{id}` — os eventos de escrita da T6. */
-        function patch(caminho, body) {
-          return _request('PATCH', caminho, { body });
-        }
-
-        /** `POST /leads/{id}/propostas` — a proposta padrão do Compareceu (#331). */
-        function post(caminho, body) {
-          return _request('POST', caminho, { body });
-        }
-
-        return { get, patch, post };
-      })();
+      // Toda a mecânica (URL, token, tradução de erro) mora em `ApiHttp`
+      // (shared.js, #322): aqui só diz de onde vem o token.
+      const ApiClient = ApiHttp.criar({
+        getToken: () => AuthController.getIdToken(),
+        tag: '[CRM]',
+      });
 
       // ─── AcoesController ─────────────────────────────────────────────────
       // Fase 3, T6. Clique → PATCH pelo ApiClient → atualização otimista da UI
