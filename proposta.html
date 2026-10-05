@@ -361,6 +361,34 @@
         opacity: 0.6;
         cursor: default;
       }
+      /* Prévia editável antes de mandar pela Alice (issue #337). */
+      .alice-previa {
+        margin-bottom: 0.5rem;
+      }
+      .alice-texto {
+        width: 100%;
+        min-height: 9rem;
+        resize: vertical;
+        border: 1.5px solid var(--text-light);
+        border-radius: 10px;
+        padding: 0.6rem 0.7rem;
+        margin-bottom: 0.5rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        color: var(--text);
+        background: var(--white);
+      }
+      .btn-alice-cancelar {
+        display: block;
+        margin: 0 auto;
+        border: none;
+        background: none;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8rem;
+        color: var(--text-light);
+        cursor: pointer;
+      }
       .alice-status {
         font-size: 0.8rem;
         font-weight: 600;
@@ -1868,6 +1896,24 @@
           <button class="btn-alice" id="btn-alice-share" type="button" style="display: none">
             🤖 Enviar pela Alice
           </button>
+          <div class="alice-previa" id="alice-previa" style="display: none">
+            <p class="alice-status">
+              Confira o texto antes de enviar — você pode editar. Sai pela Alice para o WhatsApp do
+              cadastro do lead.
+            </p>
+            <textarea
+              class="alice-texto"
+              id="alice-texto"
+              maxlength="4096"
+              aria-label="Texto da mensagem"
+            ></textarea>
+            <button class="btn-alice" id="btn-alice-confirmar" type="button">
+              📤 Enviar este texto pela Alice
+            </button>
+            <button class="btn-alice-cancelar" id="btn-alice-cancelar" type="button">
+              Cancelar
+            </button>
+          </div>
           <div class="alice-status" id="alice-status" style="display: none"></div>
           <a class="btn-wpp" id="btn-wpp-share" href="#" rel="noopener noreferrer">
             📲 Abrir no WhatsApp
@@ -2684,15 +2730,55 @@
           el.style.display = texto ? 'block' : 'none';
         }
 
+        function _previa() {
+          return document.getElementById('alice-previa');
+        }
+
+        function _fecharPrevia() {
+          _previa().style.display = 'none';
+        }
+
         function preparar({ leadId, proposalId }) {
           _alvo = leadId && proposalId ? { leadId, proposalId } : null;
           _botao().style.display = _alvo ? 'block' : 'none';
           _botao().disabled = false;
+          _fecharPrevia();
           _status('');
         }
 
         function esconder() {
           preparar({});
+        }
+
+        /**
+         * Issue #337: a Alice nunca manda direto. O clique abre o texto numa
+         * caixa editável — o MESMO que o botão do WhatsApp usa — e só o
+         * "Enviar este texto" chama a API, levando o texto final. Cancelar fecha
+         * a prévia sem mandar: a proposta já está gravada e o link vale.
+         */
+        function abrirPrevia() {
+          if (!_alvo) return;
+          const texto = document.getElementById('btn-wpp-share').dataset.wppMsg || '';
+          document.getElementById('alice-texto').value = texto;
+          _atualizarConfirmar();
+          _botao().disabled = true;
+          _previa().style.display = 'block';
+          _status('');
+          document.getElementById('alice-texto').focus();
+        }
+
+        function cancelarPrevia() {
+          _fecharPrevia();
+          _botao().disabled = false;
+          _status(
+            'Não enviei. O link continua valendo — use o botão do WhatsApp abaixo, se quiser.',
+          );
+        }
+
+        function _atualizarConfirmar() {
+          document.getElementById('btn-alice-confirmar').disabled = !document
+            .getElementById('alice-texto')
+            .value.trim();
         }
 
         async function _token() {
@@ -2703,6 +2789,9 @@
         async function enviar() {
           if (!_alvo) return;
           const { leadId, proposalId } = _alvo;
+          const texto = document.getElementById('alice-texto').value;
+          if (!texto.trim()) return;
+          _fecharPrevia();
           _botao().disabled = true;
           _status('Enviando…');
           try {
@@ -2720,7 +2809,7 @@
                   'Content-Type': 'application/json',
                   ...(token ? { Authorization: 'Bearer ' + token } : {}),
                 },
-                body: '{}',
+                body: JSON.stringify({ texto }),
               },
             );
             const corpo = await res.json().catch(() => ({}));
@@ -2756,7 +2845,10 @@
         }
 
         function init() {
-          _botao().addEventListener('click', enviar);
+          _botao().addEventListener('click', abrirPrevia);
+          document.getElementById('btn-alice-confirmar').addEventListener('click', enviar);
+          document.getElementById('btn-alice-cancelar').addEventListener('click', cancelarPrevia);
+          document.getElementById('alice-texto').addEventListener('input', _atualizarConfirmar);
         }
 
         return { preparar, esconder, init };

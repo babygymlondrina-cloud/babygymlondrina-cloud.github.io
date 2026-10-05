@@ -146,13 +146,14 @@ const BGL_CRM_AJUDA = {
       html: `
         <p>Ao clicar em <b>Marcar presença</b> abre o diálogo "Presença de [bebê]" com a pergunta "Marcar presença e…". Clicar fora do diálogo ou em Cancelar não marca nada.</p>
         <ol>
-          <li><b>📤 Enviar a proposta padrão pelo WhatsApp</b>: marca a presença e o sistema monta e envia, pela Alice, a proposta com as configurações padrão (plano em destaque Semestral, validade de 30 dias, Primeira Experiência, nome da mãe, nome do bebê, sexo e turma do cadastro). O texto da mensagem e os preços vêm das configurações do Config Editor, o mesmo que o proposta.html usa: mudou um preço lá, a proposta padrão acompanha. Só existe uma proposta padrão por agendamento; se já foi enviada, a tela avisa "já tinha sido enviada, não mandei de novo" com um link "Ver proposta".</li>
-          <li><b>✏️ Editar a proposta antes de enviar</b>: marca a presença e abre o proposta.html em outra aba, já preenchido (mãe, bebê, sexo, turma, telefone, PE paga). Ajuste desconto, destaque ou validade e use <b>🤖 Enviar pela Alice</b> (ou Abrir no WhatsApp).</li>
+          <li><b>📤 Revisar e enviar a proposta padrão pelo WhatsApp</b>: marca a presença e o sistema monta a proposta com as configurações padrão (plano em destaque Semestral, validade de 30 dias, Primeira Experiência, nome da mãe, nome do bebê, sexo e turma do cadastro). O texto da mensagem e os preços vêm das configurações do Config Editor, o mesmo que o proposta.html usa: mudou um preço lá, a proposta padrão acompanha. <b>Nada sai sozinho:</b> abre uma janela com o texto numa caixa que você pode editar, e só o botão <b>📤 Enviar pela Alice</b> manda. Só existe uma proposta padrão por agendamento; se já foi enviada, a tela avisa "já tinha sido enviada, não mandei de novo" com um link "Ver proposta".</li>
+          <li><b>✏️ Editar a proposta antes de enviar</b>: marca a presença e abre o proposta.html em outra aba, já preenchido (mãe, bebê, sexo, turma, telefone, PE paga). Ajuste desconto, destaque ou validade, gere o link e use <b>🤖 Enviar pela Alice</b>: ele mostra o texto numa caixa editável e só envia quando você confirma (ou use Abrir no WhatsApp).</li>
           <li><b>✅ Só marcar presença, sem proposta.</b></li>
         </ol>
         <p>Avisos possíveis depois da proposta padrão:</p>
         <ul>
           <li>"Proposta enviada para [mãe] pelo WhatsApp. ✓"</li>
+          <li>"Proposta gerada, mas não enviada": você cancelou a janela do texto. A proposta ficou gravada e o link continua valendo; o link <b>Enviar pelo WhatsApp</b> abre o WhatsApp Web com o texto.</li>
           <li>"Proposta gerada, mas a mensagem automática não saiu": a proposta ficou gravada e aparece o link <b>Enviar pelo WhatsApp</b> (WhatsApp Web com o texto pronto). Clique e envie.</li>
           <li>"Presença marcada, mas a proposta padrão não foi gerada": o aviso diz o motivo (sem agendamento, sem nome da mãe, sem turma reconhecida ou texto não configurado). Use <b>Gerar proposta</b> no detalhe do lead.</li>
         </ul>
@@ -164,7 +165,14 @@ const BGL_CRM_AJUDA = {
       titulo: 'Marcar fechou: a mensagem que a família recebe',
       desde: '3.12',
       html: `
-        <p>Ao clicar em <b>Marcar fechou</b>, o sistema envia pelo WhatsApp (Alice) a mensagem de boas-vindas, que substitui a mensagem manual que a equipe mandava com o app Tecnofit. Ela só sai <b>uma vez</b>, no momento em que o agendamento passa de "não fechou" para "fechou": clicar de novo, ou a planilha reenviar a linha, não repete a mensagem.</p>
+        <p>Ao clicar em <b>Marcar fechou</b>, abre uma janela com a mensagem de boas-vindas numa caixa que você pode <b>editar</b>. Ela substitui a mensagem manual que a equipe mandava com o app Tecnofit, e só sai pela Alice quando você escolhe:</p>
+        <ul>
+          <li><b>✅ Marcar e enviar</b>: marca o Fechou e envia o texto que está na caixa (editado ou não).</li>
+          <li><b>☑️ Só marcar, sem mensagem</b>: marca o Fechou e não manda nada.</li>
+          <li><b>Cancelar</b>: não marca nada.</li>
+        </ul>
+        <p>Se a janela não conseguir carregar o texto, o Fechou <b>não é marcado</b> e a tela avisa: tente de novo. Se o envio automático estiver desligado, a janela avisa e oferece <b>📲 Abrir no WhatsApp Web com este texto</b>; marcar então não manda mensagem.</p>
+        <p>A mensagem só sai <b>uma vez</b>, no momento em que o agendamento passa de "não fechou" para "fechou": clicar de novo, ou a planilha reenviar a linha, não repete a mensagem (nem a editada).</p>
         <p>Texto enviado (o que está entre colchetes muda por família):</p>
         <blockquote>
           <p>Oi, [primeiro nome da mãe] e [primeiro nome do bebê]! 💛</p>
@@ -188,7 +196,7 @@ const BGL_CRM_AJUDA = {
           <li>A mensagem usa só o <b>primeiro nome</b> da mãe e do bebê.</li>
           <li>Se faltar um dado, a frase correspondente some em vez de sair quebrada: sem nome da mãe vira "Oi, família do bebê"; sem sexo do bebê as frases saem sem artigo; sem turma reconhecida a frase da turma não entra.</li>
           <li><b>Antes de clicar em Fechou, confira se a família já passou o e-mail do cadastro do app</b>: a mensagem diz "use o mesmo e-mail que você passou pra gente".</li>
-          <li>O envio depende de uma chave de liberação no servidor. Se estiver desligada ou falhar, a tela avisa "A mensagem automática no WhatsApp não saiu. Se for o caso, fale com a família por lá." e o Fechou fica registrado do mesmo jeito. Nesse caso mande as boas-vindas à mão pela 💬 Conversa.</li>
+          <li>O envio depende de uma chave de liberação no servidor. Se estiver desligada ou falhar, a tela avisa "A mensagem automática no WhatsApp não saiu." com o link <b>Enviar pelo WhatsApp</b> (o WhatsApp Web com o texto que você revisou), e o Fechou fica registrado do mesmo jeito.</li>
           <li>No ambiente de testes (homologação) a mensagem nunca vai para a família: vai para um número de teste, com o prefixo "[HML]".</li>
         </ul>
         <div class="aviso aviso-info"><b>Atenção:</b> mensagem enviada não tem como ser desfeita. Clique em Marcar fechou só quando a matrícula está de fato fechada.</div>
@@ -233,6 +241,7 @@ const BGL_CRM_AJUDA = {
             <tr><td><b>Agendamentos</b></td><td>Todos os agendamentos, do mais recente ao mais antigo: data, hora, bebê, turma, status, confirmação, pagamento da PE e etiquetas Compareceu/Fechou.</td></tr>
             <tr><td><b>Anotações pós-PE</b></td><td>Três campos de texto livre por agendamento (veja abaixo).</td></tr>
             <tr><td><b>Propostas</b></td><td>As propostas já geradas para esta família (veja abaixo).</td></tr>
+            <tr><td><b>Comunicações</b></td><td>As mensagens que o sistema mandou para a família, com data, tipo, quem mandou, se saiu e o texto (veja abaixo).</td></tr>
           </tbody>
         </table></div>
         <h4>Gerar proposta</h4>
@@ -242,6 +251,13 @@ const BGL_CRM_AJUDA = {
           <li>É onde se responde "já mandaram proposta para essa mãe?". Se houver mais de uma, vale a mais recente: a hora de geração sai junto da data.</li>
           <li>A lista carrega depois do resto do detalhe ("Carregando…"). Se falhar, aparece a mensagem na própria seção.</li>
           <li>Só aparecem propostas ligadas ao lead. As geradas antes dessa ligação existir, ou abertas direto no proposta.html sem passar pelo CRM, podem não aparecer. <b>Lista vazia não prova que ninguém mandou proposta</b>: confira antes de reenviar.</li>
+        </ul>
+        <h4>Comunicações <small>(desde a versão 3.17)</small></h4>
+        <ul>
+          <li>É onde se responde "o que a mãe recebeu?" sem abrir o WhatsApp. A lista mostra a mais nova primeiro: data e hora, tipo (Boas-vindas, Proposta…), quem mandou (o e-mail de quem clicou), se <b>Enviada</b> ou <b>Não saiu</b> (com o motivo) e o texto, que abre em <b>Ver texto</b>.</li>
+          <li>Texto que a equipe mudou na janela de revisão aparece com a etiqueta <b>Editada</b>, e o texto original fica ao lado.</li>
+          <li>Registra também as tentativas que <b>falharam</b>, para você saber que a família não recebeu.</li>
+          <li>Só aparecem as mensagens enviadas pelo sistema (Boas-vindas do Fechou e propostas pela Alice). <b>O que foi digitado à mão no WhatsApp não aparece</b>, e as mensagens automáticas do Make entram numa próxima versão.</li>
         </ul>
         <h4>Anotações pós-PE <small>(desde a versão 3.12)</small></h4>
         <ul>
@@ -388,7 +404,7 @@ const BGL_CRM_AJUDA = {
         <ol>
           <li>Opere pelo CRM. Clicou no CRM, não edita a célula; editou a célula, não clica no CRM.</li>
           <li>Ao reagendar uma PE, crie uma linha nova na planilha. Nunca copie a linha.</li>
-          <li>Clique em Marcar fechou só com a matrícula fechada e o e-mail do cadastro do app já coletado: a mensagem sai na hora e não volta.</li>
+          <li>Clique em Marcar fechou só com a matrícula fechada e o e-mail do cadastro do app já coletado: a mensagem sai quando você confirma na janela de revisão e não volta.</li>
           <li>Só trave recuperação do lead que você está trabalhando: trava = comissão dobrada se ele fechar.</li>
           <li>Lista de Propostas vazia não prova que não foi enviada proposta.</li>
           <li>Sempre diga <b>Primeira Experiência Baby Gym</b>. Nunca "aula experimental" nem "primeira aula".</li>
@@ -416,6 +432,35 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.17',
+      data: '2026-10-05',
+      mudancas: {
+        adicionado: [
+          'Seção Comunicações no detalhe do lead: o histórico do que o sistema mandou à família (boas-vindas e propostas), com quem mandou, se saiu, o motivo da falha e o texto (#335).',
+          'Quando a equipe edita o texto antes de enviar, o histórico guarda a etiqueta Editada e o texto original.',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.16',
+      data: '2026-10-05',
+      mudancas: {
+        adicionado: [
+          'Marcar fechou abre a mensagem de boas-vindas numa caixa editável, com "Marcar e enviar", "Só marcar, sem mensagem" e Cancelar (#338).',
+          'A proposta padrão do Marcar presença e o botão Enviar pela Alice do proposta.html mostram o texto numa caixa editável antes de enviar (#337).',
+        ],
+        alterado: [
+          'A proposta padrão gera e grava a proposta, mas só é enviada depois que a equipe confirma o texto.',
+          'Quando a mensagem do Fechou ou da proposta não sai, o link Enviar pelo WhatsApp leva o texto que a equipe revisou.',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.15',
       data: '2026-10-04',

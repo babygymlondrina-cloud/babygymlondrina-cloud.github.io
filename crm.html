@@ -309,6 +309,14 @@
         border: 1px solid var(--orange);
         color: var(--warn);
       }
+      /* Histórico de comunicações (issue #335): o texto cabe numa linha só até abrir. */
+      .comunicacao-texto {
+        white-space: pre-wrap;
+        font-family: inherit;
+        font-size: 0.8rem;
+        margin-top: 0.4rem;
+        color: var(--text);
+      }
       .vazio {
         padding: 1.2rem;
         text-align: center;
@@ -759,6 +767,29 @@
         cursor: pointer;
         padding: 0.3rem;
       }
+      /* ─── Prévia editável da mensagem ao cliente (issues #337/#338) ─── */
+      .previa-corpo {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .previa-texto {
+        width: 100%;
+        min-height: 14rem;
+        resize: vertical;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.7rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        color: var(--text);
+        background: var(--surface);
+      }
+      .btn-presenca:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
       .campo {
         display: flex;
         gap: 0.4rem;
@@ -1020,7 +1051,7 @@
         <div class="modal-body presenca-opcoes">
           <p class="presenca-pergunta">Marcar presença e…</p>
           <button type="button" class="btn-presenca" data-presenca="padrao">
-            📤 Enviar a proposta padrão pelo WhatsApp
+            📤 Revisar e enviar a proposta padrão pelo WhatsApp
           </button>
           <a
             class="btn-presenca"
@@ -1036,6 +1067,55 @@
             ✅ Só marcar presença, sem proposta
           </button>
           <button type="button" class="btn-presenca-cancelar" data-presenca="cancelar">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="previa-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card previa-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="previa-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="previa-titulo">Mensagem</h2>
+          <button class="modal-close" data-previa="cancelar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body previa-corpo">
+          <p class="presenca-pergunta" id="previa-nota"></p>
+          <textarea
+            id="previa-texto"
+            class="previa-texto"
+            maxlength="4096"
+            aria-label="Texto da mensagem"
+          ></textarea>
+          <a
+            class="btn-presenca"
+            id="previa-web"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            style="display: none"
+          >
+            📲 Abrir no WhatsApp Web com este texto
+          </a>
+          <button
+            type="button"
+            class="btn-presenca"
+            id="previa-enviar"
+            data-previa="enviar"
+          ></button>
+          <button
+            type="button"
+            class="btn-presenca"
+            id="previa-secundaria"
+            data-previa="secundaria"
+            style="display: none"
+          ></button>
+          <button type="button" class="btn-presenca-cancelar" data-previa="cancelar">
             Cancelar
           </button>
         </div>
@@ -1127,6 +1207,22 @@
         if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return ou(iso);
         const data = iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);
         return /^\d{2}:\d{2}$/.test(String(hora || '')) ? data + ' ' + hora : data;
+      }
+
+      /** Instante ISO (UTC) → `05/10/2026 13:00`, na hora da unidade (BGL_CONST.TZ). */
+      function instanteBr(iso) {
+        const t = Date.parse(iso);
+        if (!Number.isFinite(t)) return ou(iso);
+        return new Intl.DateTimeFormat('pt-BR', {
+          timeZone: BGL_CONST.TZ,
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+          .format(new Date(t))
+          .replace(',', '');
       }
 
       /**
@@ -1276,6 +1372,10 @@
         // do mesmo jeito com a lista de propostas indisponível.
         let _leadPropostas = null;
         let _leadPropostasErro = null;
+        // Histórico de comunicações do lead aberto (issue #335): outra busca,
+        // com o mesmo motivo — pode falhar sem derrubar o detalhe.
+        let _leadComunicacoes = null;
+        let _leadComunicacoesErro = null;
         // Anotação pós-PE em edição no modal (issue #308): `{ agendamentoId,
         // campo, rascunho }` ou `null`. O RASCUNHO mora aqui, não só no
         // `<textarea>`, porque o modal é redesenhado por `innerHTML` (a lista de
@@ -1343,6 +1443,12 @@
               _leadPropostas = itens || null;
               _leadPropostasErro = erro || null;
             },
+            getComunicacoes: () => _leadComunicacoes,
+            getComunicacoesErro: () => _leadComunicacoesErro,
+            setComunicacoes: ({ itens, erro }) => {
+              _leadComunicacoes = itens || null;
+              _leadComunicacoesErro = erro || null;
+            },
             getPosPEEdicao: () => _posPEEdicao,
             setPosPEEdicao: (v) => {
               _posPEEdicao = v || null;
@@ -1359,6 +1465,8 @@
               // Abrir OUTRO lead não pode herdar as propostas do anterior.
               _leadPropostas = null;
               _leadPropostasErro = null;
+              _leadComunicacoes = null;
+              _leadComunicacoesErro = null;
               _posPEEdicao = null;
               _leadAviso = null;
             },
@@ -1369,6 +1477,8 @@
               _buscaFeita = false;
               _leadPropostas = null;
               _leadPropostasErro = null;
+              _leadComunicacoes = null;
+              _leadComunicacoesErro = null;
               _posPEEdicao = null;
               _leadAviso = null;
             },
@@ -1471,7 +1581,7 @@
          * saiu), e aí a equipe precisa saber das duas coisas: o aviso é a
          * junção, não o primeiro que falhou.
          */
-        function _avisoDosEfeitos(resposta) {
+        function _avisoDosEfeitos(resposta, web) {
           const avisos = [];
           if (resposta && resposta.espelho && !resposta.espelho.ok) {
             avisos.push(
@@ -1479,13 +1589,27 @@
                 'Confira a planilha para esta ação.',
             );
           }
-          if (resposta && resposta.whatsapp && !resposta.whatsapp.ok) {
+          const whatsappFalhou = resposta && resposta.whatsapp && !resposta.whatsapp.ok;
+          if (whatsappFalhou) {
             avisos.push(
               'A mensagem automática no WhatsApp não saiu. ' +
-                'Se for o caso, fale com a família por lá.',
+                (web ? '' : 'Se for o caso, fale com a família por lá.'),
             );
           }
-          return avisos.length ? avisos.join(' ') : null;
+          if (!avisos.length) return null;
+          const texto = avisos.join(' ').trim();
+          // Com o texto que a equipe acabou de revisar em mãos (`web`), o escape
+          // é mandar ELE pelo WhatsApp Web — nada de a equipe reescrever (#338).
+          if (web && whatsappFalhou) {
+            return {
+              texto,
+              link: {
+                href: _linkWhatsAppWeb(web.telefone, web.texto),
+                rotulo: 'Enviar pelo WhatsApp',
+              },
+            };
+          }
+          return texto;
         }
 
         /**
@@ -1494,7 +1618,16 @@
          * `UIRenderer.render()`, então a tela reflete a intenção antes da
          * resposta chegar.
          */
-        async function _executar({ acao, evento, id, bebe, aplicarOtimista, reverter }) {
+        async function _executar({
+          acao,
+          evento,
+          id,
+          bebe,
+          dados,
+          web,
+          aplicarOtimista,
+          reverter,
+        }) {
           const chave = _chave(acao, id, bebe);
           if (_pendentes.has(chave)) return { ok: false }; // duplo clique: um PATCH só.
           _pendentes.add(chave);
@@ -1504,10 +1637,11 @@
             const resposta = await ApiClient.patch('/leads/' + encodeURIComponent(id), {
               evento,
               bebe,
+              ...(dados ? { dados } : {}),
             });
             // Sem `espelho`/`whatsapp` na resposta não houve tentativa — o
             // aviso anterior fica como está (ver `_avisoDosEfeitos`).
-            const aviso = _avisoDosEfeitos(resposta);
+            const aviso = _avisoDosEfeitos(resposta, web);
             if (resposta && (resposta.espelho || resposta.whatsapp)) {
               CrmState.ui.setAvisoAcao(aviso);
             }
@@ -1577,12 +1711,6 @@
         }
 
         /**
-         * Proposta padrão do diálogo do Compareceu (issue #331): a API gera,
-         * grava e manda pela Alice (`POST /leads/{id}/propostas`). O resultado
-         * vira o aviso da tela — com o WhatsApp Web pronto quando a mensagem
-         * automática não saiu, porque a proposta foi gerada de qualquer jeito.
-         */
-        /**
          * Junta o aviso da proposta ao aviso que o PATCH do Compareceu já
          * deixou no MESMO clique (planilha não atualizada, mensagem que não
          * saiu). Regra do projeto: com os dois falhando, o aviso é a junção —
@@ -1595,39 +1723,32 @@
           return { texto: anterior + ' ' + aviso.texto, link: aviso.link };
         }
 
+        /**
+         * Proposta padrão do diálogo do Compareceu (issues #331, #337): a API
+         * gera e grava (`POST /leads/{id}/propostas`) e devolve o texto; a equipe
+         * o REVÊ numa caixa editável e só então ele sai pela Alice
+         * (`…/propostas/{proposalId}/enviar`, com o texto final). Cancelar a
+         * prévia não desfaz a proposta: o link continua valendo e o aviso oferece
+         * o WhatsApp Web com o texto. O resultado vira o aviso da tela — com o
+         * WhatsApp Web pronto quando a mensagem automática não saiu.
+         */
         async function enviarPropostaPadrao(item, avisoAnterior) {
           const chave = _chave('proposta', item.id, item.bebe);
           if (_pendentes.has(chave)) return;
           _pendentes.add(chave);
           const avisar = (aviso) => CrmState.ui.setAvisoAcao(_juntarAviso(avisoAnterior, aviso));
+          const web = (texto) => ({
+            href: _linkWhatsAppWeb(item.telefone, texto),
+            rotulo: 'Enviar pelo WhatsApp',
+          });
+          let r;
           try {
-            const r = await ApiClient.post('/leads/' + encodeURIComponent(item.id) + '/propostas', {
+            r = await ApiClient.post('/leads/' + encodeURIComponent(item.id) + '/propostas', {
               bebe: item.bebe,
               agendamentoId: item.agendamentoId || undefined,
             });
-            const quem = ou(item.nome, 'a família');
-            // `jaEnviada`: a Alice já tinha mandado esta proposta. Proposta que
-            // já existia mas NÃO saiu cai nos dois ramos de baixo — a API tenta
-            // de novo e devolve o texto, então a tela nunca diz "não mandei de
-            // novo" para uma família que não recebeu nada.
-            if (r.jaEnviada) {
-              avisar({
-                texto:
-                  'A proposta padrão deste agendamento já tinha sido enviada — não mandei de novo.',
-                link: { href: r.proposta.linkUrl, rotulo: 'Ver proposta' },
-              });
-            } else if (r.whatsapp && r.whatsapp.ok) {
-              avisar('Proposta enviada para ' + quem + ' pelo WhatsApp. ✓');
-            } else {
-              avisar({
-                texto: 'Proposta gerada, mas a mensagem automática não saiu.',
-                link: {
-                  href: _linkWhatsAppWeb(item.telefone, r.mensagem),
-                  rotulo: 'Enviar pelo WhatsApp',
-                },
-              });
-            }
           } catch (e) {
+            _pendentes.delete(chave);
             if (e.sessaoExpirada) {
               AuthController.expirar(e.message);
               return;
@@ -1641,19 +1762,144 @@
                 : 'Presença marcada, mas não consegui gerar a proposta padrão. Tente pelo detalhe do lead.',
             );
             if (!e.amigavel) console.error('[CRM]', e);
+            UIRenderer.render();
+            return;
+          }
+
+          try {
+            const quem = ou(item.nome, 'a família');
+            // `jaEnviada`: a Alice já tinha mandado esta proposta. Proposta que
+            // já existia mas NÃO saiu volta com o texto, e a prévia abre de novo
+            // — a tela nunca diz "não mandei de novo" para uma família que não
+            // recebeu nada.
+            if (r.jaEnviada) {
+              avisar({
+                texto:
+                  'A proposta padrão deste agendamento já tinha sido enviada — não mandei de novo.',
+                link: { href: r.proposta.linkUrl, rotulo: 'Ver proposta' },
+              });
+              return;
+            }
+            const previa = await PreviaDialog.abrir({
+              titulo: 'Proposta para ' + quem,
+              nota: 'Confira o texto antes de enviar — você pode editar. Sai pela Alice para o WhatsApp da família.',
+              texto: r.mensagem,
+              rotuloEnviar: '📤 Enviar pela Alice',
+              hrefWeb: (texto) => _linkWhatsAppWeb(item.telefone, texto),
+            });
+            if (previa.acao !== 'enviar') {
+              avisar({
+                texto: 'Proposta gerada, mas não enviada. O link continua valendo.',
+                link: web(previa.texto),
+              });
+              return;
+            }
+            const env = await ApiClient.post(
+              '/leads/' +
+                encodeURIComponent(item.id) +
+                '/propostas/' +
+                encodeURIComponent(r.proposta.proposalId) +
+                '/enviar',
+              { texto: previa.texto },
+            );
+            if (env.jaEnviada) {
+              avisar({
+                texto: 'Esta proposta já tinha sido enviada — não mandei de novo.',
+                link: { href: r.proposta.linkUrl, rotulo: 'Ver proposta' },
+              });
+            } else if (env.whatsapp && env.whatsapp.ok) {
+              avisar('Proposta enviada para ' + quem + ' pelo WhatsApp. ✓');
+            } else {
+              avisar({
+                texto: 'Proposta gerada, mas a mensagem automática não saiu.',
+                link: web(previa.texto),
+              });
+            }
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              AuthController.expirar(e.message);
+              return;
+            }
+            avisar({
+              texto: 'Proposta gerada, mas não consegui enviar pela Alice.',
+              link: web(r.mensagem),
+            });
+            if (!e.amigavel) console.error('[CRM]', e);
           } finally {
             _pendentes.delete(chave);
             UIRenderer.render();
           }
         }
 
-        function marcarFechou(item) {
+        /**
+         * Fechou (issue #338): ANTES de marcar, a equipe vê a boas-vindas numa
+         * caixa editável (`GET /leads/{id}/mensagens/fechou` — o texto é do
+         * servidor, a única fonte) e escolhe entre marcar e enviar, só marcar
+         * ou cancelar. Sem a prévia carregada nada é marcado: a mensagem
+         * entregue não tem desfazer, e marcar às cegas seria o que a prévia
+         * existe para evitar.
+         */
+        async function marcarFechou(item) {
+          const chave = _chave('fechou-previa', item.id, item.bebe);
+          if (_pendentes.has(chave)) return;
+          _pendentes.add(chave);
+          let dados;
+          let web;
+          try {
+            const previa = await ApiClient.get(
+              '/leads/' + encodeURIComponent(item.id) + '/mensagens/fechou',
+              { bebe: item.bebe || '', agendamentoId: item.agendamentoId || '' },
+            );
+            // Sem transição (já estava fechado) nada sairia: só marca.
+            if (previa.vaiSair) {
+              const ligado = previa.envioLigado;
+              const hrefWeb = (texto) => _linkWhatsAppWeb(item.telefone, texto);
+              const r = await PreviaDialog.abrir({
+                titulo: 'Fechou — ' + ou(item.bebe, 'bebê sem nome'),
+                nota: ligado
+                  ? 'Confira a mensagem de boas-vindas antes de marcar — você pode editar. Sai pela Alice para o WhatsApp da família.'
+                  : 'O envio automático está desligado: marcar NÃO manda mensagem. Se quiser avisar a família, abra o WhatsApp Web com o texto abaixo.',
+                texto: previa.texto,
+                rotuloEnviar: ligado ? '✅ Marcar e enviar' : '✅ Marcar fechou',
+                rotuloSecundario: ligado ? '☑️ Só marcar, sem mensagem' : null,
+                hrefWeb: ligado ? null : hrefWeb,
+              });
+              if (r.acao === 'cancelar') return;
+              if (r.acao === 'enviar' && ligado) {
+                dados = { textoWhatsapp: r.texto };
+                web = { telefone: item.telefone, texto: r.texto };
+              } else {
+                dados = { semMensagem: true };
+              }
+            }
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              AuthController.expirar(e.message);
+            } else {
+              CrmState.ui.setErro({
+                mensagem:
+                  'Não consegui carregar a mensagem de boas-vindas, então não marquei o Fechou. Tente de novo.',
+              });
+              if (!e.amigavel) console.error('[CRM]', e);
+              UIRenderer.render();
+            }
+            return;
+          } finally {
+            _pendentes.delete(chave);
+          }
+          // A prévia pode ter ficado minutos aberta e o polling pode ter trocado
+          // a lista: marca o item de AGORA, não o capturado no clique (se ele
+          // sumiu da lista, o capturado segue valendo).
+          const local = _itemAgenda(item.id, item.bebe);
+          if (local) item = local.item;
           const antes = item.fechou;
           _executar({
             acao: 'fechou',
             evento: EVENTO.FECHOU,
             id: item.id,
             bebe: item.bebe,
+            dados,
+            web,
             aplicarOtimista: () => {
               item.fechou = true;
             },
@@ -1879,6 +2125,69 @@
             const botao = e.target.closest('[data-presenca]');
             // Sem `preventDefault` no "editar": o link abre a aba sozinho.
             if (botao) escolher(botao.dataset.presenca);
+          });
+        }
+
+        return { abrir, iniciar };
+      })();
+
+      // ─── PreviaDialog ────────────────────────────────────────────────────
+      // Issues #337/#338: toda mensagem que a API manda à família passa antes
+      // por aqui — o texto numa caixa editável, sem checkbox, e a equipe decide.
+      // Só DOM: `abrir` devolve uma Promise com `{acao, texto}` (`enviar`,
+      // `secundaria` ou `cancelar`); quem fala com a API é o `AcoesController`.
+      // O fundo NÃO cancela ao clicar (diferente do diálogo de presença): um
+      // clique fora perderia o texto que a pessoa acabou de editar.
+      const PreviaDialog = (function () {
+        let _resolver = null;
+        let _hrefWeb = null;
+
+        const _el = (id) => document.getElementById(id);
+
+        function _atualizar() {
+          const texto = _el('previa-texto').value;
+          _el('previa-enviar').disabled = !texto.trim();
+          if (_hrefWeb) _el('previa-web').href = _hrefWeb(texto);
+        }
+
+        function abrir({ titulo, nota, texto, rotuloEnviar, rotuloSecundario, hrefWeb }) {
+          // Um diálogo por vez: abrir outro cancela o anterior.
+          if (_resolver) _concluir('cancelar');
+          _hrefWeb = hrefWeb || null;
+          _el('previa-titulo').textContent = titulo;
+          _el('previa-nota').textContent = nota || '';
+          _el('previa-texto').value = texto || '';
+          _el('previa-enviar').textContent = rotuloEnviar;
+          const sec = _el('previa-secundaria');
+          sec.textContent = rotuloSecundario || '';
+          sec.style.display = rotuloSecundario ? 'block' : 'none';
+          _el('previa-web').style.display = _hrefWeb ? 'block' : 'none';
+          _atualizar();
+          _el('previa-modal').style.display = 'flex';
+          _el('previa-texto').focus();
+          return new Promise((resolve) => {
+            _resolver = resolve;
+          });
+        }
+
+        function _concluir(acao) {
+          const resolver = _resolver;
+          _resolver = null;
+          const texto = _el('previa-texto').value;
+          _el('previa-modal').style.display = 'none';
+          if (resolver) resolver({ acao, texto });
+        }
+
+        function iniciar() {
+          _el('previa-texto').addEventListener('input', _atualizar);
+          // Esc cancela, MENOS com o foco no texto: ali um Esc sem querer
+          // perderia o que a pessoa acabou de editar.
+          _el('previa-modal').addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && e.target.id !== 'previa-texto') _concluir('cancelar');
+          });
+          _el('previa-modal').addEventListener('click', (e) => {
+            const botao = e.target.closest('[data-previa]');
+            if (botao && !botao.disabled) _concluir(botao.dataset.previa);
           });
         }
 
@@ -2913,7 +3222,8 @@
                 '</tbody></table></div>'
               : '<div class="vazio">Nenhum agendamento — este lead nunca agendou.</div>') +
             _observacoes(agendamentos) +
-            _propostas()
+            _propostas() +
+            _comunicacoes()
           );
         }
 
@@ -2949,6 +3259,86 @@
             '</tr></thead><tbody>' +
             itens.map(_proposta).join('') +
             '</tbody></table></div>'
+          );
+        }
+
+        /** Rótulo de cada `tipo` do histórico; tipo desconhecido aparece como veio. */
+        const ROTULO_COMUNICACAO = {
+          boas_vindas: 'Boas-vindas',
+          proposta: 'Proposta',
+          confirmacao_d1: 'Confirmação D-1',
+          pesquisa: 'Pesquisa de satisfação',
+          pix_gerado: 'PIX',
+          pix_erro: 'PIX (imprevisto)',
+          pix_confirmado: 'Confirmação de vaga',
+        };
+
+        /**
+         * Histórico do que foi mandado à família (issue #335), mais novo
+         * primeiro: quando, tipo, quem mandou, se saiu e o texto. É aqui que a
+         * equipe confere o que a mãe recebeu sem abrir o WhatsApp. Lista vazia
+         * não quer dizer que nada foi mandado: só a API registra (e, depois, o
+         * Make) — o que a equipe digitou à mão no WhatsApp não aparece.
+         */
+        function _comunicacoes() {
+          const itens = CrmState.lead.getComunicacoes();
+          const erro = CrmState.lead.getComunicacoesErro();
+          const titulo =
+            '<h3 class="secao-titulo">Comunicações' +
+            (itens ? ' (' + itens.length + ')' : '') +
+            '</h3>';
+          if (erro) return titulo + '<div class="vazio">' + esc(erro) + '</div>';
+          if (!itens) return titulo + '<div class="vazio">Carregando…</div>';
+          if (!itens.length) {
+            return (
+              titulo +
+              '<div class="vazio">Nenhuma mensagem registrada — só aparecem as enviadas ' +
+              'pelo sistema, não as digitadas à mão no WhatsApp.</div>'
+            );
+          }
+          return (
+            titulo +
+            '<div class="tabela-wrap"><table><thead><tr>' +
+            '<th>Quando</th><th>Tipo</th><th>Quem</th><th>Resultado</th><th>Texto</th>' +
+            '</tr></thead><tbody>' +
+            itens.map(_comunicacao).join('') +
+            '</tbody></table></div>'
+          );
+        }
+
+        function _comunicacao(c) {
+          const resultado = c.ok
+            ? badge('Enviada', 'ok')
+            : badge('Não saiu', 'warn') + (c.motivo ? ' ' + esc(c.motivo) : '');
+          return (
+            '<tr data-comunicacao>' +
+            '<td>' +
+            esc(instanteBr(c.em)) +
+            '</td>' +
+            '<td>' +
+            esc(
+              Object.hasOwn(ROTULO_COMUNICACAO, c.tipo) ? ROTULO_COMUNICACAO[c.tipo] : ou(c.tipo),
+            ) +
+            '</td>' +
+            '<td>' +
+            esc(ou(c.por)) +
+            '</td>' +
+            '<td>' +
+            resultado +
+            (c.editado ? ' ' + badge('Editada', 'neutro') : '') +
+            '</td>' +
+            '<td><details><summary>Ver texto</summary>' +
+            '<pre class="comunicacao-texto">' +
+            esc(ou(c.texto)) +
+            '</pre>' +
+            (c.editado && c.textoOriginal
+              ? '<div class="vazio">Texto original, antes da edição:</div>' +
+                '<pre class="comunicacao-texto">' +
+                esc(c.textoOriginal) +
+                '</pre>'
+              : '') +
+            '</details></td>' +
+            '</tr>'
           );
         }
 
@@ -3346,6 +3736,8 @@
 
         /** Sequência das buscas de proposta — ver `carregarPropostas`. */
         let _propostasToken = 0;
+        /** Idem para o histórico de comunicações (#335). */
+        let _comunicacoesToken = 0;
 
         /** Mês navegado da aba Mês, resolvendo o default (mês corrente) na 1ª leitura. */
         function mesReferenciaAtual() {
@@ -3537,7 +3929,10 @@
           // mais comum daqui) o `renderLead` sai cedo por `!getDoc()` e a
           // resposta não teria onde ser desenhada — seria round-trip jogado fora
           // justamente no caminho de erro.
-          if (CrmState.lead.getDoc()) carregarPropostas(telefone);
+          if (CrmState.lead.getDoc()) {
+            carregarPropostas(telefone);
+            carregarComunicacoes(telefone);
+          }
         }
 
         /**
@@ -3570,6 +3965,33 @@
           CrmState.lead.setPropostas(resultado);
           // Só redesenha se o modal ainda estiver aberto: a equipe pode ter
           // fechado enquanto a busca corria.
+          if (CrmState.lead.getDoc()) UIRenderer.renderLead();
+        }
+
+        /**
+         * Busca o histórico de comunicações do lead (issue #335). Mesma
+         * convenção do `carregarPropostas`: falha acessória avisa e não derruba
+         * o detalhe, e o token descarta a resposta de um lead que já não é o
+         * aberto.
+         */
+        async function carregarComunicacoes(telefone) {
+          const token = ++_comunicacoesToken;
+          let resultado;
+          try {
+            const resposta = await ApiClient.get(
+              '/leads/' + encodeURIComponent(telefone) + '/comunicacoes',
+            );
+            resultado = { itens: resposta.comunicacoes || [] };
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              CrmState.lead.limpar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            resultado = { erro: 'Não deu para carregar as comunicações deste lead agora.' };
+          }
+          if (token !== _comunicacoesToken) return;
+          CrmState.lead.setComunicacoes(resultado);
           if (CrmState.lead.getDoc()) UIRenderer.renderLead();
         }
 
@@ -3626,6 +4048,7 @@
           document.getElementById('btn-atualizar').addEventListener('click', atualizarAgora);
           document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
           PresencaDialog.iniciar();
+          PreviaDialog.iniciar();
           document.getElementById('lead-modal').addEventListener('click', (e) => {
             if (e.target.id === 'lead-modal') fecharLead();
           });
