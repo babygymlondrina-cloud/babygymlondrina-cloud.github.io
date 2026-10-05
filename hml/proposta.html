@@ -2791,7 +2791,10 @@
           const { leadId, proposalId } = _alvo;
           const texto = document.getElementById('alice-texto').value;
           if (!texto.trim()) return;
-          _fecharPrevia();
+          // A prévia fica ABERTA até a resposta: se a rede cair ou a mensagem
+          // não sair, o texto que a equipe editou continua ali para tentar de
+          // novo (fechar antes perdia a edição, e reabrir relia o texto padrão).
+          document.getElementById('btn-alice-confirmar').disabled = true;
           _botao().disabled = true;
           _status('Enviando…');
           try {
@@ -2817,7 +2820,7 @@
             // `allowedEmails` que libera esta tela: se as listas divergirem, a
             // pessoa vê o botão e leva 403 — diz isso em vez de "não consegui".
             if (res.status === 403) {
-              _botao().disabled = false;
+              _atualizarConfirmar();
               _status(
                 'Seu e-mail não tem acesso ao envio pela Alice — peça para o Michel liberar. ' +
                   'Use o botão do WhatsApp abaixo.',
@@ -2826,20 +2829,22 @@
             }
             if (!res.ok) throw new Error(corpo.erro || 'HTTP ' + res.status);
             if (corpo.jaEnviada) {
+              _fecharPrevia();
               _status('Esta proposta já tinha sido enviada pela Alice. ✓');
             } else if (corpo.whatsapp && corpo.whatsapp.ok) {
+              _fecharPrevia();
               // A Alice manda para o WhatsApp do CADASTRO do lead (o elo é o
               // `leadId`, nunca o telefone digitado — issue #296). Se a equipe
               // corrigiu o número no formulário, o botão do WhatsApp abaixo
               // usa o número corrigido: o texto deixa claro qual foi.
               _status('Enviada pela Alice para o WhatsApp do cadastro do lead. ✓');
             } else {
-              _botao().disabled = false;
+              _atualizarConfirmar();
               _status('A mensagem automática não saiu — use o botão do WhatsApp abaixo.');
             }
           } catch (e) {
             console.warn('[BGL Alice]', e);
-            _botao().disabled = false;
+            _atualizarConfirmar();
             _status('Não consegui enviar pela Alice — use o botão do WhatsApp abaixo.');
           }
         }
