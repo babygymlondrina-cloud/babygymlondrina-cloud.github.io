@@ -1049,7 +1049,7 @@
           <button class="modal-close" data-presenca="cancelar" aria-label="Fechar">×</button>
         </div>
         <div class="modal-body presenca-opcoes">
-          <p class="presenca-pergunta">Marcar presença e…</p>
+          <p class="presenca-pergunta" id="presenca-pergunta">Marcar presença e…</p>
           <button type="button" class="btn-presenca" data-presenca="padrao">
             📤 Revisar e enviar a proposta padrão pelo WhatsApp
           </button>
@@ -1063,7 +1063,7 @@
           >
             ✏️ Editar a proposta antes de enviar
           </a>
-          <button type="button" class="btn-presenca" data-presenca="so">
+          <button type="button" class="btn-presenca" id="presenca-so" data-presenca="so">
             ✅ Só marcar presença, sem proposta
           </button>
           <button type="button" class="btn-presenca-cancelar" data-presenca="cancelar">
@@ -1732,7 +1732,7 @@
          * o WhatsApp Web com o texto. O resultado vira o aviso da tela — com o
          * WhatsApp Web pronto quando a mensagem automática não saiu.
          */
-        async function enviarPropostaPadrao(item, avisoAnterior) {
+        async function enviarPropostaPadrao(item, avisoAnterior, { reaberta = false } = {}) {
           const chave = _chave('proposta', item.id, item.bebe);
           if (_pendentes.has(chave)) return;
           _pendentes.add(chave);
@@ -1754,12 +1754,18 @@
               return;
             }
             const motivo = MOTIVO_PROPOSTA[e.motivo];
+            // Pelo botão "Enviar proposta" (`reaberta`) nada foi marcado agora:
+            // dizer "presença marcada" seria falso.
+            const prefixo = reaberta ? 'A' : 'Presença marcada, mas a';
             avisar(
               motivo
-                ? 'Presença marcada, mas a proposta padrão não foi gerada: ' +
+                ? prefixo +
+                    ' proposta padrão não foi gerada: ' +
                     motivo +
                     '. Use "Gerar proposta" no detalhe do lead.'
-                : 'Presença marcada, mas não consegui gerar a proposta padrão. Tente pelo detalhe do lead.',
+                : reaberta
+                  ? 'Não consegui gerar a proposta padrão. Tente pelo detalhe do lead.'
+                  : 'Presença marcada, mas não consegui gerar a proposta padrão. Tente pelo detalhe do lead.',
             );
             if (!e.amigavel) console.error('[CRM]', e);
             UIRenderer.render();
@@ -1782,7 +1788,17 @@
             }
             const previa = await PreviaDialog.abrir({
               titulo: 'Proposta para ' + quem,
-              nota: 'Confira o texto antes de enviar — você pode editar. Sai pela Alice para o WhatsApp da família.',
+              nota:
+                // Outra proposta (a editada, por exemplo) já saiu para este
+                // agendamento (#381): a família receberia duas, e mensagem
+                // entregue não tem desfazer.
+                (r.outraEnviada
+                  ? '⚠️ Já saiu uma proposta para este agendamento (' +
+                    instanteBr(r.outraEnviada.em) +
+                    (r.outraEnviada.por ? ', por ' + r.outraEnviada.por : '') +
+                    '). Se enviar esta, a família recebe DUAS. Confira antes. '
+                  : '') +
+                'Confira o texto antes de enviar — você pode editar. Sai pela Alice para o WhatsApp da família.',
               texto: r.mensagem,
               rotuloEnviar: '📤 Enviar pela Alice',
               hrefWeb: (texto) => _linkWhatsAppWeb(item.telefone, texto),
@@ -2050,10 +2066,15 @@
           const acao = botao.dataset.acao;
           const id = botao.dataset.id;
           const bebe = botao.dataset.bebe || '';
-          if (acao === 'compareceu' || acao === 'fechou' || acao === 'cancelado') {
+          if (
+            acao === 'compareceu' ||
+            acao === 'proposta' ||
+            acao === 'fechou' ||
+            acao === 'cancelado'
+          ) {
             const local = _itemAgenda(id, bebe);
             if (!local) return;
-            if (acao === 'compareceu') PresencaDialog.abrir(local.item);
+            if (acao === 'compareceu' || acao === 'proposta') PresencaDialog.abrir(local.item);
             else if (acao === 'fechou') marcarFechou(local.item);
             else cancelar(local.item);
           } else if (acao === 'recuperacao') {
@@ -2097,10 +2118,22 @@
           });
         }
 
+        /**
+         * Presença já marcada (`item.compareceu`): o diálogo reaparece pelo botão
+         * "📤 Enviar proposta" só com as duas opções de proposta. Sem isso, quem
+         * escolhia "Editar a proposta" e saía da aba nunca mais via as opções
+         * (a presença já estava marcada e o botão sumia).
+         */
         function abrir(item) {
           _item = item;
+          const jaMarcada = !!item.compareceu;
+          const bebe = ou(item.bebe, 'bebê sem nome');
           document.getElementById('presenca-modal-titulo').textContent =
-            'Presença de ' + ou(item.bebe, 'bebê sem nome');
+            (jaMarcada ? 'Proposta de ' : 'Presença de ') + bebe;
+          document.getElementById('presenca-pergunta').textContent = jaMarcada
+            ? 'Enviar a proposta…'
+            : 'Marcar presença e…';
+          document.getElementById('presenca-so').style.display = jaMarcada ? 'none' : 'block';
           document.getElementById('presenca-editar').href = _hrefProposta(item);
           document.getElementById('presenca-modal').style.display = 'flex';
         }
@@ -2114,6 +2147,14 @@
           const item = _item;
           fechar();
           if (!item || opcao === 'cancelar') return;
+          // Presença já marcada: nada de PATCH, só a proposta ("editar" é o link,
+          // que abre a aba sozinho).
+          if (item.compareceu) {
+            if (opcao === 'padrao') {
+              await AcoesController.enviarPropostaPadrao(item, null, { reaberta: true });
+            }
+            return;
+          }
           const r = await AcoesController.marcarCompareceu(item);
           if (r.ok && opcao === 'padrao') await AcoesController.enviarPropostaPadrao(item, r.aviso);
         }
@@ -2405,6 +2446,19 @@
               );
             } else {
               partes.push(slotT6('Fechou', item.fechou));
+            }
+            // Depois da presença e antes do Fechou, a proposta continua a um
+            // clique: o diálogo de presença só abre uma vez (o botão some ao
+            // marcar), e "Editar a proposta" ou um erro na proposta padrão não
+            // podem deixar a equipe sem como enviar a proposta pelo CRM.
+            if (escritaLigada && item.compareceu && !item.fechou) {
+              partes.push(
+                botaoAcao('proposta', '📤 Enviar proposta', {
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('proposta', item.id, item.bebe),
+                }),
+              );
             }
             if (escritaLigada) {
               partes.push(

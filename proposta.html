@@ -2768,6 +2768,9 @@
         }
 
         function cancelarPrevia() {
+          // A resposta ainda vem: cancelar agora diria "não enviei" de uma
+          // mensagem que pode estar saindo.
+          if (_enviando) return;
           _fecharPrevia();
           _botao().disabled = false;
           _status(
@@ -2775,10 +2778,14 @@
           );
         }
 
+        // Enquanto o envio está no ar, confirmar E cancelar ficam desabilitados
+        // (digitar no texto não reabilita): a resposta decide o que vem a seguir.
+        let _enviando = false;
+
         function _atualizarConfirmar() {
-          document.getElementById('btn-alice-confirmar').disabled = !document
-            .getElementById('alice-texto')
-            .value.trim();
+          const vazio = !document.getElementById('alice-texto').value.trim();
+          document.getElementById('btn-alice-confirmar').disabled = _enviando || vazio;
+          document.getElementById('btn-alice-cancelar').disabled = _enviando;
         }
 
         async function _token() {
@@ -2791,7 +2798,11 @@
           const { leadId, proposalId } = _alvo;
           const texto = document.getElementById('alice-texto').value;
           if (!texto.trim()) return;
-          _fecharPrevia();
+          // A prévia fica ABERTA até a resposta: se a rede cair ou a mensagem
+          // não sair, o texto que a equipe editou continua ali para tentar de
+          // novo (fechar antes perdia a edição, e reabrir relia o texto padrão).
+          _enviando = true;
+          _atualizarConfirmar();
           _botao().disabled = true;
           _status('Enviando…');
           try {
@@ -2817,7 +2828,7 @@
             // `allowedEmails` que libera esta tela: se as listas divergirem, a
             // pessoa vê o botão e leva 403 — diz isso em vez de "não consegui".
             if (res.status === 403) {
-              _botao().disabled = false;
+              _atualizarConfirmar();
               _status(
                 'Seu e-mail não tem acesso ao envio pela Alice — peça para o Michel liberar. ' +
                   'Use o botão do WhatsApp abaixo.',
@@ -2826,21 +2837,27 @@
             }
             if (!res.ok) throw new Error(corpo.erro || 'HTTP ' + res.status);
             if (corpo.jaEnviada) {
+              _fecharPrevia();
               _status('Esta proposta já tinha sido enviada pela Alice. ✓');
             } else if (corpo.whatsapp && corpo.whatsapp.ok) {
+              _fecharPrevia();
               // A Alice manda para o WhatsApp do CADASTRO do lead (o elo é o
               // `leadId`, nunca o telefone digitado — issue #296). Se a equipe
               // corrigiu o número no formulário, o botão do WhatsApp abaixo
               // usa o número corrigido: o texto deixa claro qual foi.
               _status('Enviada pela Alice para o WhatsApp do cadastro do lead. ✓');
             } else {
-              _botao().disabled = false;
+              _atualizarConfirmar();
               _status('A mensagem automática não saiu — use o botão do WhatsApp abaixo.');
             }
           } catch (e) {
             console.warn('[BGL Alice]', e);
-            _botao().disabled = false;
             _status('Não consegui enviar pela Alice — use o botão do WhatsApp abaixo.');
+          } finally {
+            // Qualquer desfecho (sucesso, 403, mensagem que não saiu, rede) devolve
+            // os botões: a prévia que continua aberta volta a aceitar confirmar/cancelar.
+            _enviando = false;
+            _atualizarConfirmar();
           }
         }
 
