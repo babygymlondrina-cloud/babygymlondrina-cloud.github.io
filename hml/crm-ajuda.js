@@ -150,6 +150,8 @@ const BGL_CRM_AJUDA = {
           <li><b>✏️ Editar a proposta antes de enviar</b>: marca a presença e abre o proposta.html em outra aba, já preenchido (mãe, bebê, sexo, turma, telefone, PE paga). Ajuste desconto, destaque ou validade, gere o link e use <b>🤖 Enviar pela Alice</b>: ele mostra o texto numa caixa editável e só envia quando você confirma (ou use Abrir no WhatsApp).</li>
           <li><b>✅ Só marcar presença, sem proposta.</b></li>
         </ol>
+        <p><b>Depois de marcar a presença</b>, o botão <b>📤 Enviar proposta</b> aparece na linha do bebê (até o Fechou) e reabre o diálogo só com as opções de proposta: <b>revisar e enviar a proposta padrão</b> ou <b>editar a proposta</b>. Ele não marca a presença de novo. Use quando você escolheu "Editar a proposta" e saiu sem enviar, escolheu "Só marcar presença" e mudou de ideia, ou quando a proposta padrão não foi gerada.</p>
+        <p><b>Cuidado com proposta duplicada:</b> se uma proposta (por exemplo a editada) já foi enviada para aquele agendamento, a janela de revisão da proposta padrão mostra um aviso em destaque ("Já saiu uma proposta… a família recebe DUAS") com data e quem enviou. O sistema só avisa: confira na lista Propostas e nas Comunicações do detalhe do lead antes de enviar outra.</p>
         <p>Avisos possíveis depois da proposta padrão:</p>
         <ul>
           <li>"Proposta enviada para [mãe] pelo WhatsApp. ✓"</li>
@@ -257,7 +259,7 @@ const BGL_CRM_AJUDA = {
           <li>É onde se responde "o que a mãe recebeu?" sem abrir o WhatsApp. A lista mostra a mais nova primeiro: data e hora, tipo (Boas-vindas, Proposta…), quem mandou (o e-mail de quem clicou), se <b>Enviada</b> ou <b>Não saiu</b> (com o motivo) e o texto, que abre em <b>Ver texto</b>.</li>
           <li>Texto que a equipe mudou na janela de revisão aparece com a etiqueta <b>Editada</b>, e o texto original fica ao lado.</li>
           <li>Registra também as tentativas que <b>falharam</b>, para você saber que a família não recebeu.</li>
-          <li>Só aparecem as mensagens enviadas pelo sistema (Boas-vindas do Fechou e propostas pela Alice). <b>O que foi digitado à mão no WhatsApp não aparece</b>, e as mensagens automáticas do Make entram numa próxima versão.</li>
+          <li>Só aparecem as mensagens enviadas pelo sistema (Boas-vindas do Fechou e propostas pela Alice). <b>O que foi digitado à mão no WhatsApp não aparece</b>, e as mensagens automáticas do Make (confirmação do dia anterior, pesquisa de satisfação e PIX) aparecem aqui, com "make" em Quem, <b>só depois</b> que o cenário correspondente for ajustado para registrar; até lá, não aparecem.</li>
         </ul>
         <h4>Anotações pós-PE <small>(desde a versão 3.12)</small></h4>
         <ul>
@@ -432,6 +434,33 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.19',
+      data: '2026-10-05',
+      mudancas: {
+        adicionado: [
+          'As mensagens automáticas do Make (confirmação D-1, pesquisa de satisfação e PIX) passam a poder aparecer na seção Comunicações do detalhe do lead, com "make" em Quem, à medida que os cenários forem ajustados para registrá-las (#336).',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.18',
+      data: '2026-10-05',
+      mudancas: {
+        adicionado: [
+          'Botão 📤 Enviar proposta nos agendamentos com presença marcada (até o Fechou): reabre as opções de proposta, para enviar a padrão depois de ter escolhido "Editar a proposta" ou "Só marcar" (#381).',
+          'Aviso na revisão da proposta padrão quando outra proposta (a editada, por exemplo) já foi enviada para o mesmo agendamento: a família receberia duas (#381).',
+        ],
+        alterado: [],
+        corrigido: [
+          'Depois de "Editar a proposta" no Marcar presença, não havia mais como enviar a proposta padrão pelo CRM (#381).',
+        ],
+        removido: [],
+      },
+    },
     {
       versao: '3.17',
       data: '2026-10-05',
