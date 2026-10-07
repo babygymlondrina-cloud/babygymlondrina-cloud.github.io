@@ -67,6 +67,15 @@ Em **todas as três faixas**, cada linha tem:
   (`statusConfirmacao`, coluna T) da planilha. **Pede confirmação** antes de
   agir, porque é a única das quatro ações difícil de desfazer: o agendamento sai
   da agenda de hoje e da Semana assim que você confirma.
+- **💰 Marcar PE paga** (issue #397) — registra à mão que a Primeira Experiência foi paga
+  (PIX direto, por exemplo) em vez de digitar `pago` na planilha. Pede o **valor recebido** e o
+  **motivo de estar marcando à mão** (obrigatório, no mínimo 10 caracteres) e grava o seu e-mail
+  como quem conferiu. Só marque **depois de receber**. Se já existe um PIX do sistema pendente, o
+  diálogo avisa: se a família ainda puder pagá-lo, o dinheiro entra duas vezes. Some quando a PE
+  já consta como paga; não dá para marcar uma PE que o Mercado Pago já confirmou. Agendamento
+  antigo, sem identificação da linha, não tem o botão: marque direto na planilha. Se aparecer o
+  aviso "não atualizou a planilha", digite `pago`, o valor, seu e-mail e o motivo na linha, senão a
+  PE volta a "não paga" na próxima sincronização.
 - **💬 Conversa** — abre a conversa no WhatsApp com aquele telefone.
 
 Só na faixa **"já passou"** aparece também:

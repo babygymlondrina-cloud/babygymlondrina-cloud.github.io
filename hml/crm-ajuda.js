@@ -67,6 +67,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Cancelar</td><td>DadosAgendamento, coluna T (status de confirmação = cancelado)</td></tr>
             <tr><td>Travar ou destravar recuperação</td><td>LeadsFrios, coluna A (Travar)</td></tr>
             <tr><td>Anotações pós-PE</td><td>DadosAgendamento, colunas Y, Z e AA</td></tr>
+            <tr><td>💰 Marcar PE paga</td><td>DadosAgendamento, colunas AB (pago), AN (valor), AO (seu e-mail) e AP (o motivo)</td></tr>
           </tbody>
         </table></div>
         <p>O caminho contrário também existe: o que muda na planilha chega ao CRM automaticamente, em até cerca de 30 minutos.</p>
@@ -129,6 +130,7 @@ const BGL_CRM_AJUDA = {
           <tbody>
             <tr><td><b>Marcar presença</b></td><td>Registra que a família compareceu (planilha, coluna V) e abre a pergunta sobre a proposta (próxima seção). Depois vira "✓ Presença" e não dá para desmarcar pela tela: se marcou errado, avise o Michel. Aparece nas três faixas, porque a presença é marcada quando a mãe chega, dentro do horário corrente.</td></tr>
             <tr><td><b>Marcar fechou</b></td><td>Registra que a família fechou o plano (coluna X) e <b>manda a mensagem de boas-vindas pelo WhatsApp</b>. Só se marca uma vez; depois vira "✓ Fechou". Quem fechou continua na lista, com o selo.</td></tr>
+            <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
             <tr><td><b>Cancelar</b></td><td>Cancela o agendamento (coluna T). Pede confirmação ("Cancelar o agendamento de [bebê]? Ele sai da agenda."), por ser a ação mais difícil de desfazer.</td></tr>
             <tr><td><b>📄 Proposta</b></td><td>Só na faixa "Já passou". Abre o detalhe do lead, de onde sai a proposta.</td></tr>
             <tr><td><b>📄 Detalhe</b></td><td>Nas tabelas (Semana, Mês, Frios, lista do rodapé do Painel). Abre o detalhe do lead.</td></tr>
@@ -160,6 +162,29 @@ const BGL_CRM_AJUDA = {
           <li>"Presença marcada, mas a proposta padrão não foi gerada": o aviso diz o motivo (sem agendamento, sem nome da mãe, sem turma reconhecida ou texto não configurado). Use <b>Gerar proposta</b> no detalhe do lead.</li>
         </ul>
         <p>Se o clique falhou em dois lugares (planilha e WhatsApp), o aviso conta as duas coisas.</p>
+      `,
+    },
+    {
+      id: 'pe-paga',
+      titulo: 'Marcar a PE como paga à mão',
+      desde: '3.20',
+      html: `
+        <p>Quando a família pagou a Primeira Experiência <b>por fora do PIX do sistema</b> (PIX direto na conta da BGL, por exemplo), registre no CRM em vez de digitar na planilha. O botão <b>💰 Marcar PE paga</b> aparece na linha do bebê enquanto a PE não consta como paga.</p>
+        <ol>
+          <li><b>Valor recebido (R$)</b>: o que realmente entrou, como <b>47,00</b> ou <b>23,50</b>. É esse número que a proposta abate do plano. Se já havia um valor do PIX do sistema, ele vem preenchido: corrija se o recebido for outro. Acima de R$200 a tela recusa (provável erro de digitação).</li>
+          <li><b>Por que está marcando à mão?</b>: campo <b>obrigatório</b>, com no mínimo 10 caracteres. Escreva o motivo de verdade, por exemplo "PIX direto na conta da BGL, conferi o comprovante no extrato". Ele fica gravado junto da PE.</li>
+          <li><b>💰 Marcar como paga</b>: só libera com o valor e o motivo preenchidos.</li>
+        </ol>
+        <ul>
+          <li><b>Seu e-mail fica registrado</b> como quem conferiu o pagamento. Não dá para assinar por outra pessoa.</li>
+          <li><b>Só marque depois de receber.</b> "Vai pagar" ainda não é pago: a proposta passaria a abater um valor que não entrou.</li>
+          <li><b>PIX do sistema ainda pendente:</b> se já existe um PIX gerado para essa PE, o diálogo avisa. Se a família ainda puder pagá-lo, o dinheiro entra duas vezes: peça para ela ignorar o PIX antigo.</li>
+          <li><b>Já confirmada pelo Mercado Pago:</b> não dá para marcar à mão, porque o pagamento já foi confirmado pelo sistema. A tela avisa e nada muda.</li>
+          <li><b>Digitou o valor errado?</b> Depois de marcada, a tela não oferece corrigir (o botão some). Avise o Michel, que corrige.</li>
+          <li>Se o servidor recusar, o diálogo <b>continua aberto</b> com o motivo em vermelho e o que você digitou fica lá.</li>
+        </ul>
+        <div class="aviso aviso-info"><b>Se vier o aviso "não atualizou a planilha":</b> a PE foi salva no CRM, mas a planilha ainda está com o estado antigo, e <b>na próxima sincronização (até cerca de 30 minutos) a PE volta a "não paga"</b>. Digite você mesma na linha do bebê: <b>AB = pago</b>, <b>AN</b> = o valor, <b>AO</b> = seu e-mail e <b>AP</b> = o motivo. Depois disso nada mais se perde.</div>
+        <p><b>Sem o botão?</b> Agendamentos antigos, sem identificação da linha, não têm o botão 💰: a marcação não teria onde ser gravada na planilha e voltaria sozinha. Nesses, marque direto na planilha (AB, AN, AO e AP).</p>
       `,
     },
     {
@@ -352,14 +377,15 @@ const BGL_CRM_AJUDA = {
             <tr><td>Y</td><td>Analise Pós Aula</td><td>Aparece e escreve</td><td>Anotações pós-PE (Análise), editável no detalhe.</td></tr>
             <tr><td>Z</td><td>Contato Pós Aula 1</td><td>Aparece e escreve</td><td>Anotações pós-PE (1º contato), editável.</td></tr>
             <tr><td>AA</td><td>Contato Pós Aula 2</td><td>Aparece e escreve</td><td>Anotações pós-PE (2º contato), editável.</td></tr>
-            <tr><td>AB</td><td>statusPagamento</td><td>Aparece</td><td>Etiqueta PE (paga, PIX gerado, não paga), chip PE paga do Mês e o "PE paga" da proposta.</td></tr>
+            <tr><td>AB</td><td>statusPagamento</td><td>Aparece e escreve</td><td>Etiqueta PE (paga, PIX gerado, não paga), chip PE paga do Mês e o "PE paga" da proposta. O botão 💰 Marcar PE paga grava "pago" aqui.</td></tr>
             <tr><td>AC a AF</td><td>payment_id, external_reference, pix_emv, ticket_url</td><td>Guardado</td><td>Dados do PIX no Mercado Pago. Nenhuma tela mostra.</td></tr>
             <tr><td>AG a AI</td><td>data_hora_geracao, expiracao e pagamento</td><td>Guardado</td><td>Nenhuma tela mostra; a tela mostra só o status (AB).</td></tr>
             <tr><td>AJ, AK</td><td>(controle do sync)</td><td>Interno</td><td>Sincronização planilha para CRM. Não mexer.</td></tr>
             <tr><td>AL</td><td>agendamentoId (UUID)</td><td>Interno</td><td>Não aparece, mas é a identidade do agendamento: é como cada botão acha a linha certa da planilha. Sem ela, as anotações pós-PE ficam só para leitura. Nunca copiar linha (o UUID vai junto).</td></tr>
             <tr><td>AM</td><td>(sem uso)</td><td>Não lido</td><td>Coluna antiga, vazia. Não preencher.</td></tr>
-            <tr><td>AN</td><td>valorPE</td><td>Guardado</td><td>Quanto a família pagou na Primeira Experiência, em reais (ex.: 47 ou 23,50). O Make preenche no PIX do Mercado Pago; <b>na PE paga por PIX direto, digite o valor recebido junto do "pago" na AB</b>. É o número que a proposta abate do plano. Sem valor, ou com valor acima de R$200 (provável erro de digitação), a proposta usa o valor padrão da PE.</td></tr>
-            <tr><td>AO</td><td>comprovanteConferidoPor</td><td>Guardado</td><td>Só no PIX direto: o nome (ou iniciais) de quem conferiu o comprovante que a mãe mandou. Preenchida significa conferido. No Mercado Pago fica vazia.</td></tr>
+            <tr><td>AN</td><td>valorPE</td><td>Escreve</td><td>Quanto a família pagou na Primeira Experiência, em reais (ex.: 47 ou 23,50). O Make preenche no PIX do Mercado Pago; <b>na PE paga por PIX direto, use o botão 💰 Marcar PE paga, que grava o valor recebido aqui</b>. É o número que a proposta abate do plano. Sem valor, ou com valor acima de R$200 (provável erro de digitação), a proposta usa o valor padrão da PE.</td></tr>
+            <tr><td>AO</td><td>comprovanteConferidoPor</td><td>Escreve</td><td>Só no PIX direto: quem conferiu o pagamento. O botão 💰 Marcar PE paga grava aqui o e-mail de quem clicou. Preenchida significa conferido. No Mercado Pago fica vazia.</td></tr>
+            <tr><td>AP</td><td>observacaoPE</td><td>Escreve</td><td>O motivo de a PE ter sido marcada à mão, escrito por quem clicou em 💰 Marcar PE paga. Obrigatório nesse botão. Fica só nesta coluna e no CRM: nenhuma tela a mostra ainda.</td></tr>
           </tbody>
         </table></div>
         <p>Outras abas: <b>DadosPrimeiroAtendimento</b> alimenta Primeiro contato (A), nome de reserva (D), telefone (E), Canal (F) e chatID (G). <b>LeadsFrios</b> coluna A (Travar) alimenta a etiqueta Travado e o botão Travar/Destravar. O campo "Reengajável" do detalhe é calculado (lead com telefone válido), não vem de coluna.</p>
@@ -374,6 +400,7 @@ const BGL_CRM_AJUDA = {
         <ul>
           <li><b>Agendar uma Primeira Experiência nova e reagendar:</b> ainda é na planilha. <b>Ao reagendar, crie uma linha nova. Não copie a linha existente.</b> A cópia leva o identificador do agendamento, o sistema acha que são o mesmo e o agendamento antigo some do CRM. Se já copiou, apague o conteúdo da coluna do identificador (código parecido com 8f25a6aa-7901-…) na linha nova.</li>
           <li><b>Desmarcar presença ou fechou:</b> não existe na tela. Peça ao Michel.</li>
+          <li><b>Dispensar a PE (a família não vai pagar) e ler o motivo gravado na AP:</b> ainda não existe na tela.</li>
           <li>Os PIX da PE e as confirmações automáticas continuam sendo gerados pelos fluxos que já existiam (Make e Alice).</li>
         </ul>
       `,
@@ -434,6 +461,20 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.20',
+      data: '2026-10-07',
+      mudancas: {
+        adicionado: [
+          'Botão 💰 Marcar PE paga na agenda: registra à mão que a Primeira Experiência foi paga (PIX direto, por exemplo), sem abrir a planilha. Pede o valor recebido e um motivo obrigatório (mínimo de 10 caracteres), e grava seu e-mail como quem conferiu (#397).',
+          'Aviso no diálogo quando já existe um PIX do sistema pendente para a PE: se a família ainda puder pagá-lo, o dinheiro entra duas vezes.',
+          'Coluna AP (observacaoPE) na planilha, com o motivo escrito ao marcar a PE como paga.',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.19',
       data: '2026-10-05',

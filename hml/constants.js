@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.19',
-  APP_DATE: '2026-10-05',
+  APP_VERSION: '3.20',
+  APP_DATE: '2026-10-07',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -123,7 +123,16 @@ const BGL_CONST = {
       DESTRAVAR_RECUPERACAO: 'destravar_recuperacao',
       /** Anotação pós-PE (issue #308) — `dados: { campo, texto }` + `agendamentoId`. */
       OBSERVACAO_POS_PE: 'observacao_pos_pe',
+      /** PE marcada como paga à mão (issue #397) — `dados: { valor, observacao }`. */
+      PE_PAGA: 'pe_paga',
     },
+    /**
+     * Observação obrigatória ao marcar a PE como paga (issue #397): o motivo de
+     * estar registrando à mão. O servidor é quem recusa texto vazio/curto — a
+     * tela só repete a regra para não deixar clicar. Mesmos números de
+     * `OBSERVACAO_PE` em `functions/crm-const.js`; um teste compara as duas.
+     */
+    OBSERVACAO_PE: { MIN: 10, MAX: 500 },
     /**
      * Anotações pós-PE (issue #308), na ordem da planilha — `campo` espelha
      * `CAMPOS_POS_PE` de `functions/crm-const.js` (colunas Y, Z e AA de
