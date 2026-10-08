@@ -796,6 +796,97 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+      /* ─── Diálogo de criar agendamento (issue #271) ─── */
+      .agendar-card {
+        max-width: 640px;
+      }
+      .ag-busca {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .ag-busca .pe-input {
+        flex: 1;
+      }
+      .ag-busca .btn-presenca {
+        white-space: nowrap;
+      }
+      .ag-candidato {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.55rem 0.7rem;
+        font-size: 0.85rem;
+      }
+      .ag-candidato-nome {
+        font-weight: 700;
+      }
+      .ag-candidato-info {
+        color: var(--text-light);
+        font-size: 0.78rem;
+      }
+      .ag-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .ag-grade {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem 0.7rem;
+      }
+      .ag-grade .ag-inteiro {
+        grid-column: 1 / -1;
+      }
+      @media (max-width: 520px) {
+        .ag-grade {
+          grid-template-columns: 1fr;
+        }
+      }
+      .ag-campo {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      .ag-opcao {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.5rem 0.65rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+      .ag-opcao strong {
+        display: block;
+      }
+      .ag-opcao small {
+        color: var(--text-light);
+      }
+      .ag-opcao input {
+        margin-top: 0.25rem;
+      }
+      .ag-json summary {
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--teal-dark);
+      }
+      .ag-prompt {
+        min-height: 9rem;
+        font-size: 0.75rem;
+      }
+      .ag-resumo {
+        white-space: pre-wrap;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.7rem 0.8rem;
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
       /* ─── Diálogo de PE marcada como paga à mão (issue #397) ─── */
       .pe-corpo {
         display: flex;
@@ -1064,6 +1155,7 @@
           <span class="user-bar-email" id="user-email"></span>
           <span id="env-badge"></span>
           <span class="app-version-badge" id="app-version-badge"></span>
+          <button class="btn-bar" id="btn-agendar" style="display: none">➕ Agendar</button>
           <button class="btn-bar" id="btn-atualizar">↻ Atualizar</button>
           <button class="btn-bar" id="btn-logout">Sair</button>
         </div>
@@ -1109,6 +1201,244 @@
           <button type="button" class="btn-presenca-cancelar" data-presenca="cancelar">
             Cancelar
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="agendar-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card agendar-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ag-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="ag-titulo">Agendar Primeira Experiência</h2>
+          <button class="modal-close" data-ag="fechar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body pe-corpo">
+          <!-- Passo 1 — primeiro procura a família: só cria se não existir -->
+          <section id="ag-passo-busca" class="pe-corpo">
+            <p class="presenca-pergunta">
+              Primeiro procure a família pelo
+              <strong>telefone</strong>
+              ou pelo
+              <strong>nome</strong>
+              da mãe ou do bebê. Só cadastre uma família nova se ela não estiver na lista.
+            </p>
+            <form id="ag-form-busca" class="ag-busca">
+              <input
+                type="text"
+                id="ag-busca"
+                class="pe-input"
+                autocomplete="off"
+                placeholder="43 99999-0000 ou nome"
+                aria-label="Telefone ou nome"
+              />
+              <button type="submit" class="btn-presenca" id="ag-buscar">🔎 Buscar</button>
+            </form>
+            <div
+              class="aviso aviso-erro"
+              id="ag-busca-erro"
+              role="alert"
+              style="display: none"
+            ></div>
+            <div id="ag-resultados" class="ag-lista"></div>
+          </section>
+
+          <!-- Passo 2 — o formulário -->
+          <section id="ag-passo-form" class="pe-corpo" style="display: none">
+            <div class="presenca-pergunta" id="ag-familia"></div>
+            <div class="aviso aviso-info" id="ag-conflito" style="display: none"></div>
+
+            <details class="ag-json" id="ag-json-bloco">
+              <summary>Preencher a partir do ChatGPT (colar o JSON)</summary>
+              <div class="pe-corpo">
+                <p class="presenca-pergunta">
+                  1) Copie o prompt, 2) cole no ChatGPT junto com o print da conversa, 3) traga o
+                  JSON que ele devolver. O JSON só
+                  <strong>preenche</strong>
+                  o formulário: você confere antes de gravar.
+                </p>
+                <textarea
+                  id="ag-prompt"
+                  class="pe-input ag-prompt"
+                  readonly
+                  aria-label="Prompt para o ChatGPT"
+                ></textarea>
+                <button type="button" class="btn-presenca" data-ag="copiar">
+                  📋 Copiar prompt
+                </button>
+                <textarea
+                  id="ag-json"
+                  class="pe-input"
+                  aria-label="JSON devolvido pelo ChatGPT"
+                  placeholder="Cole aqui o JSON"
+                ></textarea>
+                <button type="button" class="btn-presenca" data-ag="preencher">
+                  ⬇️ Preencher o formulário
+                </button>
+                <div
+                  class="aviso aviso-erro"
+                  id="ag-json-erro"
+                  role="alert"
+                  style="display: none"
+                ></div>
+                <div class="pe-dica" id="ag-json-ok"></div>
+              </div>
+            </details>
+
+            <div class="ag-grade">
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-telefone">Telefone *</label>
+                <input
+                  type="text"
+                  id="ag-telefone"
+                  class="pe-input"
+                  inputmode="tel"
+                  autocomplete="off"
+                  placeholder="43 99999-0000"
+                />
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-responsavel">Responsável *</label>
+                <input type="text" id="ag-responsavel" class="pe-input" autocomplete="off" />
+              </div>
+              <div class="ag-campo ag-inteiro">
+                <label class="pe-rotulo" for="ag-email">E-mail</label>
+                <input
+                  type="text"
+                  id="ag-email"
+                  class="pe-input"
+                  inputmode="email"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="ag-campo ag-inteiro" id="ag-bebe-escolha" style="display: none">
+                <label class="pe-rotulo" for="ag-bebe-select">Bebê</label>
+                <select id="ag-bebe-select" class="pe-input"></select>
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-bebe">Nome do bebê *</label>
+                <input type="text" id="ag-bebe" class="pe-input" autocomplete="off" />
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-nascimento">Nascimento *</label>
+                <input type="date" id="ag-nascimento" class="pe-input" />
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-sexo">Sexo</label>
+                <select id="ag-sexo" class="pe-input">
+                  <option value="">—</option>
+                  <option value="f">Menina</option>
+                  <option value="m">Menino</option>
+                </select>
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-turma">Turma</label>
+                <select id="ag-turma" class="pe-input"></select>
+                <div class="pe-dica" id="ag-turma-dica"></div>
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-data">Data da Primeira Experiência *</label>
+                <input type="date" id="ag-data" class="pe-input" />
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-hora">Hora *</label>
+                <input type="time" id="ag-hora" class="pe-input" />
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-como">Como conheceu</label>
+                <input type="text" id="ag-como" class="pe-input" autocomplete="off" />
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-alergia">Alergia</label>
+                <input type="text" id="ag-alergia" class="pe-input" autocomplete="off" />
+              </div>
+              <div class="ag-campo">
+                <label class="pe-rotulo" for="ag-prematuro">Prematuro</label>
+                <select id="ag-prematuro" class="pe-input">
+                  <option value="">—</option>
+                  <option value="Não">Não</option>
+                  <option value="Sim">Sim</option>
+                </select>
+              </div>
+            </div>
+
+            <fieldset class="pe-corpo" style="border: none; padding: 0; margin: 0">
+              <legend class="pe-rotulo">Cobrança da PE * (escolha uma)</legend>
+              <label class="ag-opcao">
+                <input type="radio" name="ag-cobranca" value="gerar_pix" />
+                <span>
+                  <strong>Pedir para gerar o PIX</strong>
+                  <small>O sistema cobra e manda as mensagens do PIX à mãe.</small>
+                </span>
+              </label>
+              <label class="ag-opcao">
+                <input type="radio" name="ag-cobranca" value="pix_enviado" />
+                <span>
+                  <strong>PIX já enviado</strong>
+                  <small>Você já mandou o PIX à mãe. Marque como paga quando ela pagar.</small>
+                </span>
+              </label>
+              <label class="ag-opcao">
+                <input type="radio" name="ag-cobranca" value="nao_paga" />
+                <span>
+                  <strong>Não vai pagar a PE</strong>
+                  <small>Exige uma justificativa.</small>
+                </span>
+              </label>
+            </fieldset>
+            <div class="ag-campo" id="ag-justificativa-bloco" style="display: none">
+              <label class="pe-rotulo" for="ag-justificativa">Justificativa (obrigatória)</label>
+              <textarea
+                id="ag-justificativa"
+                class="pe-input"
+                maxlength="500"
+                placeholder="Ex.: a família combinou que a PE é cortesia"
+              ></textarea>
+              <div class="pe-dica" id="ag-justificativa-dica"></div>
+            </div>
+
+            <div class="pe-dica" id="ag-faltando"></div>
+            <button type="button" class="btn-presenca" id="ag-revisar" data-ag="revisar">
+              Revisar e confirmar
+            </button>
+            <button type="button" class="btn-presenca-cancelar" data-ag="voltar-busca">
+              ← Voltar à busca
+            </button>
+          </section>
+
+          <!-- Passo 3 — a confirmação com o resumo em texto -->
+          <section id="ag-passo-resumo" class="pe-corpo" style="display: none">
+            <p class="presenca-pergunta">
+              Confira antes de gravar — esta é a única ação da tela que cria um agendamento.
+            </p>
+            <div class="ag-resumo" id="ag-resumo-texto"></div>
+            <div class="aviso aviso-info" id="ag-resumo-aviso" style="display: none"></div>
+            <div class="aviso aviso-erro" id="ag-erro" role="alert" style="display: none"></div>
+            <button type="button" class="btn-presenca" id="ag-confirmar" data-ag="confirmar">
+              ✅ Confirmar e criar
+            </button>
+            <button type="button" class="btn-presenca-cancelar" data-ag="voltar-form">
+              ← Voltar ao formulário
+            </button>
+          </section>
+
+          <!-- Passo 4 — o resultado -->
+          <section id="ag-passo-resultado" class="pe-corpo" style="display: none">
+            <div class="aviso" id="ag-resultado-texto" style="border: 1px solid var(--line)"></div>
+            <button
+              type="button"
+              class="btn-presenca"
+              id="ag-tentar-de-novo"
+              data-ag="tentar-de-novo"
+              style="display: none"
+            >
+              🔁 Tentar gravar na planilha de novo
+            </button>
+            <button type="button" class="btn-presenca" data-ag="fechar">Fechar</button>
+          </section>
         </div>
       </div>
     </div>
@@ -2414,6 +2744,711 @@
         return { abrir, iniciar };
       })();
 
+      // ─── AgendarForm ─────────────────────────────────────────────────────
+      // Issue #271: a lógica PURA de "criar agendamento pela tela" — sem DOM, para
+      // ser testável sozinha. Idade → turma sugerida, o JSON do ChatGPT, o prompt, o
+      // que falta preencher, o corpo do POST e o resumo de confirmação. O servidor
+      // valida tudo de novo (`functions/agendar.js`): aqui é conforto, não garantia.
+      const AgendarForm = (function () {
+        const COBRANCA = BGL_CONST.CRM.COBRANCA_PE;
+        const OBS = BGL_CONST.CRM.OBSERVACAO_PE;
+        const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+        function _hojeISO() {
+          const d = new Date();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          return d.getFullYear() + '-' + mm + '-' + dd;
+        }
+
+        /** Meses completos entre duas datas ISO (`null` se alguma for inválida ou o nascimento for futuro). */
+        function idadeEmMeses(nascimento, hoje) {
+          if (!ISO_RE.test(nascimento || '') || !ISO_RE.test(hoje || '')) return null;
+          const [na, nm, nd] = nascimento.split('-').map(Number);
+          const [ha, hm, hd] = hoje.split('-').map(Number);
+          const meses = (ha - na) * 12 + (hm - nm) - (hd < nd ? 1 : 0);
+          return meses < 0 ? null : meses;
+        }
+
+        /** Turma SUGERIDA pelo nascimento (minúscula), ou `null` fora de qualquer faixa. */
+        function turmaSugerida(nascimento, hoje) {
+          const meses = idadeEmMeses(nascimento, hoje || _hojeISO());
+          if (meses === null) return null;
+          const faixa = BGL_CONST.CRM.FAIXAS_TURMA.find((f) => meses >= f.de && meses < f.ate);
+          return faixa ? faixa.turma : null;
+        }
+
+        /** O prompt do ChatGPT, MONTADO a partir de `BGL_CONST.TURMAS` (turma nova entra sozinha). */
+        function montarPrompt() {
+          return [
+            'Você vai receber o print (imagem) ou o texto de uma conversa de agendamento da Baby Gym Londrina — na mesma mensagem ou na próxima.',
+            '',
+            'Extraia os dados e devolva SÓ um JSON, sem texto em volta, com estas chaves:',
+            '- telefone — só dígitos, com DDD (ex.: 43999990000)',
+            '- responsavel — nome de quem está falando',
+            '- bebe — nome do bebê',
+            '- nascimento — AAAA-MM-DD',
+            '- sexo — m ou f',
+            '- data — AAAA-MM-DD, o dia da Primeira Experiência',
+            '- hora — HH:MM, 24 horas',
+            '- turma — uma de: ' + BGL_CONST.TURMAS.join(', '),
+            '- email, comoConheceu, alergia — texto',
+            '- prematuro — true ou false',
+            '',
+            'Regras:',
+            '- Se algo não estiver na conversa, OMITA a chave. Não invente e não deduza.',
+            '- Não converta data relativa. "Sexta que vem" não vira data: omita data e a equipe preenche.',
+            '- Um bebê por JSON. Havendo irmãos, use o do agendamento.',
+          ].join('\n');
+        }
+
+        function _txt(v) {
+          return typeof v === 'string' || typeof v === 'number' ? String(v).trim() : '';
+        }
+
+        /**
+         * Lê o JSON que o ChatGPT devolveu. SÓ PREENCHE: devolve `{campos}` com o que
+         * entendeu (chave ausente fica de fora — nada é inventado, chave desconhecida é
+         * ignorada) ou `{erro}` quando não é um JSON de objeto (e aí nada é preenchido).
+         * Aceita o JSON dentro de cercas ``` — o ChatGPT adora devolver assim.
+         */
+        function lerJson(entrada) {
+          const texto = String(entrada || '')
+            .trim()
+            .replace(/^```(?:json)?\s*/i, '')
+            .replace(/\s*```$/, '')
+            .trim();
+          if (!texto) return { erro: 'Cole o JSON que o ChatGPT devolveu.' };
+          let obj;
+          try {
+            obj = JSON.parse(texto);
+          } catch (e) {
+            return { erro: 'Isso não é um JSON válido. Peça ao ChatGPT para devolver só o JSON.' };
+          }
+          if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+            return { erro: 'O JSON precisa ser um objeto { ... } com os dados do agendamento.' };
+          }
+          const campos = {};
+          const telefone = normalizeTelefone(_txt(obj.telefone));
+          if (telefone) campos.telefone = telefone;
+          if (_txt(obj.responsavel)) campos.responsavel = _txt(obj.responsavel);
+          if (_txt(obj.bebe)) campos.bebeNome = _txt(obj.bebe);
+          if (ISO_RE.test(_txt(obj.nascimento))) campos.nascimento = _txt(obj.nascimento);
+          const sexo = _txt(obj.sexo).toLowerCase();
+          if (sexo === 'm' || sexo.startsWith('masc')) campos.sexo = 'm';
+          else if (sexo === 'f' || sexo.startsWith('fem')) campos.sexo = 'f';
+          if (ISO_RE.test(_txt(obj.data))) campos.data = _txt(obj.data);
+          const hora = /^(\d{1,2}):(\d{2})/.exec(_txt(obj.hora));
+          if (hora) campos.hora = hora[1].padStart(2, '0') + ':' + hora[2];
+          const turma = _txt(obj.turma).toLowerCase();
+          if (BGL_CONST.TURMAS.includes(turma)) campos.turma = turma; // desconhecida cai na sugestão pelo nascimento
+          if (_txt(obj.email)) campos.email = _txt(obj.email);
+          if (_txt(obj.comoConheceu)) campos.comoConheceu = _txt(obj.comoConheceu);
+          if (_txt(obj.alergia)) campos.alergia = _txt(obj.alergia);
+          if (typeof obj.prematuro === 'boolean') campos.prematuro = obj.prematuro ? 'Sim' : 'Não';
+          else if (/^(sim|não|nao)$/i.test(_txt(obj.prematuro))) {
+            campos.prematuro = /^sim$/i.test(_txt(obj.prematuro)) ? 'Sim' : 'Não';
+          }
+          return { campos };
+        }
+
+        /**
+         * O que ainda falta para poder revisar — rótulos em linguagem da recepção.
+         * `ctx.novo`: família nova (exige telefone e responsável); `ctx.nascimentoConhecido`:
+         * o lead já tem o nascimento do bebê escolhido.
+         */
+        function faltando(f, ctx) {
+          const falta = [];
+          if (ctx.novo && !normalizeTelefone(f.telefone)) falta.push('telefone válido');
+          if (ctx.novo && !f.responsavel.trim()) falta.push('responsável');
+          if (!f.bebeNome.trim()) falta.push('nome do bebê');
+          if (!f.nascimento && !ctx.nascimentoConhecido) falta.push('nascimento');
+          if (!f.data) falta.push('data');
+          if (!f.hora) falta.push('hora');
+          if (!f.cobranca) falta.push('cobrança da PE');
+          if (f.cobranca === COBRANCA.NAO_PAGA) {
+            const n = f.justificativa.trim().length;
+            if (n < OBS.MIN) falta.push('justificativa (mínimo ' + OBS.MIN + ' caracteres)');
+          }
+          return falta;
+        }
+
+        /** O corpo do `POST /leads/{id}/agendamentos` (o servidor repete toda a validação). */
+        function montarCorpo(f, ctx) {
+          return {
+            // Família que já existe: o cadastro dela não é reescrito por este pedido.
+            // `familiaNova` deixa o servidor recusar (409) um telefone que já é de um lead.
+            ...(ctx.novo
+              ? {
+                  familiaNova: true,
+                  responsavel: { nome: f.responsavel.trim(), email: f.email.trim() },
+                }
+              : {}),
+            bebe: {
+              nome: f.bebeNome.trim(),
+              nascimento: f.nascimento,
+              sexo: f.sexo,
+              alergia: f.alergia.trim(),
+              prematuro: f.prematuro,
+            },
+            data: f.data,
+            hora: f.hora,
+            turma: f.turma,
+            comoConheceu: f.comoConheceu.trim(),
+            cobranca: f.cobranca,
+            ...(f.cobranca === COBRANCA.NAO_PAGA ? { justificativa: f.justificativa.trim() } : {}),
+          };
+        }
+
+        const ROTULO_COBRANCA = {
+          [COBRANCA.GERAR_PIX]: 'pedir para gerar o PIX',
+          [COBRANCA.PIX_ENVIADO]: 'PIX já enviado',
+          [COBRANCA.NAO_PAGA]: 'não vai pagar a PE',
+        };
+
+        const ROTULO_TURMA = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : 'sem turma');
+
+        /** O resumo em texto da confirmação — a conferência que pega o erro plausível (nome trocado, ano errado). */
+        function resumo(f, ctx) {
+          const quando = f.data.split('-').reverse().join('/') + ' às ' + f.hora;
+          const linhas = [
+            'Bebê: ' +
+              f.bebeNome.trim() +
+              (f.nascimento
+                ? ' (nasceu em ' + f.nascimento.split('-').reverse().join('/') + ')'
+                : ''),
+            'Responsável: ' + (ctx.novo ? f.responsavel.trim() : ctx.responsavelDoLead || '—'),
+            'Telefone: ' + (ctx.telefoneExibido || '—'),
+            'Primeira Experiência: ' + quando + ' · ' + ROTULO_TURMA(f.turma),
+            'PE: ' + ROTULO_COBRANCA[f.cobranca],
+          ];
+          if (f.cobranca === COBRANCA.NAO_PAGA)
+            linhas.push('Justificativa: ' + f.justificativa.trim());
+          linhas.push(ctx.novo ? 'Família: NOVA (será cadastrada)' : 'Família: já cadastrada');
+          return linhas.join('\n');
+        }
+
+        /** O que vai acontecer com a MÃE ao gravar — só a cobrança por PIX fala com ela. */
+        function avisoDaCobranca(cobranca) {
+          return cobranca === COBRANCA.GERAR_PIX
+            ? 'Ao gravar, o sistema vai gerar o PIX e mandar as mensagens do PIX para a mãe, pelo WhatsApp. Isso não se desfaz.'
+            : '';
+        }
+
+        return {
+          idadeEmMeses,
+          turmaSugerida,
+          montarPrompt,
+          lerJson,
+          faltando,
+          montarCorpo,
+          resumo,
+          avisoDaCobranca,
+        };
+      })();
+
+      // ─── AgendarDialog ───────────────────────────────────────────────────
+      // Issue #271: "➕ Agendar" — a recepção marca a Primeira Experiência do lead que
+      // captou. Quatro passos num diálogo só: (1) PROCURAR a família por telefone ou
+      // nome (só cria se não existir, e com confirmação explícita, porque o docId do
+      // lead é o telefone e achar pelo nome e criar outra por estar com outro número
+      // gera lead duplicado); (2) o formulário, com a turma sugerida pelo nascimento,
+      // a cobrança da PE SEM padrão e a porta do JSON do ChatGPT; (3) o RESUMO em texto,
+      // porque criar é a única ação da tela que não se desfaz por ela; (4) o resultado.
+      //
+      // Só DOM: a lógica pura mora no `AgendarForm`, e quem fala com a API é o
+      // `ApiClient` (nunca um `fetch` aqui). Como o diálogo da PE paga, o fundo NÃO
+      // cancela ao clicar e o Esc não fecha com texto digitado.
+      const AgendarDialog = (function () {
+        const COBRANCA = BGL_CONST.CRM.COBRANCA_PE;
+        const OBS = BGL_CONST.CRM.OBSERVACAO_PE;
+        const ENCERRADOS = BGL_CONST.CRM.AGENDAMENTO_ENCERRADO;
+        const _el = (id) => document.getElementById(id);
+
+        let _aoCriar = null;
+        let _lead = null; // { id, lead } da família escolhida; `null` = família nova
+        let _telefoneDaBusca = '';
+        let _turmaManual = false; // a equipe mexeu na turma: a sugestão para de sobrescrever
+        let _tentativa = null; // { corpo (JSON), chave, caminho } do último pedido — o retry a reusa
+        let _enviando = false;
+
+        function _passo(nome) {
+          for (const id of ['busca', 'form', 'resumo', 'resultado']) {
+            _el('ag-passo-' + id).style.display = id === nome ? 'flex' : 'none';
+          }
+        }
+
+        function _mostrar(id, texto) {
+          const caixa = _el(id);
+          caixa.textContent = texto || '';
+          caixa.style.display = texto ? 'block' : 'none';
+        }
+
+        function _sexoDoLead(sexo) {
+          const s = String(sexo || '').toLowerCase();
+          return s.startsWith('m') ? 'm' : s.startsWith('f') ? 'f' : '';
+        }
+
+        function _bebeDoLead(nome) {
+          const chave = String(nome || '')
+            .trim()
+            .toLowerCase();
+          return ((_lead && _lead.lead.bebes) || []).find(
+            (b) =>
+              String(b.nome || '')
+                .trim()
+                .toLowerCase() === chave,
+          );
+        }
+
+        /** O agendamento ATIVO do bebê escolhido, se existir (reagendar ainda não é feito pela tela). */
+        function _agendamentoAtivo(nome) {
+          const chave = String(nome || '')
+            .trim()
+            .toLowerCase();
+          if (!_lead || !chave) return null;
+          return (
+            (_lead.lead.agendamentos || []).find(
+              (a) =>
+                String(a.bebe || '')
+                  .trim()
+                  .toLowerCase() === chave && !ENCERRADOS.includes(a.status),
+            ) || null
+          );
+        }
+
+        function _ler() {
+          const cobranca = document.querySelector('input[name="ag-cobranca"]:checked');
+          return {
+            telefone: _el('ag-telefone').value,
+            responsavel: _el('ag-responsavel').value,
+            email: _el('ag-email').value,
+            bebeNome: _el('ag-bebe').value,
+            nascimento: _el('ag-nascimento').value,
+            sexo: _el('ag-sexo').value,
+            turma: _el('ag-turma').value,
+            data: _el('ag-data').value,
+            hora: _el('ag-hora').value,
+            comoConheceu: _el('ag-como').value,
+            alergia: _el('ag-alergia').value,
+            prematuro: _el('ag-prematuro').value,
+            cobranca: cobranca ? cobranca.value : '',
+            justificativa: _el('ag-justificativa').value,
+          };
+        }
+
+        function _ctx(f) {
+          const bebe = _bebeDoLead(f.bebeNome);
+          return {
+            novo: !_lead,
+            nascimentoConhecido: !!(bebe && bebe.nascimento),
+            responsavelDoLead: _lead && _lead.lead.responsavel ? _lead.lead.responsavel.nome : '',
+            telefoneExibido: _lead
+              ? _lead.lead.telefone || '(sem telefone)'
+              : normalizeTelefone(f.telefone) || f.telefone,
+          };
+        }
+
+        /** Reavalia o formulário: turma sugerida, justificativa, conflito e o que falta. */
+        function _atualizar() {
+          const f = _ler();
+          _el('ag-justificativa-bloco').style.display =
+            f.cobranca === COBRANCA.NAO_PAGA ? 'flex' : 'none';
+          const nj = f.justificativa.trim().length;
+          _el('ag-justificativa-dica').textContent =
+            nj < OBS.MIN ? 'Faltam ' + (OBS.MIN - nj) + ' caracteres.' : nj + '/' + OBS.MAX;
+
+          // Turma pela idade: SUGERE, e some da frente assim que a equipe escolhe.
+          const sugerida = AgendarForm.turmaSugerida(f.nascimento);
+          if (!_turmaManual && f.nascimento) _el('ag-turma').value = sugerida || '';
+          _el('ag-turma-dica').textContent = !f.nascimento
+            ? ''
+            : sugerida
+              ? 'Sugerida pela idade: ' +
+                sugerida.charAt(0).toUpperCase() +
+                sugerida.slice(1) +
+                '. Pode trocar.'
+              : 'Idade fora das faixas das turmas: escolha a turma.';
+
+          const ativo = _agendamentoAtivo(f.bebeNome);
+          _mostrar(
+            'ag-conflito',
+            ativo
+              ? f.bebeNome.trim() +
+                  ' já tem um agendamento ativo (' +
+                  dataCurta(ativo.data) +
+                  (ativo.hora ? ' às ' + ativo.hora : '') +
+                  '). Reagendar ainda não é feito pela tela: peça ao Michel.'
+              : '',
+          );
+
+          const falta = AgendarForm.faltando(f, _ctx(f));
+          _el('ag-faltando').textContent = falta.length ? 'Falta: ' + falta.join(', ') + '.' : '';
+          _el('ag-revisar').disabled = falta.length > 0 || !!ativo;
+        }
+
+        function _preencherBebe(b) {
+          _el('ag-bebe').value = b ? b.nome || '' : '';
+          _el('ag-nascimento').value = b && b.nascimento ? String(b.nascimento).slice(0, 10) : '';
+          _el('ag-sexo').value = b ? _sexoDoLead(b.sexo) : '';
+          _el('ag-alergia').value = b && b.alergia ? b.alergia : '';
+          _el('ag-prematuro').value = b && b.prematuro ? b.prematuro : '';
+        }
+
+        function _zerarFormulario() {
+          for (const id of [
+            'ag-telefone',
+            'ag-responsavel',
+            'ag-email',
+            'ag-bebe',
+            'ag-nascimento',
+            'ag-data',
+            'ag-hora',
+            'ag-como',
+            'ag-alergia',
+            'ag-justificativa',
+            'ag-json',
+          ]) {
+            _el(id).value = '';
+          }
+          for (const id of ['ag-sexo', 'ag-prematuro', 'ag-turma']) _el(id).value = '';
+          for (const r of document.querySelectorAll('input[name="ag-cobranca"]')) r.checked = false;
+          _turmaManual = false;
+          _mostrar('ag-json-erro', '');
+          _el('ag-json-ok').textContent = '';
+        }
+
+        function _montarTurmas() {
+          _el('ag-turma').innerHTML =
+            '<option value="">— escolher depois —</option>' +
+            BGL_CONST.TURMAS.map(
+              (t) =>
+                '<option value="' +
+                esc(t) +
+                '">' +
+                esc(t.charAt(0).toUpperCase() + t.slice(1)) +
+                '</option>',
+            ).join('');
+        }
+
+        function abrir() {
+          _lead = null;
+          _telefoneDaBusca = '';
+          _tentativa = null;
+          _enviando = false;
+          _montarTurmas();
+          _zerarFormulario();
+          _el('ag-busca').value = '';
+          _el('ag-resultados').innerHTML = '';
+          _mostrar('ag-busca-erro', '');
+          _el('ag-prompt').value = AgendarForm.montarPrompt();
+          _passo('busca');
+          _el('agendar-modal').style.display = 'flex';
+          _el('ag-busca').focus();
+        }
+
+        function fechar() {
+          _el('agendar-modal').style.display = 'none';
+          _lead = null;
+          _enviando = false;
+        }
+
+        // ── passo 1: procurar ──
+        async function buscar(q) {
+          const termo = String(q || '').trim();
+          _mostrar('ag-busca-erro', '');
+          if (termo.length < 2) {
+            _mostrar('ag-busca-erro', 'Digite ao menos 2 caracteres: telefone ou nome.');
+            return;
+          }
+          _telefoneDaBusca = normalizeTelefone(termo) || '';
+          _el('ag-buscar').disabled = true;
+          try {
+            const r = await ApiClient.get('/leads', { view: BGL_CONST.CRM.VIEW.BUSCA, q: termo });
+            _renderResultados(r.itens || []);
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            _mostrar(
+              'ag-busca-erro',
+              e.amigavel ? e.message : 'Não consegui buscar agora. Tente de novo.',
+            );
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _el('ag-buscar').disabled = false;
+          }
+        }
+
+        function _renderResultados(itens) {
+          const lista = itens.length
+            ? itens
+                .map(
+                  (i) =>
+                    '<div class="ag-candidato"><div><div class="ag-candidato-nome">' +
+                    esc(ou(i.nome, 'Sem nome')) +
+                    '</div><div class="ag-candidato-info">' +
+                    esc(ou(i.telefone, 'sem telefone')) +
+                    (i.bebeCasado ? ' · bebê ' + esc(i.bebeCasado) : '') +
+                    (i.turma ? ' · ' + esc(i.turma) : '') +
+                    '</div></div><button type="button" class="btn-acao" data-ag="usar" data-ag-id="' +
+                    esc(i.id) +
+                    '">Usar esta família</button></div>',
+                )
+                .join('')
+            : '<div class="pe-dica" id="ag-sem-resultado">Nenhuma família encontrada com esse termo.</div>';
+          _el('ag-resultados').innerHTML =
+            lista +
+            '<button type="button" class="btn-presenca" id="ag-novo" data-ag="novo">' +
+            (itens.length
+              ? 'Nenhuma destas é a família — cadastrar uma família nova'
+              : 'Cadastrar uma família nova') +
+            '</button>';
+        }
+
+        async function usar(id) {
+          _mostrar('ag-busca-erro', '');
+          try {
+            const doc = await ApiClient.get('/leads/' + encodeURIComponent(id));
+            _lead = { id: doc.id || id, lead: doc.lead || {} };
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            _mostrar('ag-busca-erro', e.amigavel ? e.message : 'Não consegui abrir essa família.');
+            return;
+          }
+          _zerarFormulario();
+          const lead = _lead.lead;
+          _el('ag-familia').textContent =
+            'Família cadastrada: ' +
+            ou(lead.responsavel && lead.responsavel.nome, 'sem nome') +
+            ' · ' +
+            ou(lead.telefone, 'sem telefone');
+          _el('ag-telefone').value = lead.telefone || '';
+          _el('ag-telefone').readOnly = true;
+          _el('ag-responsavel').value = (lead.responsavel && lead.responsavel.nome) || '';
+          _el('ag-responsavel').readOnly = true;
+          _el('ag-email').value = (lead.responsavel && lead.responsavel.email) || '';
+          _el('ag-email').readOnly = true;
+          _el('ag-como').value = lead.comoConheceu || '';
+          const bebes = lead.bebes || [];
+          _el('ag-bebe-escolha').style.display = bebes.length ? 'flex' : 'none';
+          _el('ag-bebe-select').innerHTML =
+            bebes.map((b, i) => '<option value="' + i + '">' + esc(b.nome) + '</option>').join('') +
+            '<option value="novo">— outro bebê —</option>';
+          _preencherBebe(bebes[0] || null);
+          _passo('form');
+          _atualizar();
+        }
+
+        function novo() {
+          _lead = null;
+          _zerarFormulario();
+          _el('ag-familia').textContent = 'Família nova — será cadastrada junto com o agendamento.';
+          for (const id of ['ag-telefone', 'ag-responsavel', 'ag-email']) _el(id).readOnly = false;
+          _el('ag-bebe-escolha').style.display = 'none';
+          _el('ag-telefone').value = _telefoneDaBusca;
+          _passo('form');
+          _atualizar();
+          _el(_telefoneDaBusca ? 'ag-responsavel' : 'ag-telefone').focus();
+        }
+
+        // ── passo 2: formulário e o JSON ──
+        function preencherPeloJson() {
+          const r = AgendarForm.lerJson(_el('ag-json').value);
+          _el('ag-json-ok').textContent = '';
+          if (r.erro) {
+            _mostrar('ag-json-erro', r.erro);
+            return; // JSON inválido não preenche NADA
+          }
+          _mostrar('ag-json-erro', '');
+          const c = r.campos;
+          const mapa = {
+            email: 'ag-email',
+            comoConheceu: 'ag-como',
+            alergia: 'ag-alergia',
+            prematuro: 'ag-prematuro',
+            sexo: 'ag-sexo',
+            data: 'ag-data',
+            hora: 'ag-hora',
+            nascimento: 'ag-nascimento',
+            bebeNome: 'ag-bebe',
+            turma: 'ag-turma',
+            telefone: 'ag-telefone',
+            responsavel: 'ag-responsavel',
+          };
+          let preenchidos = 0;
+          for (const [campo, id] of Object.entries(mapa)) {
+            if (c[campo] === undefined) continue;
+            // Família que já existe: o cadastro dela não é reescrito pelo JSON.
+            if (_el(id).readOnly) continue;
+            _el(id).value = c[campo];
+            preenchidos++;
+          }
+          if (c.turma) _turmaManual = true;
+          if (c.bebeNome && _lead) {
+            const i = (_lead.lead.bebes || []).findIndex((b) => b.nome === c.bebeNome);
+            _el('ag-bebe-select').value = i >= 0 ? String(i) : 'novo';
+          }
+          _el('ag-json-ok').textContent = preenchidos
+            ? preenchidos + ' campo(s) preenchido(s). Confira tudo antes de gravar.'
+            : 'O JSON não trouxe nenhum campo que eu entenda.';
+          _atualizar();
+        }
+
+        async function copiarPrompt() {
+          const texto = _el('ag-prompt').value;
+          try {
+            await navigator.clipboard.writeText(texto);
+          } catch (e) {
+            _el('ag-prompt').select();
+            document.execCommand('copy');
+          }
+          _el('ag-json-ok').textContent = 'Prompt copiado. Cole no ChatGPT junto com o print.';
+        }
+
+        // ── passo 3: confirmar ──
+        function revisar() {
+          const f = _ler();
+          const ctx = _ctx(f);
+          if (AgendarForm.faltando(f, ctx).length || _agendamentoAtivo(f.bebeNome)) return;
+          _el('ag-resumo-texto').textContent = AgendarForm.resumo(f, ctx);
+          _mostrar('ag-resumo-aviso', AgendarForm.avisoDaCobranca(f.cobranca));
+          _mostrar('ag-erro', '');
+          _passo('resumo');
+        }
+
+        function _caminhoETentativa() {
+          const f = _ler();
+          const ctx = _ctx(f);
+          const corpo = AgendarForm.montarCorpo(f, ctx);
+          const id = _lead ? _lead.id : normalizeTelefone(f.telefone);
+          const json = JSON.stringify(corpo);
+          const caminho = '/leads/' + encodeURIComponent(id) + '/agendamentos';
+          // A chave identifica a INTENÇÃO: repetir o MESMO pedido (retry depois de um
+          // timeout) reusa a chave, e o servidor devolve o que já criou. Mudou qualquer
+          // campo, é outro pedido — chave nova, senão o servidor devolveria o antigo.
+          if (!_tentativa || _tentativa.json !== json || _tentativa.caminho !== caminho) {
+            _tentativa = { json, caminho, corpo, chave: crypto.randomUUID(), f };
+          }
+          return _tentativa;
+        }
+
+        async function confirmar() {
+          if (_enviando) return;
+          const t = _caminhoETentativa();
+          _enviando = true;
+          _el('ag-confirmar').disabled = true;
+          _el('ag-tentar-de-novo').disabled = true;
+          _mostrar('ag-erro', '');
+          try {
+            const resposta = await ApiClient.post(t.caminho, t.corpo, {
+              'Idempotency-Key': t.chave,
+            });
+            _mostrarResultado(resposta, t.f);
+            if (_aoCriar) _aoCriar();
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            // Fica no resumo, com o texto: nada se perde e o retry reusa a chave.
+            _passo('resumo');
+            _mostrar(
+              'ag-erro',
+              e.amigavel ? e.message : 'Não consegui gravar agora. Tente de novo.',
+            );
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _enviando = false;
+            _el('ag-confirmar').disabled = false;
+            _el('ag-tentar-de-novo').disabled = false;
+          }
+        }
+
+        function _mostrarResultado(resposta, f) {
+          const quando = dataCurta(f.data) + ' às ' + f.hora;
+          const espelho = resposta && resposta.espelho;
+          const falhou = espelho && !espelho.ok;
+          let texto = 'Agendamento de ' + f.bebeNome.trim() + ' criado para ' + quando + '.';
+          if (falhou) {
+            texto +=
+              '\n\n⚠️ Ele foi salvo no CRM, mas a linha NÃO entrou na planilha. Sem ela a cobrança da PE e a ' +
+              'confirmação do dia anterior não saem. Clique em "Tentar gravar na planilha de novo"; se continuar ' +
+              'falhando, avise o Michel (não crie de novo: o agendamento já existe).';
+          } else {
+            texto +=
+              espelho && espelho.jaExistia
+                ? '\nA linha já estava na planilha.'
+                : '\nA linha já está na planilha.';
+          }
+          const caixa = _el('ag-resultado-texto');
+          caixa.textContent = texto;
+          caixa.style.whiteSpace = 'pre-wrap';
+          caixa.className = 'aviso ' + (falhou ? 'aviso-info' : '');
+          _el('ag-tentar-de-novo').style.display = falhou ? 'block' : 'none';
+          _passo('resultado');
+        }
+
+        function iniciar({ aoCriar } = {}) {
+          _aoCriar = aoCriar || null;
+          const botao = _el('btn-agendar');
+          // O botão só existe com as DUAS flags: criar agendamento é escrita, e a flag de
+          // criação nasce desligada até a validação ao vivo da linha nova na planilha.
+          botao.style.display =
+            BGL_CONST.CRM.FLAG_ACOES_ESCRITA && BGL_CONST.CRM.FLAG_REAGENDAR ? '' : 'none';
+          botao.addEventListener('click', abrir);
+          const modal = _el('agendar-modal');
+          _el('ag-form-busca').addEventListener('submit', (e) => {
+            e.preventDefault();
+            buscar(_el('ag-busca').value);
+          });
+          modal.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-ag]');
+            if (!b || b.disabled) return;
+            const acao = b.dataset.ag;
+            if (acao === 'fechar') fechar();
+            else if (acao === 'usar') usar(b.dataset.agId);
+            else if (acao === 'novo') novo();
+            else if (acao === 'voltar-busca') _passo('busca');
+            else if (acao === 'voltar-form') _passo('form');
+            else if (acao === 'revisar') revisar();
+            else if (acao === 'confirmar' || acao === 'tentar-de-novo') confirmar();
+            else if (acao === 'copiar') copiarPrompt();
+            else if (acao === 'preencher') preencherPeloJson();
+          });
+          const form = _el('ag-passo-form');
+          form.addEventListener('input', (e) => {
+            if (e.target.id === 'ag-turma') _turmaManual = true;
+            _atualizar();
+          });
+          form.addEventListener('change', (e) => {
+            if (e.target.id === 'ag-turma') _turmaManual = true;
+            if (e.target.id === 'ag-bebe-select') {
+              const v = e.target.value;
+              _preencherBebe(v === 'novo' ? null : (_lead.lead.bebes || [])[Number(v)]);
+              _turmaManual = false;
+            }
+            _atualizar();
+          });
+          // Esc só fecha onde nada se perde: busca vazia ou resultado.
+          modal.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || _enviando) return;
+            const vazia =
+              _el('ag-passo-busca').style.display !== 'none' && !_el('ag-busca').value.trim();
+            if (vazia || _el('ag-passo-resultado').style.display !== 'none') fechar();
+          });
+        }
+
+        return { iniciar, abrir };
+      })();
+
       // ─── PreviaDialog ────────────────────────────────────────────────────
       // Issues #337/#338: toda mensagem que a API manda à família passa antes
       // por aqui — o texto numa caixa editável, sem checkbox, e a equipe decide.
@@ -2566,6 +3601,10 @@
       const ROTULO_PE = {
         [BGL_CONST.CRM.PAGAMENTO_PE.PAGO]: 'PE paga',
         [BGL_CONST.CRM.PAGAMENTO_PE.PIX_GERADO]: 'PIX gerado',
+        // Os que a criação de agendamento escreve (#271).
+        [BGL_CONST.CRM.PAGAMENTO_PE.AGUARDANDO_GERAR_PIX]: 'Aguardando PIX',
+        [BGL_CONST.CRM.PAGAMENTO_PE.PIX_ENVIADO_MANUAL]: 'PIX enviado (manual)',
+        [BGL_CONST.CRM.PAGAMENTO_PE.NAO_PAGO]: 'PE dispensada',
       };
       const ROTULO_MOTIVO_FRIO = {
         [BGL_CONST.CRM.MOTIVO_FRIO.FALTA_AGENDAMENTO]: 'Nunca agendou',
@@ -3400,7 +4439,7 @@
          * seria apagado pelo próximo sync da planilha.
          */
         function _observacoes(agendamentos) {
-          const encerrados = ['reagendado', 'cancelado'];
+          const encerrados = BGL_CONST.CRM.AGENDAMENTO_ENCERRADO;
           const lista = agendamentos.filter(
             (a) => !encerrados.includes(a.status) || (a.posPE && Object.keys(a.posPE).length > 0),
           );
@@ -4365,6 +5404,8 @@
           document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
           PresencaDialog.iniciar();
           PePagaDialog.iniciar();
+          // Depois de criar, a agenda atrás do diálogo se atualiza sozinha.
+          AgendarDialog.iniciar({ aoCriar: atualizarAgora });
           PreviaDialog.iniciar();
           document.getElementById('lead-modal').addEventListener('click', (e) => {
             if (e.target.id === 'lead-modal') fecharLead();

@@ -137,7 +137,7 @@ const ApiHttp = (function () {
       return Object.assign(new Error(mensagem), { amigavel: true }, extras || {});
     }
 
-    async function _request(metodo, caminho, { params, body } = {}) {
+    async function _request(metodo, caminho, { params, body, headers: extras } = {}) {
       // `apiBaseUrl()` ESTOURA quando a URL do ambiente está vazia (a `hml`
       // nasce assim até o primeiro deploy da `apiHml`): erro de configuração,
       // não de rede — mensagem própria, para não parecer API fora do ar.
@@ -161,7 +161,8 @@ const ApiHttp = (function () {
         throw _erro('Sua sessão expirou. Entre de novo com o Google.', { sessaoExpirada: true });
       }
 
-      const headers = { Authorization: 'Bearer ' + token };
+      // O Bearer vem DEPOIS dos extras: header extra nunca troca quem assina.
+      const headers = { ...(extras || {}), Authorization: 'Bearer ' + token };
       const init = { method: metodo, headers };
       if (body !== undefined) {
         headers['Content-Type'] = 'application/json; charset=utf-8';
@@ -209,7 +210,9 @@ const ApiHttp = (function () {
     return {
       get: (caminho, params) => _request('GET', caminho, { params }),
       patch: (caminho, body) => _request('PATCH', caminho, { body }),
-      post: (caminho, body) => _request('POST', caminho, { body }),
+      // `headers` extras só para quem precisa deles (a `Idempotency-Key` do criar
+      // agendamento, #271): o Bearer e o Content-Type seguem sendo do cliente.
+      post: (caminho, body, headers) => _request('POST', caminho, { body, headers }),
     };
   }
 

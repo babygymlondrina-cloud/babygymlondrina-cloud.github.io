@@ -6,7 +6,7 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.21',
+  APP_VERSION: '3.22',
   APP_DATE: '2026-10-08',
   PLANO: {
     ANUAL: 'anual',
@@ -98,7 +98,37 @@ const BGL_CONST = {
     PAGAMENTO_PE: {
       PAGO: 'pago',
       PIX_GERADO: 'pix_gerado',
+      // Os três que a tela escreve ao CRIAR um agendamento (#271) — espelham
+      // `STATUS_PE_*` de `functions/crm-const.js`.
+      AGUARDANDO_GERAR_PIX: 'aguardando_gerar_pix',
+      PIX_ENVIADO_MANUAL: 'pix_enviado_manual',
+      NAO_PAGO: 'nao_pago',
     },
+    /** Status de agendamento que não conta como "ativo" (a linha foi encerrada). */
+    AGENDAMENTO_ENCERRADO: ['cancelado', 'reagendado'],
+    /**
+     * As três cobranças da PE ao agendar (#271) — espelha `COBRANCA_PE` de
+     * `functions/crm-const.js` (um teste compara). SEM padrão na tela: só
+     * `GERAR_PIX` faz o Make cobrar e mandar mensagens à mãe.
+     */
+    COBRANCA_PE: {
+      GERAR_PIX: 'gerar_pix',
+      PIX_ENVIADO: 'pix_enviado',
+      NAO_PAGA: 'nao_paga',
+    },
+    /**
+     * Faixas de idade (em MESES, `de` inclusive e `ate` exclusivo) que SUGEREM a turma
+     * ao agendar (#271): Pitocos 2–6m, Sapecas 6–12m, Exploradores 12–18m, Artistas
+     * 18m–2a, Atletas 2–4a. Sugestão, nunca imposição: a turma real depende de horário
+     * disponível, e quem sabe isso é a equipe. Fora de qualquer faixa não sugere nada.
+     */
+    FAIXAS_TURMA: [
+      { turma: 'pitocos', de: 2, ate: 6 },
+      { turma: 'sapecas', de: 6, ate: 12 },
+      { turma: 'exploradores', de: 12, ate: 18 },
+      { turma: 'artistas', de: 18, ate: 24 },
+      { turma: 'atletas', de: 24, ate: 48 },
+    ],
     /**
      * `motivo` de `?view=frios` — espelha `MOTIVOS_FRIOS` do
      * `functions/crm-const.js` (`docs/CRM_FASE2_API.md`).
@@ -155,5 +185,13 @@ const BGL_CONST = {
      * controla se o botão aparece.
      */
     FLAG_ACOES_ESCRITA: true,
+    /**
+     * Botão "➕ Agendar" (criar agendamento pela tela, issue #271). **Nasce
+     * DESLIGADA**: o botão só aparece com ela E com `FLAG_ACOES_ESCRITA` ligadas, e a
+     * API tem a sua (`BGL_REAGENDAR_LINHA`, servidor) — sem as duas a criação não
+     * chega à planilha. Ligar só depois da validação ao vivo da linha nova na
+     * planilha (`docs/COMANDOS.md`, "Criar agendamento pela tela").
+     */
+    FLAG_REAGENDAR: false,
   },
 };
