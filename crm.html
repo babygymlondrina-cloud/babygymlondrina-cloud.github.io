@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Baby Gym Londrina — CRM</title>
+    <link rel="icon" href="assets/favicon/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16.png" />
+    <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png" />
+    <link rel="manifest" href="assets/favicon/site.webmanifest" />
+    <meta name="theme-color" content="#433d99" />
     <meta name="robots" content="noindex, nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -790,6 +796,40 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+      /* ─── Diálogo de PE marcada como paga à mão (issue #397) ─── */
+      .pe-corpo {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .pe-rotulo {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .pe-input {
+        width: 100%;
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        padding: 0.55rem 0.7rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.9rem;
+        color: var(--text);
+        background: var(--surface);
+      }
+      textarea.pe-input {
+        min-height: 5.5rem;
+        resize: vertical;
+        line-height: 1.4;
+      }
+      .pe-dica {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        min-height: 1rem;
+      }
+      .pe-corpo .aviso {
+        margin-bottom: 0;
+      }
       .campo {
         display: flex;
         gap: 0.4rem;
@@ -1069,6 +1109,56 @@
           <button type="button" class="btn-presenca-cancelar" data-presenca="cancelar">
             Cancelar
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="pe-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card presenca-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pe-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="pe-titulo">Marcar PE como paga</h2>
+          <button class="modal-close" data-pe="cancelar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body pe-corpo">
+          <p class="presenca-pergunta">
+            Só marque quando o pagamento
+            <strong>já foi recebido</strong>
+            . Fica registrado com o seu e-mail e o motivo abaixo.
+          </p>
+          <div class="aviso aviso-info" id="pe-aviso-pix" style="display: none">
+            Já existe um PIX gerado pelo Mercado Pago para esta PE. Se a família ainda puder
+            pagá-lo, o dinheiro entra duas vezes: peça para ela ignorar o PIX antigo.
+          </div>
+          <label class="pe-rotulo" for="pe-valor">Valor recebido (R$)</label>
+          <input
+            type="text"
+            id="pe-valor"
+            class="pe-input"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="47,00"
+          />
+          <div class="pe-dica" id="pe-valor-dica"></div>
+          <label class="pe-rotulo" for="pe-observacao">
+            Por que está marcando à mão? (obrigatório)
+          </label>
+          <textarea
+            id="pe-observacao"
+            class="pe-input"
+            maxlength="500"
+            placeholder="Ex.: PIX direto na conta da BGL, conferi o comprovante no extrato"
+          ></textarea>
+          <div class="pe-dica" id="pe-obs-dica"></div>
+          <div class="aviso aviso-erro" id="pe-erro" role="alert" style="display: none"></div>
+          <button type="button" class="btn-presenca" id="pe-confirmar" data-pe="confirmar">
+            💰 Marcar como paga
+          </button>
+          <button type="button" class="btn-presenca-cancelar" data-pe="cancelar">Cancelar</button>
         </div>
       </div>
     </div>
@@ -1623,6 +1713,7 @@
           evento,
           id,
           bebe,
+          agendamentoId,
           dados,
           web,
           aplicarOtimista,
@@ -1637,6 +1728,9 @@
             const resposta = await ApiClient.patch('/leads/' + encodeURIComponent(id), {
               evento,
               bebe,
+              // Só os eventos que apontam UM agendamento (PE paga, #397) levam a
+              // identidade da linha; os demais seguem pelo bebê, como sempre.
+              ...(agendamentoId ? { agendamentoId } : {}),
               ...(dados ? { dados } : {}),
             });
             // Sem `espelho`/`whatsapp` na resposta não houve tentativa — o
@@ -1662,7 +1756,9 @@
               CrmState.ui.setErro({ mensagem: _mensagemErro(e) });
               if (!e.amigavel) console.error('[CRM]', e);
             }
-            return { ok: false };
+            // A mensagem volta junto: o diálogo da PE paga (#397) fica aberto e
+            // a mostra por dentro, para a equipe não perder o texto que digitou.
+            return { ok: false, erro: _mensagemErro(e) };
           } finally {
             _pendentes.delete(chave);
             UIRenderer.render();
@@ -1685,6 +1781,37 @@
               item.compareceu = antes;
             },
           });
+        }
+
+        /**
+         * PE marcada como paga pela tela (issue #397). Devolve `{ok, aviso, erro}`.
+         * O servidor exige valor e observação e assina com o e-mail do login. A
+         * PE já aparece como paga na hora (o botão some e o clique não se repete),
+         * mas o VALOR só entra no item depois da resposta: ele alimenta o botão
+         * Gerar proposta, e uma proposta não pode abater um valor que o servidor
+         * ainda não aceitou.
+         */
+        async function marcarPePaga(item, { valor, observacao }) {
+          const antes = item.pagamentoPE;
+          const resultado = await _executar({
+            acao: 'pe_paga',
+            evento: EVENTO.PE_PAGA,
+            id: item.id,
+            bebe: item.bebe,
+            agendamentoId: item.agendamentoId,
+            dados: { valor, observacao },
+            aplicarOtimista: () => {
+              item.pagamentoPE = BGL_CONST.CRM.PAGAMENTO_PE.PAGO;
+            },
+            reverter: () => {
+              item.pagamentoPE = antes;
+            },
+          });
+          if (resultado.ok) {
+            item.valorPE = valor;
+            UIRenderer.render();
+          }
+          return resultado;
         }
 
         /** Por que a proposta padrão não saiu, em linguagem da recepção. */
@@ -2070,12 +2197,14 @@
             acao === 'compareceu' ||
             acao === 'proposta' ||
             acao === 'fechou' ||
-            acao === 'cancelado'
+            acao === 'cancelado' ||
+            acao === 'pe_paga'
           ) {
             const local = _itemAgenda(id, bebe);
             if (!local) return;
             if (acao === 'compareceu' || acao === 'proposta') PresencaDialog.abrir(local.item);
             else if (acao === 'fechou') marcarFechou(local.item);
+            else if (acao === 'pe_paga') PePagaDialog.abrir(local.item);
             else cancelar(local.item);
           } else if (acao === 'recuperacao') {
             const local = _itemFrio(id);
@@ -2089,6 +2218,7 @@
           aoClicarNoLead,
           digitarPosPE,
           marcarCompareceu,
+          marcarPePaga,
           enviarPropostaPadrao,
         };
       })();
@@ -2166,6 +2296,118 @@
             const botao = e.target.closest('[data-presenca]');
             // Sem `preventDefault` no "editar": o link abre a aba sozinho.
             if (botao) escolher(botao.dataset.presenca);
+          });
+        }
+
+        return { abrir, iniciar };
+      })();
+
+      // ─── PePagaDialog ────────────────────────────────────────────────────
+      // Issue #397: marcar a PE como paga à mão pede o VALOR recebido e a
+      // OBSERVAÇÃO com o motivo de estar fazendo manual. Só DOM e validação de
+      // conforto — quem garante a regra é o servidor, e quem fala com ele é o
+      // `AcoesController`. Como o da prévia, o fundo NÃO cancela ao clicar (um
+      // clique fora perderia o texto digitado) e, se o servidor recusar, o
+      // diálogo continua aberto com a mensagem por dentro.
+      const PePagaDialog = (function () {
+        let _item = null;
+        let _enviando = false;
+        const _el = (id) => document.getElementById(id);
+        const { MIN, MAX } = BGL_CONST.CRM.OBSERVACAO_PE;
+
+        function _valor() {
+          return parseValorPE(_el('pe-valor').value);
+        }
+
+        function _observacao() {
+          return _el('pe-observacao').value.trim();
+        }
+
+        function _atualizar() {
+          const digitado = _el('pe-valor').value.trim();
+          const valor = _valor();
+          _el('pe-valor-dica').textContent =
+            digitado && valor === null ? 'Valor inválido: use só números, até R$ 200.' : '';
+          const tamanho = _observacao().length;
+          _el('pe-obs-dica').textContent =
+            tamanho < MIN
+              ? 'Faltam ' + (MIN - tamanho) + ' caracteres para o motivo ficar completo.'
+              : tamanho + '/' + MAX;
+          _el('pe-confirmar').disabled =
+            _enviando || valor === null || tamanho < MIN || tamanho > MAX;
+        }
+
+        // PIX do sistema que a família ainda pode pagar (issue #405): `pix_gerado` e
+        // ainda não vencido. Vencido não entra em dobro, então não avisa. Sem
+        // `pixExpiraEm` legível o aviso fica (o risco é o pagamento em dobro).
+        function _pixAindaValido(item) {
+          if (item.pagamentoPE !== BGL_CONST.CRM.PAGAMENTO_PE.PIX_GERADO) return false;
+          const vence = Date.parse(item.pixExpiraEm);
+          return Number.isNaN(vence) || vence > Date.now();
+        }
+
+        function _mostrarErro(mensagem) {
+          const caixa = _el('pe-erro');
+          caixa.textContent = mensagem || '';
+          caixa.style.display = mensagem ? 'block' : 'none';
+        }
+
+        function abrir(item) {
+          _item = item;
+          _enviando = false;
+          _el('pe-titulo').textContent = 'PE paga de ' + ou(item.bebe, 'bebê sem nome');
+          // Valor que já existe (o Make grava o cobrado no PIX): a equipe só
+          // corrige se o recebido for outro.
+          _el('pe-valor').value =
+            typeof item.valorPE === 'number' ? String(item.valorPE).replace('.', ',') : '';
+          _el('pe-observacao').value = '';
+          _el('pe-aviso-pix').style.display = _pixAindaValido(item) ? 'block' : 'none';
+          _mostrarErro('');
+          _atualizar();
+          _el('pe-modal').style.display = 'flex';
+          _el('pe-valor').focus();
+        }
+
+        function fechar() {
+          _item = null;
+          _enviando = false;
+          _el('pe-modal').style.display = 'none';
+        }
+
+        async function confirmar() {
+          const item = _item;
+          const valor = _valor();
+          const observacao = _observacao();
+          if (!item || _enviando || valor === null || observacao.length < MIN) return;
+          _enviando = true;
+          _mostrarErro('');
+          _atualizar();
+          const r = await AcoesController.marcarPePaga(item, { valor, observacao });
+          // O diálogo pode ter sido fechado/reaberto para outro item enquanto o
+          // PATCH corria: só mexe se ainda é o mesmo.
+          if (_item !== item) return;
+          _enviando = false;
+          if (r.ok) return fechar();
+          _mostrarErro(r.erro);
+          _atualizar();
+        }
+
+        function iniciar() {
+          _el('pe-valor').addEventListener('input', _atualizar);
+          _el('pe-observacao').addEventListener('input', _atualizar);
+          // Esc só fecha com os dois campos VAZIOS: um Esc sem querer, em qualquer
+          // dos dois, perderia o que a pessoa acabou de escrever. Com texto, sai
+          // pelo Cancelar.
+          _el('pe-modal').addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || _enviando) return;
+            if (_el('pe-valor').value.trim() || _el('pe-observacao').value.trim()) return;
+            fechar();
+          });
+          _el('pe-modal').addEventListener('click', (e) => {
+            const botao = e.target.closest('[data-pe]');
+            if (!botao || botao.disabled) return;
+            if (botao.dataset.pe === 'confirmar') confirmar();
+            else if (!_enviando) fechar();
           });
         }
 
@@ -2457,6 +2699,26 @@
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('proposta', item.id, item.bebe),
+                }),
+              );
+            }
+            // PE paga à mão (issue #397): some quando a PE já consta como paga. Fica
+            // mesmo com PIX do Make pendente ("PIX gerado") — é justamente o caso
+            // da família que pagou por fora; o diálogo avisa do PIX ainda vivo.
+            // Só com `agendamentoId`: sem a identidade da linha o write-back não
+            // tem onde escrever, e a próxima sincronização da planilha (que ainda
+            // é mestre) devolveria a PE ao estado antigo — mesmo critério da
+            // anotação pós-PE. Agendamento sem UUID se marca direto na planilha.
+            if (
+              escritaLigada &&
+              item.agendamentoId &&
+              item.pagamentoPE !== BGL_CONST.CRM.PAGAMENTO_PE.PAGO
+            ) {
+              partes.push(
+                botaoAcao('pe_paga', '💰 Marcar PE paga', {
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('pe_paga', item.id, item.bebe),
                 }),
               );
             }
@@ -4102,6 +4364,7 @@
           document.getElementById('btn-atualizar').addEventListener('click', atualizarAgora);
           document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
           PresencaDialog.iniciar();
+          PePagaDialog.iniciar();
           PreviaDialog.iniciar();
           document.getElementById('lead-modal').addEventListener('click', (e) => {
             if (e.target.id === 'lead-modal') fecharLead();
