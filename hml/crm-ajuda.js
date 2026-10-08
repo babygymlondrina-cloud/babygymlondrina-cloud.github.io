@@ -193,7 +193,7 @@ const BGL_CRM_AJUDA = {
       titulo: 'Agendar uma Primeira Experiência',
       desde: '3.22',
       html: `
-        <div class="aviso aviso-info"><b>Este botão ainda não está liberado.</b> O ➕ Agendar só aparece depois que o Michel validar a criação da linha na planilha. Até lá, continue agendando como hoje.</div>
+        <div class="aviso aviso-info"><b>Este botão ainda não está liberado.</b> O ➕ Agendar está em teste e só aparece na versão de homologação (endereço com <code>/hml/</code>); lá, a linha criada é <b>real</b> na planilha, então não use com dados de uma família de verdade. No sistema de verdade, continue agendando como hoje até o Michel liberar.</div>
         <p>O botão <b>➕ Agendar</b> marca a Primeira Experiência de uma família que você captou e <b>cria a linha na planilha sozinho</b>, no lugar certo. Acabou o "colar a linha": o sistema grava, e você só confere.</p>
         <ol>
           <li><b>Procure a família primeiro.</b> Digite o <b>telefone</b> ou o <b>nome</b> (da mãe ou do bebê) e clique em 🔎 Buscar. Se a família aparecer, clique em <b>Usar esta família</b>: o formulário já vem com o cadastro dela. <b>Só cadastre uma família nova se ela não estiver na lista</b>: o botão para isso diz "Nenhuma destas é a família", justamente para ninguém criar uma família repetida só porque ela está com outro número.</li>
@@ -497,7 +497,7 @@ const BGL_CRM_AJUDA = {
       data: '2026-10-08',
       mudancas: {
         adicionado: [
-          'Botão ➕ Agendar: marca a Primeira Experiência de uma família e cria a linha na planilha, sem colar nada (#271). Ainda desligado: aparece quando o Michel liberar, depois de validar a criação da linha.',
+          'Botão ➕ Agendar: marca a Primeira Experiência de uma família e cria a linha na planilha, sem colar nada (#271). Em teste: por enquanto só aparece na versão de homologação (/hml/); no sistema de verdade aparece quando o Michel liberar, depois de validar a criação da linha.',
           'O formulário procura a família por telefone ou nome antes de cadastrar uma nova, sugere a turma pela idade do bebê e traz a porta do JSON do ChatGPT, com o prompt para copiar.',
           'Três cobranças da PE ao agendar, sem nenhuma pré-marcada: pedir para gerar o PIX, PIX já enviado ou não vai pagar a PE (com justificativa).',
           'Novos rótulos da PE na agenda: "Aguardando PIX", "PIX enviado (manual)" e "PE dispensada".',

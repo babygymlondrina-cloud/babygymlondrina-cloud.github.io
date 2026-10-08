@@ -3401,8 +3401,10 @@
           const botao = _el('btn-agendar');
           // O botão só existe com as DUAS flags: criar agendamento é escrita, e a flag de
           // criação nasce desligada até a validação ao vivo da linha nova na planilha.
-          botao.style.display =
-            BGL_CONST.CRM.FLAG_ACOES_ESCRITA && BGL_CONST.CRM.FLAG_REAGENDAR ? '' : 'none';
+          // `'hml'` = liberada só na tela servida em /hml/ (mesmo valor do servidor).
+          const reagendar = BGL_CONST.CRM.FLAG_REAGENDAR;
+          const liberado = reagendar === true || (reagendar === 'hml' && BGL_CONFIG.env === 'hml');
+          botao.style.display = BGL_CONST.CRM.FLAG_ACOES_ESCRITA && liberado ? '' : 'none';
           botao.addEventListener('click', abrir);
           const modal = _el('agendar-modal');
           _el('ag-form-busca').addEventListener('submit', (e) => {

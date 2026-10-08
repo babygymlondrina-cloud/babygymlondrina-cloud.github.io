@@ -186,12 +186,15 @@ const BGL_CONST = {
      */
     FLAG_ACOES_ESCRITA: true,
     /**
-     * Botão "➕ Agendar" (criar agendamento pela tela, issue #271). **Nasce
-     * DESLIGADA**: o botão só aparece com ela E com `FLAG_ACOES_ESCRITA` ligadas, e a
-     * API tem a sua (`BGL_REAGENDAR_LINHA`, servidor) — sem as duas a criação não
-     * chega à planilha. Ligar só depois da validação ao vivo da linha nova na
-     * planilha (`docs/COMANDOS.md`, "Criar agendamento pela tela").
+     * Botão "➕ Agendar" (criar agendamento pela tela, issue #271). O botão só
+     * aparece com ela E com `FLAG_ACOES_ESCRITA` ligadas, e a API tem a sua
+     * (`BGL_REAGENDAR_LINHA`, servidor) — sem as duas a criação não chega à planilha.
+     * Valores: `false` (nasceu assim) = ninguém vê · **`'hml'` = só a tela servida em
+     * `/hml/`** (validação ao vivo da linha nova, o mesmo valor `hml` da flag do
+     * servidor) · `true` = todos, inclusive produção — só depois da validação
+     * (`docs/COMANDOS.md`, "Criar agendamento pela tela"). Promover com `'hml'` para
+     * a `master` não mostra o botão em produção.
      */
-    FLAG_REAGENDAR: false,
+    FLAG_REAGENDAR: 'hml',
   },
 };
