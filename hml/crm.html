@@ -850,6 +850,31 @@
         flex-direction: column;
         gap: 0.2rem;
       }
+      .ag-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .ag-chip {
+        border: 1.5px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.7rem;
+        cursor: pointer;
+      }
+      .ag-chip.ativo {
+        border-color: var(--pink-hot);
+        color: var(--pink-hot);
+        font-weight: 600;
+      }
+      .ag-escolhido {
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-height: 1.1rem;
+      }
       .ag-opcao {
         display: flex;
         gap: 0.5rem;
@@ -1339,13 +1364,22 @@
                 <select id="ag-turma" class="pe-input"></select>
                 <div class="pe-dica" id="ag-turma-dica"></div>
               </div>
-              <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-data">Data da Primeira Experiência *</label>
-                <input type="date" id="ag-data" class="pe-input" />
-              </div>
-              <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-hora">Hora *</label>
-                <input type="time" id="ag-hora" class="pe-input" />
+              <div
+                class="ag-campo ag-inteiro"
+                id="ag-grade-bloco"
+                role="group"
+                aria-labelledby="ag-grade-rotulo"
+              >
+                <span class="pe-rotulo" id="ag-grade-rotulo">
+                  Horário da Primeira Experiência *
+                </span>
+                <div class="pe-dica" id="ag-grade-dica"></div>
+                <div class="ag-chips" id="ag-slots"></div>
+                <div class="pe-dica" id="ag-datas-dica"></div>
+                <div class="ag-chips" id="ag-datas"></div>
+                <div class="ag-escolhido" id="ag-escolhido"></div>
+                <input type="hidden" id="ag-data" />
+                <input type="hidden" id="ag-hora" />
               </div>
               <div class="ag-campo">
                 <label class="pe-rotulo" for="ag-como">Como conheceu</label>
@@ -2863,14 +2897,44 @@
           if (ctx.novo && !f.responsavel.trim()) falta.push('responsável');
           if (!f.bebeNome.trim()) falta.push('nome do bebê');
           if (!f.nascimento && !ctx.nascimentoConhecido) falta.push('nascimento');
-          if (!f.data) falta.push('data');
-          if (!f.hora) falta.push('hora');
+          if (!f.turma) falta.push('turma');
+          if (!f.data || !f.hora) falta.push('horário');
           if (!f.cobranca) falta.push('cobrança da PE');
           if (f.cobranca === COBRANCA.NAO_PAGA) {
             const n = f.justificativa.trim().length;
             if (n < OBS.MIN) falta.push('justificativa (mínimo ' + OBS.MIN + ' caracteres)');
           }
           return falta;
+        }
+
+        const NOME_DO_DIA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+        /** `{diaSemana: 4, hora: '14:00'}` → `Quinta 14:00`. */
+        function rotuloDoHorario(h) {
+          return NOME_DO_DIA[h.diaSemana] + ' ' + h.hora;
+        }
+
+        /**
+         * As próximas `n` datas (`AAAA-MM-DD`) que caem no dia da semana do horário, de
+         * `hoje` em diante. Hoje só entra se a hora ainda não passou (`agora` = `HH:MM`).
+         */
+        function proximasDatas(h, hoje, agora, n) {
+          const [a, m, d] = hoje.split('-').map(Number);
+          const datas = [];
+          for (let i = 0; datas.length < n && i < 7 * n + 7; i++) {
+            const t = new Date(Date.UTC(a, m - 1, d + i));
+            if (t.getUTCDay() !== h.diaSemana) continue;
+            if (i === 0 && h.hora <= agora) continue;
+            datas.push(t.toISOString().slice(0, 10));
+          }
+          return datas;
+        }
+
+        /** Esse `data` + `hora` caem num dos horários da turma? (o servidor repete a conferência) */
+        function dentroDosHorarios(horarios, data, hora) {
+          if (!ISO_RE.test(String(data || ''))) return false;
+          const dow = new Date(data + 'T12:00:00Z').getUTCDay();
+          return horarios.some((h) => h.diaSemana === dow && h.hora === hora);
         }
 
         /** O corpo do `POST /leads/{id}/agendamentos` (o servidor repete toda a validação). */
@@ -2944,6 +3008,9 @@
           montarCorpo,
           resumo,
           avisoDaCobranca,
+          rotuloDoHorario,
+          proximasDatas,
+          dentroDosHorarios,
         };
       })();
 
@@ -2971,6 +3038,13 @@
         let _turmaManual = false; // a equipe mexeu na turma: a sugestão para de sobrescrever
         let _tentativa = null; // { corpo (JSON), chave, caminho } do último pedido — o retry a reusa
         let _enviando = false;
+        // Grade de horários da turma (issue #413): a PE só vale dentro dela.
+        let _grade = {}; // turma → horarios[] (cache do diálogo; recarrega a cada abertura)
+        let _gradeTurma = ''; // turma cujos botões estão na tela
+        let _gradeErro = '';
+        let _gradePedida = ''; // turma com pedido em voo
+        let _slot = null; // { diaSemana, hora } escolhido
+        let _pendente = null; // data + hora que o JSON do ChatGPT trouxe, a conferir com a grade
 
         function _passo(nome) {
           for (const id of ['busca', 'form', 'resumo', 'resultado']) {
@@ -3070,6 +3144,11 @@
                 '. Pode trocar.'
               : 'Idade fora das faixas das turmas: escolha a turma.';
 
+          _sincronizarGrade(_el('ag-turma').value);
+          f.turma = _el('ag-turma').value;
+          f.data = _el('ag-data').value;
+          f.hora = _el('ag-hora').value;
+
           const ativo = _agendamentoAtivo(f.bebeNome);
           _mostrar(
             'ag-conflito',
@@ -3085,6 +3164,147 @@
           const falta = AgendarForm.faltando(f, _ctx(f));
           _el('ag-faltando').textContent = falta.length ? 'Falta: ' + falta.join(', ') + '.' : '';
           _el('ag-revisar').disabled = falta.length > 0 || !!ativo;
+        }
+
+        // ── grade de horários (issue #413) ──
+        function _sincronizarGrade(turma) {
+          if (turma !== _gradeTurma) {
+            _gradeTurma = turma;
+            _slot = null;
+            _gradeErro = '';
+            _el('ag-data').value = '';
+            _el('ag-hora').value = '';
+          }
+          if (turma && !_grade[turma] && !_gradeErro && _gradePedida !== turma)
+            _carregarGrade(turma);
+          if (turma && _grade[turma]) _aplicarPendente(turma);
+          _desenharGrade();
+        }
+
+        async function _carregarGrade(turma) {
+          _gradePedida = turma;
+          _gradeErro = '';
+          try {
+            const r = await ApiClient.get('/horarios', { turma });
+            _grade[turma] = r.horarios || [];
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            if (_gradeTurma === turma) {
+              _gradeErro = e.amigavel ? e.message : 'Não consegui carregar os horários agora.';
+            }
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _gradePedida = '';
+          }
+          if (_gradeTurma !== turma) return; // a turma mudou enquanto o pedido voltava
+          if (_grade[turma]) _aplicarPendente(turma);
+          _atualizar();
+        }
+
+        /** Data + hora que o JSON trouxe só valem se caírem na grade; senão a equipe escolhe. */
+        function _aplicarPendente(turma) {
+          const p = _pendente;
+          _pendente = null;
+          if (!p || !p.data || !p.hora) return;
+          const horarios = _grade[turma] || [];
+          // Data que já passou (ou hoje com a hora vencida) não é opção: os botões nunca a oferecem.
+          const hoje = Relogio.hojeISO();
+          const vencido = p.data < hoje || (p.data === hoje && p.hora <= Relogio.horaAgora());
+          if (!vencido && AgendarForm.dentroDosHorarios(horarios, p.data, p.hora)) {
+            const dow = new Date(p.data + 'T12:00:00Z').getUTCDay();
+            _slot = horarios.find((h) => h.diaSemana === dow && h.hora === p.hora) || null;
+            _el('ag-data').value = p.data;
+            _el('ag-hora').value = p.hora;
+          } else {
+            _el('ag-json-ok').textContent =
+              'O horário do JSON (' +
+              p.data +
+              ' às ' +
+              p.hora +
+              ') não está na grade da turma (ou já passou): escolha um horário abaixo.';
+          }
+        }
+
+        function _desenharGrade() {
+          const turma = _gradeTurma;
+          const horarios = turma ? _grade[turma] : null;
+          let dica = '';
+          let slots = '';
+          let datas = '';
+          let datasDica = '';
+          if (!turma) dica = 'Escolha a turma para ver os horários.';
+          else if (_gradeErro) dica = _gradeErro;
+          else if (!horarios) dica = 'Carregando os horários da turma…';
+          else if (!horarios.length)
+            dica = 'Esta turma não tem horários cadastrados: não dá para agendar.';
+          else {
+            dica = 'Horários da turma ' + turma.charAt(0).toUpperCase() + turma.slice(1) + ':';
+            slots = horarios
+              .map((h, i) => {
+                const ativo = _slot && _slot.diaSemana === h.diaSemana && _slot.hora === h.hora;
+                return (
+                  '<button type="button" class="ag-chip' +
+                  (ativo ? ' ativo' : '') +
+                  '" aria-pressed="' +
+                  (ativo ? 'true' : 'false') +
+                  '" data-ag="slot" data-ag-i="' +
+                  i +
+                  '">' +
+                  esc(AgendarForm.rotuloDoHorario(h)) +
+                  '</button>'
+                );
+              })
+              .join('');
+            if (_slot) {
+              datasDica = 'Próximas datas — ' + AgendarForm.rotuloDoHorario(_slot) + ':';
+              const escolhida = _el('ag-data').value;
+              datas = AgendarForm.proximasDatas(_slot, Relogio.hojeISO(), Relogio.horaAgora(), 6)
+                .map(
+                  (iso) =>
+                    '<button type="button" class="ag-chip' +
+                    (iso === escolhida ? ' ativo' : '') +
+                    '" aria-pressed="' +
+                    (iso === escolhida ? 'true' : 'false') +
+                    '" data-ag="data" data-ag-data="' +
+                    iso +
+                    '">' +
+                    esc(dataCurta(iso)) +
+                    '</button>',
+                )
+                .join('');
+            }
+          }
+          _el('ag-grade-dica').innerHTML =
+            esc(dica) +
+            (_gradeErro
+              ? ' <button type="button" class="ag-chip" data-ag="grade-de-novo">Tentar de novo</button>'
+              : '');
+          _el('ag-slots').innerHTML = slots;
+          _el('ag-datas-dica').textContent = datasDica;
+          _el('ag-datas').innerHTML = datas;
+          const d = _el('ag-data').value;
+          const h = _el('ag-hora').value;
+          _el('ag-escolhido').textContent = d && h ? 'Escolhido: ' + dataCurta(d) + ' às ' + h : '';
+        }
+
+        function _escolherHorario(i) {
+          const h = (_grade[_gradeTurma] || [])[Number(i)];
+          if (!h) return;
+          _slot = { diaSemana: h.diaSemana, hora: h.hora };
+          _el('ag-data').value = '';
+          _el('ag-hora').value = '';
+          _atualizar();
+        }
+
+        function _escolherData(iso) {
+          if (!_slot) return;
+          _el('ag-data').value = iso;
+          _el('ag-hora').value = _slot.hora;
+          _atualizar();
         }
 
         function _preencherBebe(b) {
@@ -3114,6 +3334,10 @@
           for (const id of ['ag-sexo', 'ag-prematuro', 'ag-turma']) _el(id).value = '';
           for (const r of document.querySelectorAll('input[name="ag-cobranca"]')) r.checked = false;
           _turmaManual = false;
+          _gradeTurma = '';
+          _gradeErro = '';
+          _slot = null;
+          _pendente = null;
           _mostrar('ag-json-erro', '');
           _el('ag-json-ok').textContent = '';
         }
@@ -3136,6 +3360,7 @@
           _telefoneDaBusca = '';
           _tentativa = null;
           _enviando = false;
+          _grade = {};
           _montarTurmas();
           _zerarFormulario();
           _el('ag-busca').value = '';
@@ -3274,8 +3499,6 @@
             alergia: 'ag-alergia',
             prematuro: 'ag-prematuro',
             sexo: 'ag-sexo',
-            data: 'ag-data',
-            hora: 'ag-hora',
             nascimento: 'ag-nascimento',
             bebeNome: 'ag-bebe',
             turma: 'ag-turma',
@@ -3291,6 +3514,12 @@
             preenchidos++;
           }
           if (c.turma) _turmaManual = true;
+          // Data e hora do JSON só valem se caírem na grade da turma (issue #413): ficam
+          // pendentes até a grade carregar, e aí são conferidas.
+          if (c.data && c.hora) {
+            _pendente = { data: c.data, hora: c.hora };
+            preenchidos++;
+          }
           if (c.bebeNome && _lead) {
             const i = (_lead.lead.bebes || []).findIndex((b) => b.nome === c.bebeNome);
             _el('ag-bebe-select').value = i >= 0 ? String(i) : 'novo';
@@ -3424,6 +3653,12 @@
             else if (acao === 'confirmar' || acao === 'tentar-de-novo') confirmar();
             else if (acao === 'copiar') copiarPrompt();
             else if (acao === 'preencher') preencherPeloJson();
+            else if (acao === 'slot') _escolherHorario(b.dataset.agI);
+            else if (acao === 'data') _escolherData(b.dataset.agData);
+            else if (acao === 'grade-de-novo') {
+              _gradeErro = '';
+              _atualizar();
+            }
           });
           const form = _el('ag-passo-form');
           form.addEventListener('input', (e) => {

@@ -197,7 +197,8 @@ const BGL_CRM_AJUDA = {
         <p>O botão <b>➕ Agendar</b> marca a Primeira Experiência de uma família que você captou e <b>cria a linha na planilha sozinho</b>, no lugar certo. Acabou o "colar a linha": o sistema grava, e você só confere.</p>
         <ol>
           <li><b>Procure a família primeiro.</b> Digite o <b>telefone</b> ou o <b>nome</b> (da mãe ou do bebê) e clique em 🔎 Buscar. Se a família aparecer, clique em <b>Usar esta família</b>: o formulário já vem com o cadastro dela. <b>Só cadastre uma família nova se ela não estiver na lista</b>: o botão para isso diz "Nenhuma destas é a família", justamente para ninguém criar uma família repetida só porque ela está com outro número.</li>
-          <li><b>Preencha o formulário.</b> Obrigatórios: telefone e responsável (família nova), nome e nascimento do bebê, data e hora da Primeira Experiência e a <b>cobrança da PE</b>. A <b>turma é sugerida pelo nascimento</b> (Pitocos 2 a 6 meses, Sapecas 6 a 12, Exploradores 12 a 18, Artistas 18 meses a 2 anos, Atletas 2 a 4 anos). É só uma sugestão: se a turma que cabe no horário for outra, troque, e a sugestão não volta a mexer. Fora das faixas, escolha você.</li>
+          <li><b>Preencha o formulário.</b> Obrigatórios: telefone e responsável (família nova), nome e nascimento do bebê, a <b>turma</b>, o <b>horário</b> da Primeira Experiência e a <b>cobrança da PE</b>. A <b>turma é sugerida pelo nascimento</b> (Pitocos 2 a 6 meses, Sapecas 6 a 12, Exploradores 12 a 18, Artistas 18 meses a 2 anos, Atletas 2 a 4 anos). É só uma sugestão: se a turma que cabe no horário for outra, troque, e a sugestão não volta a mexer. Fora das faixas, escolha você.</li>
+          <li><b>Escolha o horário da turma.</b> Não se digita data nem hora: com a turma escolhida, aparecem os <b>horários dela</b> (por exemplo "Terça 11:00" e "Quinta 14:00"). Clique no horário e a tela lista as <b>próximas datas</b> que caem naquele dia da semana; clique na data. A Primeira Experiência <b>só pode ser marcada dentro dos horários cadastrados</b>, nunca fora (o sistema recusa). A lista mostra os horários da turma, não as vagas: confira a lotação como sempre. Se mudar a turma, escolha o horário de novo. Se a lista disser que não conseguiu carregar, clique em "Tentar de novo".</li>
           <li><b>Escolha a cobrança da PE.</b> Não vem nada marcado de propósito:
             <ul>
               <li><b>Pedir para gerar o PIX:</b> o sistema cobra e <b>manda as mensagens do PIX para a mãe</b>, pelo WhatsApp. É o único que fala com ela, e isso não se desfaz. A tela avisa antes de gravar.</li>
@@ -208,7 +209,7 @@ const BGL_CRM_AJUDA = {
           <li><b>Revise e confirme.</b> A tela mostra um resumo em texto (bebê, responsável, data, turma, cobrança). Confira com calma, principalmente nome e data: é a única ação do CRM que cria um agendamento e não dá para desfazer por ele. Clique em <b>✅ Confirmar e criar</b>.</li>
         </ol>
         <h3>Preencher a partir do ChatGPT</h3>
-        <p>O caminho do print continua valendo, com o passo ruim trocado. No formulário, abra <b>Preencher a partir do ChatGPT</b>: clique em <b>📋 Copiar prompt</b>, cole no ChatGPT junto com o print da conversa e <b>traga de volta o JSON</b> que ele devolver. Cole no campo e clique em <b>⬇️ Preencher o formulário</b>. O JSON <b>só preenche</b>: nada é gravado até você revisar e confirmar. O que o ChatGPT não achou na conversa fica em branco (ele foi instruído a não inventar), e uma data como "sexta que vem" não é convertida: você preenche. Se o texto colado não for um JSON válido, o formulário não é alterado. <b>Use sempre o prompt da tela</b> (não o que você tinha guardado): ele já traz as turmas atuais e pede o JSON, não mais a linha da planilha.</p>
+        <p>O caminho do print continua valendo, com o passo ruim trocado. No formulário, abra <b>Preencher a partir do ChatGPT</b>: clique em <b>📋 Copiar prompt</b>, cole no ChatGPT junto com o print da conversa e <b>traga de volta o JSON</b> que ele devolver. Cole no campo e clique em <b>⬇️ Preencher o formulário</b>. O JSON <b>só preenche</b>: nada é gravado até você revisar e confirmar. O que o ChatGPT não achou na conversa fica em branco (ele foi instruído a não inventar), e uma data como "sexta que vem" não é convertida: você preenche. A data e a hora do JSON só valem se caírem nos horários da turma; se não caírem, a tela avisa e você escolhe o horário. Se o texto colado não for um JSON válido, o formulário não é alterado. <b>Use sempre o prompt da tela</b> (não o que você tinha guardado): ele já traz as turmas atuais e pede o JSON, não mais a linha da planilha.</p>
         <h3>Se algo der errado</h3>
         <ul>
           <li><b>"Salvo no CRM, mas a linha NÃO entrou na planilha":</b> o agendamento existe, só a linha faltou. Clique em <b>🔁 Tentar gravar na planilha de novo</b>. <b>Não crie de novo</b>: o agendamento já existe e a tela vai recusar. Se continuar falhando, avise o Michel.</li>
@@ -492,6 +493,18 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.23',
+      data: '2026-10-08',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'No ➕ Agendar, data e hora deixam de ser digitadas: você escolhe um dos horários da turma e depois uma das próximas datas daquele dia da semana. A Primeira Experiência só pode ser marcada dentro dos horários cadastrados (#413). A turma passou a ser obrigatória.',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.22',
       data: '2026-10-08',
