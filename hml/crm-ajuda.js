@@ -178,7 +178,7 @@ const BGL_CRM_AJUDA = {
         <ul>
           <li><b>Seu e-mail fica registrado</b> como quem conferiu o pagamento. Não dá para assinar por outra pessoa.</li>
           <li><b>Só marque depois de receber.</b> "Vai pagar" ainda não é pago: a proposta passaria a abater um valor que não entrou.</li>
-          <li><b>PIX do sistema ainda pendente:</b> se já existe um PIX gerado para essa PE, o diálogo avisa. Se a família ainda puder pagá-lo, o dinheiro entra duas vezes: peça para ela ignorar o PIX antigo.</li>
+          <li><b>PIX do sistema ainda pendente:</b> se já existe um PIX gerado para essa PE e ele <b>ainda não venceu</b>, o diálogo avisa. Se a família ainda puder pagá-lo, o dinheiro entra duas vezes: peça para ela ignorar o PIX antigo. PIX já vencido não pode mais ser pago, então não há aviso.</li>
           <li><b>Já confirmada pelo Mercado Pago:</b> não dá para marcar à mão, porque o pagamento já foi confirmado pelo sistema. A tela avisa e nada muda.</li>
           <li><b>Digitou o valor errado?</b> Depois de marcada, a tela não oferece corrigir (o botão some). Avise o Michel, que corrige.</li>
           <li>Se o servidor recusar, o diálogo <b>continua aberto</b> com o motivo em vermelho e o que você digitou fica lá.</li>
@@ -461,6 +461,18 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.21',
+      data: '2026-10-08',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'No diálogo Marcar PE paga, o aviso de "já existe um PIX gerado" só aparece enquanto o PIX ainda não venceu. PIX vencido não pode mais ser pago, então deixa de avisar (#405).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.20',
       data: '2026-10-07',

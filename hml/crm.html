@@ -2331,6 +2331,15 @@
             _enviando || valor === null || tamanho < MIN || tamanho > MAX;
         }
 
+        // PIX do sistema que a família ainda pode pagar (issue #405): `pix_gerado` e
+        // ainda não vencido. Vencido não entra em dobro, então não avisa. Sem
+        // `pixExpiraEm` legível o aviso fica (o risco é o pagamento em dobro).
+        function _pixAindaValido(item) {
+          if (item.pagamentoPE !== BGL_CONST.CRM.PAGAMENTO_PE.PIX_GERADO) return false;
+          const vence = Date.parse(item.pixExpiraEm);
+          return Number.isNaN(vence) || vence > Date.now();
+        }
+
         function _mostrarErro(mensagem) {
           const caixa = _el('pe-erro');
           caixa.textContent = mensagem || '';
@@ -2346,8 +2355,7 @@
           _el('pe-valor').value =
             typeof item.valorPE === 'number' ? String(item.valorPE).replace('.', ',') : '';
           _el('pe-observacao').value = '';
-          _el('pe-aviso-pix').style.display =
-            item.pagamentoPE === BGL_CONST.CRM.PAGAMENTO_PE.PIX_GERADO ? 'block' : 'none';
+          _el('pe-aviso-pix').style.display = _pixAindaValido(item) ? 'block' : 'none';
           _mostrarErro('');
           _atualizar();
           _el('pe-modal').style.display = 'flex';
