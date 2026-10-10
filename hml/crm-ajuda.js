@@ -201,7 +201,7 @@ const BGL_CRM_AJUDA = {
           <li><b>Escolha o horário da turma.</b> Não se digita data nem hora: com a turma escolhida, aparecem os <b>horários dela</b> (por exemplo "Terça 11:00" e "Quinta 14:00"). Clique no horário e a tela lista as <b>próximas datas</b> que caem naquele dia da semana; clique na data. A Primeira Experiência <b>só pode ser marcada dentro dos horários cadastrados</b>, nunca fora (o sistema recusa). A lista mostra os horários da turma, não as vagas: confira a lotação como sempre. Se mudar a turma, escolha o horário de novo. Se a lista disser que não conseguiu carregar, clique em "Tentar de novo".</li>
           <li><b>Escolha a cobrança da PE.</b> Não vem nada marcado de propósito:
             <ul>
-              <li><b>Pedir para gerar o PIX:</b> o sistema cobra e <b>manda as mensagens do PIX para a mãe</b>, pelo WhatsApp. É o único que fala com ela, e isso não se desfaz. A tela avisa antes de gravar.</li>
+              <li><b>Pedir para gerar o PIX:</b> o sistema <b>pede o PIX ao gerador</b> (o mesmo que a Alice usa) e a mãe recebe as mensagens com o copia-e-cola pelo WhatsApp. É o único que fala com ela, e isso não se desfaz: a tela avisa antes de gravar. <b>Vale para qualquer família</b>, também a que você acabou de cadastrar pela tela: o pedido sai com o código do agendamento e, se ela ainda não tiver conversa com a gente, as mensagens vão pelo telefone. Se o Michel ainda não tiver ligado o PIX por aqui, o sistema recusa ao confirmar e nada é criado.</li>
               <li><b>PIX já enviado:</b> você já mandou o PIX à mãe. Nada sai pelo sistema. Quando ela pagar, use 💰 Marcar PE paga.</li>
               <li><b>Não vai pagar a PE:</b> exige uma <b>justificativa</b> (no mínimo 10 caracteres). A PE fica como dispensada e nunca abate o plano.</li>
             </ul>
@@ -212,8 +212,10 @@ const BGL_CRM_AJUDA = {
         <p>O caminho do print continua valendo, com o passo ruim trocado. No formulário, abra <b>Preencher a partir do ChatGPT</b>: clique em <b>📋 Copiar prompt</b>, cole no ChatGPT junto com o print da conversa e <b>traga de volta o JSON</b> que ele devolver. Cole no campo e clique em <b>⬇️ Preencher o formulário</b>. O JSON <b>só preenche</b>: nada é gravado até você revisar e confirmar. O que o ChatGPT não achou na conversa fica em branco (ele foi instruído a não inventar), e uma data como "sexta que vem" não é convertida: você preenche. A data e a hora do JSON só valem se caírem nos horários da turma; se não caírem, a tela avisa e você escolhe o horário. Se o texto colado não for um JSON válido, o formulário não é alterado. <b>Use sempre o prompt da tela</b> (não o que você tinha guardado): ele já traz as turmas atuais e pede o JSON, não mais a linha da planilha.</p>
         <h3>Se algo der errado</h3>
         <ul>
-          <li><b>"Salvo no CRM, mas a linha NÃO entrou na planilha":</b> o agendamento existe, só a linha faltou. Clique em <b>🔁 Tentar gravar na planilha de novo</b>. <b>Não crie de novo</b>: o agendamento já existe e a tela vai recusar. Se continuar falhando, avise o Michel.</li>
+          <li><b>"Salvo no CRM, mas a linha NÃO entrou na planilha":</b> o agendamento existe, só a linha faltou. Clique em <b>🔁 Tentar de novo</b>. <b>Não crie de novo</b>: o agendamento já existe e a tela vai recusar. Se continuar falhando, avise o Michel.</li>
           <li><b>"Fora do ar" ou erro de conexão:</b> o pedido fica na tela, com tudo o que você digitou. Clique em Confirmar de novo: o sistema reconhece que é o mesmo pedido e não cria duas vezes.</li>
+          <li><b>"O pedido do PIX NÃO saiu":</b> o agendamento e a linha estão salvos, só o PIX não foi pedido (o gerador recusou, por exemplo). Clique em <b>🔁 Tentar de novo</b>: ele pede o PIX de novo, <b>sem criar outro agendamento</b>. Se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre.</li>
+          <li><b>"O pedido do PIX ficou INCERTO":</b> o gerador não respondeu a tempo e pode ter recebido o pedido, então <b>a mãe pode ou não ter recebido o PIX</b>. Olhe a linha na planilha: se a coluna <b>AB</b> virou <b>pix_gerado</b> (ou <b>pago</b>), está feito, não repita. Se não virou em alguns minutos, use 🔁 Tentar de novo (o sistema só deixa repetir 15 minutos depois, para não gerar dois PIX). Depois de "o pedido foi enviado", confira também que a AB virou <b>pix_gerado</b>.</li>
           <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. Reagendar ainda é feito na planilha, e o CRM ainda não faz.</li>
           <li>Na planilha, a linha nova mostra seu e-mail na coluna <b>agendadoPor</b>, no lugar do nome genérico de antes.</li>
         </ul>
@@ -493,6 +495,20 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.24',
+      data: '2026-10-09',
+      mudancas: {
+        adicionado: [
+          'No ➕ Agendar, "Pedir para gerar o PIX" agora pede o PIX de verdade ao gerador (o mesmo da Alice): a mãe recebe as mensagens com o copia-e-cola (#414). Vale para qualquer família, inclusive a cadastrada à mão pela tela, sem conversa anterior com a gente (#416). Se o pedido falhar, o resultado avisa e "Tentar de novo" repete sem duplicar.',
+        ],
+        alterado: [],
+        corrigido: [
+          'O texto anterior prometia que essa opção gerava o PIX, mas ela só gravava o status e nenhum PIX saía. Agora a promessa vale (depois de o Michel ligar a opção).',
+        ],
+        removido: [],
+      },
+    },
     {
       versao: '3.23',
       data: '2026-10-08',

@@ -1405,7 +1405,9 @@
                 <input type="radio" name="ag-cobranca" value="gerar_pix" />
                 <span>
                   <strong>Pedir para gerar o PIX</strong>
-                  <small>O sistema cobra e manda as mensagens do PIX à mãe.</small>
+                  <small id="ag-gerar-dica">
+                    O sistema cobra e manda as mensagens do PIX à mãe, pelo WhatsApp.
+                  </small>
                 </span>
               </label>
               <label class="ag-opcao">
@@ -1469,7 +1471,7 @@
               data-ag="tentar-de-novo"
               style="display: none"
             >
-              🔁 Tentar gravar na planilha de novo
+              🔁 Tentar de novo
             </button>
             <button type="button" class="btn-presenca" data-ag="fechar">Fechar</button>
           </section>
@@ -3601,21 +3603,45 @@
           }
         }
 
+        // Resultado em que o Make pode ter recebido o pedido: não se afirma que a mãe ficou sem PIX.
+        const PIX_INCERTO = ['incerto', 'em_andamento'];
+
+        const ROTULO_FALHA_PIX = {
+          erro_make: 'o gerador de PIX não respondeu',
+          sem_valor: 'o valor da PE não está cadastrado',
+          sem_linha: 'a linha ainda não está na planilha',
+          desligado: 'a geração de PIX está desligada',
+        };
+
         function _mostrarResultado(resposta, f) {
           const quando = dataCurta(f.data) + ' às ' + f.hora;
           const espelho = resposta && resposta.espelho;
-          const falhou = espelho && !espelho.ok;
+          const pix = resposta && resposta.pix;
+          const linhaFalhou = espelho && !espelho.ok;
+          const pixFalhou = pix && !pix.ok;
+          const falhou = linhaFalhou || pixFalhou;
           let texto = 'Agendamento de ' + f.bebeNome.trim() + ' criado para ' + quando + '.';
-          if (falhou) {
+          if (linhaFalhou) {
             texto +=
               '\n\n⚠️ Ele foi salvo no CRM, mas a linha NÃO entrou na planilha. Sem ela a cobrança da PE e a ' +
-              'confirmação do dia anterior não saem. Clique em "Tentar gravar na planilha de novo"; se continuar ' +
+              'confirmação do dia anterior não saem. Clique em "Tentar de novo"; se continuar ' +
               'falhando, avise o Michel (não crie de novo: o agendamento já existe).';
           } else {
             texto +=
               espelho && espelho.jaExistia
                 ? '\nA linha já estava na planilha.'
                 : '\nA linha já está na planilha.';
+          }
+          if (pix && pix.ok) {
+            texto += pix.jaSolicitado
+              ? '\nO PIX já tinha sido pedido para esta linha.'
+              : '\nO pedido do PIX foi enviado ao gerador: a mãe deve receber as mensagens com o copia-e-cola em instantes. Confira na planilha que a coluna AB desta linha virou "pix_gerado".';
+          } else if (pixFalhou && !linhaFalhou) {
+            texto += PIX_INCERTO.includes(pix.motivo)
+              ? '\n\n⚠️ O agendamento e a linha estão salvos, mas o pedido do PIX ficou INCERTO: o gerador não respondeu a tempo e pode ter recebido. A mãe pode ou não ter recebido o PIX. Confira na planilha: se a coluna AB desta linha virou "pix_gerado" ou "pago", está feito. Se não virou em alguns minutos, clique em "Tentar de novo" (o sistema só repete 15 minutos depois do pedido incerto, para não gerar dois PIX). Não crie o agendamento de novo.'
+              : '\n\n⚠️ O agendamento e a linha estão salvos, mas o pedido do PIX NÃO saiu (' +
+                (ROTULO_FALHA_PIX[pix.motivo] || 'erro ao chamar o gerador de PIX') +
+                '). Clique em "Tentar de novo"; se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre (não crie o agendamento de novo).';
           }
           const caixa = _el('ag-resultado-texto');
           caixa.textContent = texto;
