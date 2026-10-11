@@ -506,6 +506,7 @@ const BGL_CRM_AJUDA = {
         ],
         alterado: [],
         corrigido: [
+          'No ➕ Agendar, o campo E-mail agora só aceita e-mail no formato nome@exemplo.com (sem espaços, acentos ou pontos duplos). Antes passava qualquer coisa e o Mercado Pago recusava o PIX depois (#433). A tela avisa debaixo do campo e não deixa Revisar até corrigir.',
           'O texto anterior prometia que essa opção gerava o PIX, mas ela só gravava o status e nenhum PIX saía. Agora a promessa vale (depois de o Michel ligar a opção).',
         ],
         removido: [],

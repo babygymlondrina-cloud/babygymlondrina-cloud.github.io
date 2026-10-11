@@ -1338,6 +1338,12 @@
                   inputmode="email"
                   autocomplete="off"
                 />
+                <div
+                  class="aviso aviso-erro"
+                  id="ag-email-dica"
+                  role="alert"
+                  style="display: none"
+                ></div>
               </div>
               <div class="ag-campo ag-inteiro" id="ag-bebe-escolha" style="display: none">
                 <label class="pe-rotulo" for="ag-bebe-select">Bebê</label>
@@ -2902,6 +2908,9 @@
           const falta = [];
           if (ctx.novo && !normalizeTelefone(f.telefone)) falta.push('telefone válido');
           if (ctx.novo && !f.responsavel.trim()) falta.push('responsável');
+          // E-mail digitado (campo editável: só família nova) tem de estar no padrão — é o pagador do PIX
+          // e o Mercado Pago recusa o resto (issue #433). Vazio é permitido; o PIX o exige no servidor.
+          if (ctx.novo && f.email.trim() && !emailValido(f.email)) falta.push('e-mail válido');
           if (!f.bebeNome.trim()) falta.push('nome do bebê');
           if (!f.nascimento && !ctx.nascimentoConhecido) falta.push('nascimento');
           if (!f.turma) falta.push('turma');
@@ -3242,7 +3251,15 @@
               : '',
           );
 
-          const falta = AgendarForm.faltando(f, _ctx(f));
+          const ctxAtual = _ctx(f);
+          const emailRuim = ctxAtual.novo && f.email.trim() !== '' && !emailValido(f.email);
+          _mostrar(
+            'ag-email-dica',
+            emailRuim
+              ? 'E-mail fora do padrão. Use o formato nome@exemplo.com (sem espaços ou acentos).'
+              : '',
+          );
+          const falta = AgendarForm.faltando(f, ctxAtual);
           _el('ag-faltando').textContent = falta.length ? 'Falta: ' + falta.join(', ') + '.' : '';
           _el('ag-revisar').disabled = falta.length > 0 || !!ativo;
         }

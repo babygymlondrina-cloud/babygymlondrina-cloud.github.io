@@ -56,6 +56,23 @@ function normalizeTelefone(raw) {
   return null;
 }
 
+/**
+ * E-mail no padrão que o Mercado Pago aceita como pagador (issue #433): ASCII, um `@`, parte local
+ * sem pontos no começo/fim nem `..`, domínio com ao menos um ponto e rótulos de até 63 caracteres,
+ * último rótulo alfabético com 2+ letras. Não prova que a caixa existe: só barra o que seria
+ * recusado (`payer.email invalid`). A MESMA regra vive em `functions/normalize.js:emailValido`; um teste compara as duas.
+ */
+const EMAIL_PADRAO =
+  /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+function emailValido(valor) {
+  const s = String(valor === null || valor === undefined ? '' : valor).trim();
+  if (!s || s.length > 254 || !EMAIL_PADRAO.test(s)) return false;
+  const [local, dominio] = s.split('@');
+  if (local.length > 64 || local.startsWith('.') || local.endsWith('.') || local.includes('..'))
+    return false;
+  return /^[A-Za-z]{2,}$/.test(dominio.split('.').pop());
+}
+
 // ─── parseValorBRL ───────────────────────────────────────────────────────────
 // Valor em reais digitado/vindo de URL -> número, ou `null` se ilegível. Aceita
 // `47`, `23,5`, `23.5`, `R$ 47,00`, `1.234,50`. Zero é válido (PE cortesia):
