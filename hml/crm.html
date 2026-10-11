@@ -1425,6 +1425,11 @@
                 </span>
               </label>
             </fieldset>
+            <div class="ag-campo" id="ag-pe-oferta-bloco" style="display: none">
+              <label class="pe-rotulo" for="ag-pe-oferta">Valor da PE *</label>
+              <select id="ag-pe-oferta" class="pe-input"></select>
+              <div class="pe-dica" id="ag-pe-oferta-dica"></div>
+            </div>
             <div class="ag-campo" id="ag-justificativa-bloco" style="display: none">
               <label class="pe-rotulo" for="ag-justificativa">Justificativa (obrigatória)</label>
               <textarea
@@ -2902,6 +2907,12 @@
           if (!f.turma) falta.push('turma');
           if (!f.data || !f.hora) falta.push('horário');
           if (!f.cobranca) falta.push('cobrança da PE');
+          // Ofertas carregadas (mesmo a lista vazia): o servidor recusa PIX sem valor, então a tela exige a escolha.
+          if (
+            f.cobranca === COBRANCA.GERAR_PIX &&
+            (ctx.ofertasPendentes || (ctx.ofertasCarregadas && !f.peOfertaId))
+          )
+            falta.push('valor da PE');
           if (f.cobranca === COBRANCA.NAO_PAGA) {
             const n = f.justificativa.trim().length;
             if (n < OBS.MIN) falta.push('justificativa (mínimo ' + OBS.MIN + ' caracteres)');
@@ -2962,6 +2973,9 @@
             turma: f.turma,
             comoConheceu: f.comoConheceu.trim(),
             cobranca: f.cobranca,
+            ...(f.cobranca === COBRANCA.GERAR_PIX && f.peOfertaId
+              ? { peOfertaId: f.peOfertaId }
+              : {}),
             ...(f.cobranca === COBRANCA.NAO_PAGA ? { justificativa: f.justificativa.trim() } : {}),
           };
         }
@@ -2971,6 +2985,12 @@
           [COBRANCA.PIX_ENVIADO]: 'PIX já enviado',
           [COBRANCA.NAO_PAGA]: 'não vai pagar a PE',
         };
+
+        /** "R$ 37,00 — Promoção de outubro (até 07/10)": uma oferta da PE como a equipe a lê. */
+        function rotuloDaOferta(o) {
+          const ate = o.fim ? ' (até ' + o.fim.slice(8, 10) + '/' + o.fim.slice(5, 7) + ')' : '';
+          return 'R$ ' + Number(o.valor).toFixed(2).replace('.', ',') + ' — ' + o.nome + ate;
+        }
 
         const ROTULO_TURMA = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : 'sem turma');
 
@@ -2988,6 +3008,8 @@
             'Primeira Experiência: ' + quando + ' · ' + ROTULO_TURMA(f.turma),
             'PE: ' + ROTULO_COBRANCA[f.cobranca],
           ];
+          if (f.cobranca === COBRANCA.GERAR_PIX && ctx.peOfertaRotulo)
+            linhas.push('Valor da PE: ' + ctx.peOfertaRotulo);
           if (f.cobranca === COBRANCA.NAO_PAGA)
             linhas.push('Justificativa: ' + f.justificativa.trim());
           linhas.push(ctx.novo ? 'Família: NOVA (será cadastrada)' : 'Família: já cadastrada');
@@ -3009,6 +3031,7 @@
           faltando,
           montarCorpo,
           resumo,
+          rotuloDaOferta,
           avisoDaCobranca,
           rotuloDoHorario,
           proximasDatas,
@@ -3045,6 +3068,10 @@
         let _gradeTurma = ''; // turma cujos botões estão na tela
         let _gradeErro = '';
         let _gradePedida = ''; // turma com pedido em voo
+        let _ofertas = null; // { ofertas, padraoId } de GET /pe/ofertas (issue #427); null = não carregou
+        let _ofertasPedida = false; // pedido em voo
+        let _ofertasErro = false; // falhou: o servidor usa o valor vigente hoje, sem escolha
+        let _avisoOferta = ''; // a oferta escolhida acabou antes de confirmar (422 oferta_invalida)
         let _slot = null; // { diaSemana, hora } escolhido
         let _pendente = null; // data + hora que o JSON do ChatGPT trouxe, a conferir com a grade
 
@@ -3109,6 +3136,7 @@
             alergia: _el('ag-alergia').value,
             prematuro: _el('ag-prematuro').value,
             cobranca: cobranca ? cobranca.value : '',
+            peOfertaId: _el('ag-pe-oferta').value,
             justificativa: _el('ag-justificativa').value,
           };
         }
@@ -3118,6 +3146,12 @@
           return {
             novo: !_lead,
             nascimentoConhecido: !!(bebe && bebe.nascimento),
+            ofertasCarregadas: !!_ofertas,
+            ofertasPendentes: !_ofertas && !_ofertasErro, // ainda carregando: não deixa passar sem o valor
+            peOfertaRotulo: (() => {
+              const o = _ofertas && _ofertas.ofertas.find((x) => x.id === f.peOfertaId);
+              return o ? AgendarForm.rotuloDaOferta(o) : '';
+            })(),
             responsavelDoLead: _lead && _lead.lead.responsavel ? _lead.lead.responsavel.nome : '',
             telefoneExibido: _lead
               ? _lead.lead.telefone || '(sem telefone)'
@@ -3125,11 +3159,56 @@
           };
         }
 
+        // ── valor da PE (issue #427): as ofertas vigentes HOJE, resolvidas pelo servidor ──
+        async function _carregarOfertas() {
+          _ofertasPedida = true;
+          try {
+            const r = await ApiClient.get('/pe/ofertas');
+            _ofertas = { ofertas: r.ofertas || [], padraoId: r.padraoId || '' };
+            _el('ag-pe-oferta').innerHTML = _ofertas.ofertas
+              .map(
+                (o) =>
+                  '<option value="' +
+                  esc(o.id) +
+                  '">' +
+                  esc(AgendarForm.rotuloDaOferta(o)) +
+                  '</option>',
+              )
+              .join('');
+            _el('ag-pe-oferta').value = _ofertas.padraoId;
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            _ofertasErro = true;
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _ofertasPedida = false;
+          }
+          _atualizar();
+        }
+
         /** Reavalia o formulário: turma sugerida, justificativa, conflito e o que falta. */
         function _atualizar() {
           const f = _ler();
           _el('ag-justificativa-bloco').style.display =
             f.cobranca === COBRANCA.NAO_PAGA ? 'flex' : 'none';
+          const pedePix = f.cobranca === COBRANCA.GERAR_PIX;
+          _el('ag-pe-oferta-bloco').style.display = pedePix ? 'flex' : 'none';
+          if (pedePix && !_ofertas && !_ofertasErro && !_ofertasPedida) _carregarOfertas();
+          _el('ag-pe-oferta-dica').textContent = !pedePix
+            ? ''
+            : _avisoOferta
+              ? _avisoOferta
+              : _ofertasErro
+                ? 'Não consegui carregar os valores da PE agora: o sistema usa o valor vigente hoje.'
+                : !_ofertas
+                  ? 'Carregando os valores da PE…'
+                  : _ofertas.ofertas.length
+                    ? 'O valor vigente hoje já vem marcado.'
+                    : 'Nenhum valor de PE cadastrado: peça ao Michel (Config → Planos).';
           const nj = f.justificativa.trim().length;
           _el('ag-justificativa-dica').textContent =
             nj < OBS.MIN ? 'Faltam ' + (OBS.MIN - nj) + ' caracteres.' : nj + '/' + OBS.MAX;
@@ -3363,6 +3442,11 @@
           _tentativa = null;
           _enviando = false;
           _grade = {};
+          _ofertas = null;
+          _ofertasPedida = false;
+          _ofertasErro = false;
+          _avisoOferta = '';
+          _el('ag-pe-oferta').innerHTML = '';
           _montarTurmas();
           _zerarFormulario();
           _el('ag-busca').value = '';
@@ -3589,6 +3673,17 @@
               AuthController.expirar(e.message);
               return;
             }
+            if (e.motivo === 'oferta_invalida') {
+              // A oferta escolhida acabou entre abrir a tela e confirmar: nada foi criado. Volta ao
+              // formulário (nada digitado se perde) com a lista recarregada.
+              _avisoOferta = e.message.replace('A API recusou a requisição: ', '') + '.';
+              _ofertas = null;
+              _ofertasErro = false;
+              _el('ag-pe-oferta').innerHTML = '';
+              _passo('form');
+              _atualizar();
+              return;
+            }
             // Fica no resumo, com o texto: nada se perde e o retry reusa a chave.
             _passo('resumo');
             _mostrar(
@@ -3603,13 +3698,20 @@
           }
         }
 
-        // Resultado em que o Make pode ter recebido o pedido: não se afirma que a mãe ficou sem PIX.
+        // Resultado em que o pedido pode ter chegado ao Mercado Pago: repetir é seguro (idempotente).
         const PIX_INCERTO = ['incerto', 'em_andamento'];
 
         const ROTULO_FALHA_PIX = {
-          erro_make: 'o gerador de PIX não respondeu',
+          oferta_invalida:
+            'a oferta do valor da PE acabou: reabra o Agendar e escolha o valor de novo',
+          erro_mp: 'o Mercado Pago recusou o pedido',
+          resposta_invalida: 'o Mercado Pago respondeu sem os dados do PIX',
           sem_valor: 'o valor da PE não está cadastrado',
+          sem_email: 'falta o e-mail do responsável',
           sem_linha: 'a linha ainda não está na planilha',
+          data_invalida: 'a data ou a hora da aula está inválida',
+          erro_planilha: 'a planilha não respondeu',
+          erro_lead: 'o CRM não gravou o PIX',
           desligado: 'a geração de PIX está desligada',
         };
 
@@ -3619,6 +3721,9 @@
           const pix = resposta && resposta.pix;
           const linhaFalhou = espelho && !espelho.ok;
           const pixFalhou = pix && !pix.ok;
+          const mensagensFalharam = pix && pix.ok && pix.mensagens && !pix.mensagens.ok;
+          // "Tentar de novo" só quando repetir resolve: com o PIX já gerado e enviado (mensagens
+          // fora do ar) repetir devolveria só "já gerado", sem o link — então não é oferecido.
           const falhou = linhaFalhou || pixFalhou;
           let texto = 'Agendamento de ' + f.bebeNome.trim() + ' criado para ' + quando + '.';
           if (linhaFalhou) {
@@ -3633,20 +3738,39 @@
                 : '\nA linha já está na planilha.';
           }
           if (pix && pix.ok) {
-            texto += pix.jaSolicitado
-              ? '\nO PIX já tinha sido pedido para esta linha.'
-              : '\nO pedido do PIX foi enviado ao gerador: a mãe deve receber as mensagens com o copia-e-cola em instantes. Confira na planilha que a coluna AB desta linha virou "pix_gerado".';
+            if (pix.jaSolicitado) {
+              texto += '\nO PIX já tinha sido gerado para esta linha.';
+            } else if (mensagensFalharam) {
+              texto +=
+                '\n\n⚠️ O PIX foi gerado, mas as mensagens à mãe NÃO saíram (' +
+                (pix.mensagens.motivo === 'desligado'
+                  ? 'o envio pela Alice está desligado'
+                  : 'erro ao mandar pelo WhatsApp') +
+                '). Mande este link a ela: ' +
+                (pix.pagamento && pix.pagamento.ticketUrl
+                  ? pix.pagamento.ticketUrl
+                  : '(sem link)') +
+                '\nNão clique em "Tentar de novo": o PIX já existe.';
+            } else {
+              texto +=
+                '\nPIX gerado no Mercado Pago e as mensagens (link e dados do pagamento) já foram enviadas à mãe.';
+            }
           } else if (pixFalhou && !linhaFalhou) {
-            texto += PIX_INCERTO.includes(pix.motivo)
-              ? '\n\n⚠️ O agendamento e a linha estão salvos, mas o pedido do PIX ficou INCERTO: o gerador não respondeu a tempo e pode ter recebido. A mãe pode ou não ter recebido o PIX. Confira na planilha: se a coluna AB desta linha virou "pix_gerado" ou "pago", está feito. Se não virou em alguns minutos, clique em "Tentar de novo" (o sistema só repete 15 minutos depois do pedido incerto, para não gerar dois PIX). Não crie o agendamento de novo.'
-              : '\n\n⚠️ O agendamento e a linha estão salvos, mas o pedido do PIX NÃO saiu (' +
-                (ROTULO_FALHA_PIX[pix.motivo] || 'erro ao chamar o gerador de PIX') +
-                '). Clique em "Tentar de novo"; se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre (não crie o agendamento de novo).';
+            texto += ['erro_planilha', 'erro_lead'].includes(pix.motivo)
+              ? '\n\n⚠️ O agendamento e a linha estão salvos. O PIX chegou a ser criado no Mercado Pago, mas ' +
+                (pix.motivo === 'erro_planilha' ? 'a planilha' : 'o CRM') +
+                ' não gravou, então NADA foi enviado à mãe. Clique em "Tentar de novo": ele termina o que faltou, sem cobrar duas vezes. Não crie o agendamento de novo.'
+              : PIX_INCERTO.includes(pix.motivo) || pix.incerto
+                ? '\n\n⚠️ O agendamento e a linha estão salvos, mas o Mercado Pago não respondeu a tempo (ou há um pedido em andamento). ' +
+                  'Aguarde alguns segundos e clique em "Tentar de novo": o pedido é o mesmo e o sistema não cobra duas vezes. Não crie o agendamento de novo.'
+                : '\n\n⚠️ O agendamento e a linha estão salvos, mas o PIX NÃO foi gerado (' +
+                  (ROTULO_FALHA_PIX[pix.motivo] || 'erro ao gerar o PIX') +
+                  '). Clique em "Tentar de novo"; se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre (não crie o agendamento de novo).';
           }
           const caixa = _el('ag-resultado-texto');
           caixa.textContent = texto;
           caixa.style.whiteSpace = 'pre-wrap';
-          caixa.className = 'aviso ' + (falhou ? 'aviso-info' : '');
+          caixa.className = 'aviso ' + (falhou || mensagensFalharam ? 'aviso-info' : '');
           _el('ag-tentar-de-novo').style.display = falhou ? 'block' : 'none';
           _passo('resultado');
         }
