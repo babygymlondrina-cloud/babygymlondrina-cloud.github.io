@@ -103,6 +103,8 @@ const BGL_CONST = {
       AGUARDANDO_GERAR_PIX: 'aguardando_gerar_pix',
       PIX_ENVIADO_MANUAL: 'pix_enviado_manual',
       NAO_PAGO: 'nao_pago',
+      // O dinheiro mudou de agendamento (reagendou): fica no antigo como histórico — espelha `STATUS_PE_PAGO_REAGENDADO`.
+      PAGO_REAGENDADO: 'pago_reagendado',
     },
     /** Status de agendamento que não conta como "ativo" (a linha foi encerrada). */
     AGENDAMENTO_ENCERRADO: ['cancelado', 'reagendado'],

@@ -113,6 +113,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Aguardando pagamento (laranja)</td><td>Confirmou, mas a PE não foi paga.</td></tr>
             <tr><td>Sem confirmação (cinza)</td><td>Nenhuma confirmação registrada.</td></tr>
             <tr><td>PE paga (verde)</td><td>A Primeira Experiência foi paga.</td></tr>
+            <tr><td>PE paga (passou para o novo horário)</td><td>A família reagendou: o pagamento já está na PE do agendamento novo. Este (antigo) fica só como histórico.</td></tr>
             <tr><td>PIX gerado (laranja)</td><td>O PIX foi gerado, mas ainda não foi pago.</td></tr>
             <tr><td>PE não paga (cinza)</td><td>Sem PIX nem pagamento.</td></tr>
             <tr><td>✓ Presença, ✓ Fechou</td><td>A ação já foi marcada.</td></tr>
