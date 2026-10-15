@@ -76,6 +76,10 @@ Em **todas as três faixas**, cada linha tem:
   antigo, sem identificação da linha, não tem o botão: marque direto na planilha. Se aparecer o
   aviso "não atualizou a planilha", digite `pago`, o valor, seu e-mail e o motivo na linha, senão a
   PE volta a "não paga" na próxima sincronização.
+- **➕ Agendar** (issue #271, **ainda não liberado**) — fica no topo, ao lado de ↻ Atualizar. Procura a
+  família por telefone ou nome e, só se ela não existir, cadastra; sugere a turma pela idade do bebê;
+  exige escolher a cobrança da PE (gerar o PIX, PIX já enviado ou não vai pagar) e cria a linha na
+  planilha sozinho, no lugar do "colar a linha". Passo a passo na aba 📖 Ajuda.
 - **💬 Conversa** — abre a conversa no WhatsApp com aquele telefone.
 
 Só na faixa **"já passou"** aparece também:

@@ -113,6 +113,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Aguardando pagamento (laranja)</td><td>Confirmou, mas a PE não foi paga.</td></tr>
             <tr><td>Sem confirmação (cinza)</td><td>Nenhuma confirmação registrada.</td></tr>
             <tr><td>PE paga (verde)</td><td>A Primeira Experiência foi paga.</td></tr>
+            <tr><td>PE paga (passou para o novo horário)</td><td>A família reagendou: o pagamento já está na PE do agendamento novo. Este (antigo) fica só como histórico.</td></tr>
             <tr><td>PIX gerado (laranja)</td><td>O PIX foi gerado, mas ainda não foi pago.</td></tr>
             <tr><td>PE não paga (cinza)</td><td>Sem PIX nem pagamento.</td></tr>
             <tr><td>✓ Presença, ✓ Fechou</td><td>A ação já foi marcada.</td></tr>
@@ -130,6 +131,7 @@ const BGL_CRM_AJUDA = {
           <tbody>
             <tr><td><b>Marcar presença</b></td><td>Registra que a família compareceu (planilha, coluna V) e abre a pergunta sobre a proposta (próxima seção). Depois vira "✓ Presença" e não dá para desmarcar pela tela: se marcou errado, avise o Michel. Aparece nas três faixas, porque a presença é marcada quando a mãe chega, dentro do horário corrente.</td></tr>
             <tr><td><b>Marcar fechou</b></td><td>Registra que a família fechou o plano (coluna X) e <b>manda a mensagem de boas-vindas pelo WhatsApp</b>. Só se marca uma vez; depois vira "✓ Fechou". Quem fechou continua na lista, com o selo.</td></tr>
+            <tr><td><b>➕ Agendar</b></td><td>Fica no topo da tela, ao lado de ↻ Atualizar, e só aparece quando o Michel libera. Cria a Primeira Experiência de uma família e a linha na planilha. Veja a seção "Agendar uma Primeira Experiência".</td></tr>
             <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
             <tr><td><b>Cancelar</b></td><td>Cancela o agendamento (coluna T). Pede confirmação ("Cancelar o agendamento de [bebê]? Ele sai da agenda."), por ser a ação mais difícil de desfazer.</td></tr>
             <tr><td><b>📄 Proposta</b></td><td>Só na faixa "Já passou". Abre o detalhe do lead, de onde sai a proposta.</td></tr>
@@ -185,6 +187,40 @@ const BGL_CRM_AJUDA = {
         </ul>
         <div class="aviso aviso-info"><b>Se vier o aviso "não atualizou a planilha":</b> a PE foi salva no CRM, mas a planilha ainda está com o estado antigo, e <b>na próxima sincronização (até cerca de 30 minutos) a PE volta a "não paga"</b>. Digite você mesma na linha do bebê: <b>AB = pago</b>, <b>AN</b> = o valor, <b>AO</b> = seu e-mail e <b>AP</b> = o motivo. Depois disso nada mais se perde.</div>
         <p><b>Sem o botão?</b> Agendamentos antigos, sem identificação da linha, não têm o botão 💰: a marcação não teria onde ser gravada na planilha e voltaria sozinha. Nesses, marque direto na planilha (AB, AN, AO e AP).</p>
+      `,
+    },
+    {
+      id: 'agendar',
+      titulo: 'Agendar uma Primeira Experiência',
+      desde: '3.22',
+      html: `
+        <div class="aviso aviso-info"><b>Este botão ainda não está liberado.</b> O ➕ Agendar está em teste e só aparece na versão de homologação (endereço com <code>/hml/</code>); lá, a linha criada é <b>real</b> na planilha, então não use com dados de uma família de verdade. No sistema de verdade, continue agendando como hoje até o Michel liberar.</div>
+        <p>O botão <b>➕ Agendar</b> marca a Primeira Experiência de uma família que você captou e <b>cria a linha na planilha sozinho</b>, no lugar certo. Acabou o "colar a linha": o sistema grava, e você só confere.</p>
+        <ol>
+          <li><b>Procure a família primeiro.</b> Digite o <b>telefone</b> ou o <b>nome</b> (da mãe ou do bebê) e clique em 🔎 Buscar. Se a família aparecer, clique em <b>Usar esta família</b>: o formulário já vem com o cadastro dela. <b>Só cadastre uma família nova se ela não estiver na lista</b>: o botão para isso diz "Nenhuma destas é a família", justamente para ninguém criar uma família repetida só porque ela está com outro número.</li>
+          <li><b>Preencha o formulário.</b> Obrigatórios: telefone e responsável (família nova), nome e nascimento do bebê, a <b>turma</b>, o <b>horário</b> da Primeira Experiência e a <b>cobrança da PE</b>. A <b>turma é sugerida pelo nascimento</b> (Pitocos 2 a 6 meses, Sapecas 6 a 12, Exploradores 12 a 18, Artistas 18 meses a 2 anos, Atletas 2 a 4 anos). É só uma sugestão: se a turma que cabe no horário for outra, troque, e a sugestão não volta a mexer. Fora das faixas, escolha você.</li>
+          <li><b>Escolha o horário da turma.</b> Não se digita data nem hora: com a turma escolhida, aparecem os <b>horários dela</b> (por exemplo "Terça 11:00" e "Quinta 14:00"). Clique no horário e a tela lista as <b>próximas datas</b> que caem naquele dia da semana; clique na data. A Primeira Experiência <b>só pode ser marcada dentro dos horários cadastrados</b>, nunca fora (o sistema recusa). A lista mostra os horários da turma, não as vagas: confira a lotação como sempre. Se mudar a turma, escolha o horário de novo. Se a lista disser que não conseguiu carregar, clique em "Tentar de novo".</li>
+          <li><b>Escolha a cobrança da PE.</b> Não vem nada marcado de propósito:
+            <ul>
+              <li><b>Pedir para gerar o PIX:</b> o sistema <b>gera o PIX no Mercado Pago</b> e a mãe recebe as duas mensagens pelo WhatsApp (o link do PIX e os dados do pagamento). É o único que fala com ela, e isso não se desfaz: a tela avisa antes de gravar. <b>Vale para qualquer família</b>, também a que você acabou de cadastrar pela tela. <b>Precisa do e-mail do responsável</b> (o Mercado Pago exige): sem ele a tela recusa e nada é criado. <b>O valor da PE</b> aparece num campo logo abaixo: a lista traz os valores que estão <b>valendo hoje</b> (cadastrados com início e fim) e já vem marcado o mais recente; escolha outro se for o caso. O valor que a mãe paga é o escolhido. Se nenhum valor estiver cadastrado, a tela avisa e pede para falar com o Michel. A validade do PIX é calculada pela aula (vence 12 horas antes dela, no mínimo 2 horas depois de gerado). Se o Michel ainda não tiver ligado o PIX por aqui, o sistema recusa ao confirmar e nada é criado.</li>
+              <li><b>PIX já enviado:</b> você já mandou o PIX à mãe. Nada sai pelo sistema. Quando ela pagar, use 💰 Marcar PE paga.</li>
+              <li><b>Não vai pagar a PE:</b> exige uma <b>justificativa</b> (no mínimo 10 caracteres). A PE fica como dispensada e nunca abate o plano.</li>
+            </ul>
+          </li>
+          <li><b>Revise e confirme.</b> A tela mostra um resumo em texto (bebê, responsável, data, turma, cobrança). Confira com calma, principalmente nome e data: é a única ação do CRM que cria um agendamento e não dá para desfazer por ele. Clique em <b>✅ Confirmar e criar</b>.</li>
+        </ol>
+        <h3>Preencher a partir do ChatGPT</h3>
+        <p>O caminho do print continua valendo, com o passo ruim trocado. No formulário, abra <b>Preencher a partir do ChatGPT</b>: clique em <b>📋 Copiar prompt</b>, cole no ChatGPT junto com o print da conversa e <b>traga de volta o JSON</b> que ele devolver. Cole no campo e clique em <b>⬇️ Preencher o formulário</b>. O JSON <b>só preenche</b>: nada é gravado até você revisar e confirmar. O que o ChatGPT não achou na conversa fica em branco (ele foi instruído a não inventar), e uma data como "sexta que vem" não é convertida: você preenche. A data e a hora do JSON só valem se caírem nos horários da turma; se não caírem, a tela avisa e você escolhe o horário. Se o texto colado não for um JSON válido, o formulário não é alterado. <b>Use sempre o prompt da tela</b> (não o que você tinha guardado): ele já traz as turmas atuais e pede o JSON, não mais a linha da planilha.</p>
+        <h3>Se algo der errado</h3>
+        <ul>
+          <li><b>"Salvo no CRM, mas a linha NÃO entrou na planilha":</b> o agendamento existe, só a linha faltou. Clique em <b>🔁 Tentar de novo</b>. <b>Não crie de novo</b>: o agendamento já existe e a tela vai recusar. Se continuar falhando, avise o Michel.</li>
+          <li><b>"Fora do ar" ou erro de conexão:</b> o pedido fica na tela, com tudo o que você digitou. Clique em Confirmar de novo: o sistema reconhece que é o mesmo pedido e não cria duas vezes.</li>
+          <li><b>"O PIX NÃO foi gerado":</b> o agendamento e a linha estão salvos, só o PIX não saiu (o Mercado Pago recusou, por exemplo). Clique em <b>🔁 Tentar de novo</b>: ele gera o PIX de novo, <b>sem criar outro agendamento e sem cobrar duas vezes</b>. Se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre.</li>
+          <li><b>"Não respondeu a tempo" ou "a planilha/o CRM não gravou":</b> o Mercado Pago, a planilha ou o CRM demorou ou falhou no meio. <b>Nada foi enviado à mãe</b> até terminar tudo. Aguarde alguns segundos e clique em <b>🔁 Tentar de novo</b>: ele termina o que faltou e o sistema <b>não cobra duas vezes</b>.</li>
+          <li><b>"O PIX foi gerado, mas as mensagens NÃO saíram":</b> o PIX existe. A tela mostra o <b>link</b>: mande-o à mãe pelo WhatsApp. <b>Não use Tentar de novo.</b></li>
+          <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. Reagendar ainda é feito na planilha, e o CRM ainda não faz.</li>
+          <li>Na planilha, a linha nova mostra seu e-mail na coluna <b>agendadoPor</b>, no lugar do nome genérico de antes.</li>
+        </ul>
       `,
     },
     {
@@ -370,7 +406,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>R</td><td>humorDoCliente</td><td>Guardado</td><td>Nenhuma tela mostra.</td></tr>
             <tr><td>S</td><td>confirmacaoEnviada</td><td>Guardado</td><td>Não aparece; a tela mostra o resultado da confirmação (coluna T), não quando foi enviada.</td></tr>
             <tr><td>T</td><td>statusConfirmacao</td><td>Aparece e escreve</td><td>Etiqueta de confirmação (Painel, tabelas, detalhe) e coluna Status do detalhe. "cancelado" e "reagendado" tiram o agendamento das listas do dia. O botão Cancelar grava aqui.</td></tr>
-            <tr><td>U</td><td>agendadoPor</td><td>Não lido</td><td>O CRM não usa.</td></tr>
+            <tr><td>U</td><td>agendadoPor</td><td>Escreve</td><td>Só nas linhas criadas pelo botão ➕ Agendar: o e-mail de quem criou. Nas demais, o CRM não a usa.</td></tr>
             <tr><td>V</td><td>Compareceu</td><td>Aparece e escreve</td><td>"✓ Presença", chip Compareceu do Mês e etiqueta no detalhe. Marcar presença grava aqui.</td></tr>
             <tr><td>W</td><td>PesquisaEnviada</td><td>Aparece</td><td>Chip Pesquisa enviada do Mês (só o envio, não a resposta).</td></tr>
             <tr><td>X</td><td>Fechou</td><td>Aparece e escreve</td><td>"✓ Fechou", chip Fechou do Mês e etiqueta no detalhe. Marcar fechou grava aqui e dispara a mensagem de boas-vindas.</td></tr>
@@ -381,11 +417,11 @@ const BGL_CRM_AJUDA = {
             <tr><td>AC a AF</td><td>payment_id, external_reference, pix_emv, ticket_url</td><td>Guardado</td><td>Dados do PIX no Mercado Pago. Nenhuma tela mostra.</td></tr>
             <tr><td>AG a AI</td><td>data_hora_geracao, expiracao e pagamento</td><td>Guardado</td><td>Nenhuma tela mostra; a tela mostra só o status (AB).</td></tr>
             <tr><td>AJ, AK</td><td>(controle do sync)</td><td>Interno</td><td>Sincronização planilha para CRM. Não mexer.</td></tr>
-            <tr><td>AL</td><td>agendamentoId (UUID)</td><td>Interno</td><td>Não aparece, mas é a identidade do agendamento: é como cada botão acha a linha certa da planilha. Sem ela, as anotações pós-PE ficam só para leitura. Nunca copiar linha (o UUID vai junto).</td></tr>
+            <tr><td>AL</td><td>agendamentoId (UUID)</td><td>Interno</td><td>Não aparece, mas é a identidade do agendamento: é como cada botão acha a linha certa da planilha. Sem ela, as anotações pós-PE ficam só para leitura. Nunca copiar linha (o UUID vai junto). No botão ➕ Agendar, o identificador nasce no sistema e vai junto com a linha.</td></tr>
             <tr><td>AM</td><td>(sem uso)</td><td>Não lido</td><td>Coluna antiga, vazia. Não preencher.</td></tr>
             <tr><td>AN</td><td>valorPE</td><td>Escreve</td><td>Quanto a família pagou na Primeira Experiência, em reais (ex.: 47 ou 23,50). O Make preenche no PIX do Mercado Pago; <b>na PE paga por PIX direto, use o botão 💰 Marcar PE paga, que grava o valor recebido aqui</b>. É o número que a proposta abate do plano. Sem valor, ou com valor acima de R$200 (provável erro de digitação), a proposta usa o valor padrão da PE.</td></tr>
             <tr><td>AO</td><td>comprovanteConferidoPor</td><td>Escreve</td><td>Só no PIX direto: quem conferiu o pagamento. O botão 💰 Marcar PE paga grava aqui o e-mail de quem clicou. Preenchida significa conferido. No Mercado Pago fica vazia.</td></tr>
-            <tr><td>AP</td><td>observacaoPE</td><td>Escreve</td><td>O motivo de a PE ter sido marcada à mão, escrito por quem clicou em 💰 Marcar PE paga. Obrigatório nesse botão. Fica só nesta coluna e no CRM: nenhuma tela a mostra ainda.</td></tr>
+            <tr><td>AP</td><td>observacaoPE</td><td>Escreve</td><td>O motivo de a PE ter sido marcada à mão, escrito por quem clicou em 💰 Marcar PE paga. Obrigatório nesse botão. No botão ➕ Agendar, quando a cobrança é "Não vai pagar a PE", é a justificativa. Fica só nesta coluna e no CRM: nenhuma tela a mostra ainda.</td></tr>
           </tbody>
         </table></div>
         <p>Outras abas: <b>DadosPrimeiroAtendimento</b> alimenta Primeiro contato (A), nome de reserva (D), telefone (E), Canal (F) e chatID (G). <b>LeadsFrios</b> coluna A (Travar) alimenta a etiqueta Travado e o botão Travar/Destravar. O campo "Reengajável" do detalhe é calculado (lead com telefone válido), não vem de coluna.</p>
@@ -398,7 +434,7 @@ const BGL_CRM_AJUDA = {
       desde: '3.8',
       html: `
         <ul>
-          <li><b>Agendar uma Primeira Experiência nova e reagendar:</b> ainda é na planilha. <b>Ao reagendar, crie uma linha nova. Não copie a linha existente.</b> A cópia leva o identificador do agendamento, o sistema acha que são o mesmo e o agendamento antigo some do CRM. Se já copiou, apague o conteúdo da coluna do identificador (código parecido com 8f25a6aa-7901-…) na linha nova.</li>
+          <li><b>Agendar uma Primeira Experiência nova:</b> é o botão ➕ Agendar (veja "Agendar uma Primeira Experiência"), quando liberado. <b>Reagendar</b> ainda é na planilha. <b>Ao reagendar, crie uma linha nova. Não copie a linha existente.</b> A cópia leva o identificador do agendamento, o sistema acha que são o mesmo e o agendamento antigo some do CRM. Se já copiou, apague o conteúdo da coluna do identificador (código parecido com 8f25a6aa-7901-…) na linha nova.</li>
           <li><b>Desmarcar presença ou fechou:</b> não existe na tela. Peça ao Michel.</li>
           <li><b>Dispensar a PE (a família não vai pagar) e ler o motivo gravado na AP:</b> ainda não existe na tela.</li>
           <li>Os PIX da PE e as confirmações automáticas continuam sendo gerados pelos fluxos que já existiam (Make e Alice).</li>
@@ -461,6 +497,49 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.24',
+      data: '2026-10-09',
+      mudancas: {
+        adicionado: [
+          'No ➕ Agendar, "Pedir para gerar o PIX" agora gera o PIX de verdade no Mercado Pago e manda as mensagens à mãe (link do PIX e dados do pagamento) (#414, #419). Vale para qualquer família, inclusive a cadastrada à mão pela tela, sem conversa anterior com a gente (#416); precisa do e-mail do responsável. Se algo falhar, o resultado avisa o que aconteceu e "Tentar de novo" repete sem duplicar e sem cobrar duas vezes. Se as mensagens não saírem, a tela mostra o link do PIX para você mandar.',
+          'No ➕ Agendar, "Pedir para gerar o PIX" ganha o campo "Valor da PE" (#427): a lista traz os valores cadastrados com início e fim que estão valendo hoje, o mais recente já marcado. O PIX sai com o valor escolhido, e o "Tentar de novo" mantém o mesmo valor mesmo que a oferta acabe nesse meio-tempo. Quem cadastra os valores é o Michel (Config → Planos).',
+        ],
+        alterado: [],
+        corrigido: [
+          'No ➕ Agendar, o campo E-mail agora só aceita e-mail no formato nome@exemplo.com (sem espaços, acentos ou pontos duplos). Antes passava qualquer coisa e o Mercado Pago recusava o PIX depois (#433). A tela avisa debaixo do campo e não deixa Revisar até corrigir.',
+          'O texto anterior prometia que essa opção gerava o PIX, mas ela só gravava o status e nenhum PIX saía. Agora a promessa vale (depois de o Michel ligar a opção).',
+        ],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.23',
+      data: '2026-10-08',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'No ➕ Agendar, data e hora deixam de ser digitadas: você escolhe um dos horários da turma e depois uma das próximas datas daquele dia da semana. A Primeira Experiência só pode ser marcada dentro dos horários cadastrados (#413). A turma passou a ser obrigatória.',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.22',
+      data: '2026-10-08',
+      mudancas: {
+        adicionado: [
+          'Botão ➕ Agendar: marca a Primeira Experiência de uma família e cria a linha na planilha, sem colar nada (#271). Em teste: por enquanto só aparece na versão de homologação (/hml/); no sistema de verdade aparece quando o Michel liberar, depois de validar a criação da linha.',
+          'O formulário procura a família por telefone ou nome antes de cadastrar uma nova, sugere a turma pela idade do bebê e traz a porta do JSON do ChatGPT, com o prompt para copiar.',
+          'Três cobranças da PE ao agendar, sem nenhuma pré-marcada: pedir para gerar o PIX, PIX já enviado ou não vai pagar a PE (com justificativa).',
+          'Novos rótulos da PE na agenda: "Aguardando PIX", "PIX enviado (manual)" e "PE dispensada".',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.21',
       data: '2026-10-08',
