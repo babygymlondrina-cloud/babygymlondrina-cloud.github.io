@@ -194,7 +194,6 @@ const BGL_CRM_AJUDA = {
       titulo: 'Agendar uma Primeira Experiência',
       desde: '3.22',
       html: `
-        <div class="aviso aviso-info"><b>Este botão ainda não está liberado.</b> O ➕ Agendar está em teste e só aparece na versão de homologação (endereço com <code>/hml/</code>); lá, a linha criada é <b>real</b> na planilha, então não use com dados de uma família de verdade. No sistema de verdade, continue agendando como hoje até o Michel liberar.</div>
         <p>O botão <b>➕ Agendar</b> marca a Primeira Experiência de uma família que você captou e <b>cria a linha na planilha sozinho</b>, no lugar certo. Acabou o "colar a linha": o sistema grava, e você só confere.</p>
         <ol>
           <li><b>Procure a família primeiro.</b> Digite o <b>telefone</b> ou o <b>nome</b> (da mãe ou do bebê) e clique em 🔎 Buscar. Se a família aparecer, clique em <b>Usar esta família</b>: o formulário já vem com o cadastro dela. <b>Só cadastre uma família nova se ela não estiver na lista</b>: o botão para isso diz "Nenhuma destas é a família", justamente para ninguém criar uma família repetida só porque ela está com outro número.</li>
@@ -497,6 +496,33 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.26',
+      data: '2026-10-15',
+      mudancas: {
+        adicionado: [
+          'O botão ➕ Agendar está liberado no sistema de verdade (#449): a equipe marca a Primeira Experiência de uma família e a linha nasce sozinha na planilha. Atenção: a linha criada é real e, na opção "Pedir para gerar o PIX", o PIX e as mensagens à mãe saem de verdade. Para treinar, use a versão de homologação (endereço com /hml/) só com telefone de teste: a homologação usa a MESMA planilha da produção, então a linha criada lá também é real. Peça ao Michel para apagá-la depois.',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.25',
+      data: '2026-10-15',
+      mudancas: {
+        adicionado: [
+          'Quando a família reagenda uma Primeira Experiência que já estava paga, o pagamento acompanha o novo horário: a linha nova fica como paga e a antiga mostra "PE paga (passou para o novo horário)" (#439). Assim existe um só pagamento por PE paga, na linha que vale.',
+          'No histórico de alterações do lead, a origem "Make (Alice)" mostra o que a Alice mudou ao agendar ou reagendar (#417, #438).',
+        ],
+        alterado: [
+          'Agendamentos feitos pela Alice já nascem com a confirmação preenchida: "aguardando pagamento" quando o PIX ainda não foi pago e "a confirmar" quando a PE já está paga ou dispensada. Antes a coluna ficava vazia e a família não entrava no lembrete do dia anterior (#438).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.24',
       data: '2026-10-09',
