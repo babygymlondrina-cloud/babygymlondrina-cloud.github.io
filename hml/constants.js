@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.26',
-  APP_DATE: '2026-10-15',
+  APP_VERSION: '3.27',
+  APP_DATE: '2026-10-16',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -197,5 +197,12 @@ const BGL_CONST = {
      * o botão; a criação no servidor segue em `BGL_REAGENDAR_LINHA`, `docs/COMANDOS.md`).
      */
     FLAG_REAGENDAR: true,
+    /**
+     * Botão "📅 Reagendar" em cada item da agenda (issue #451). Flag PRÓPRIA, separada da do ➕ Agendar:
+     * reagendar encerra uma linha e pode cancelar um PIX, e o rollback tem de ser independente.
+     * Mesmos valores: `false` = ninguém vê · `'hml'` = só a tela servida em `/hml/` · `true` = todos.
+     * Também exige `FLAG_ACOES_ESCRITA` e `BGL_REAGENDAR_LINHA` no servidor.
+     */
+    FLAG_REAGENDAR_TELA: 'hml',
   },
 };

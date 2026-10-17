@@ -1490,6 +1490,123 @@
       </div>
     </div>
 
+    <div id="reag-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card agendar-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rg-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="rg-titulo">Reagendar</h2>
+          <button class="modal-close" data-rg="fechar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body pe-corpo">
+          <!-- Passo 1 — o novo horário (da grade da turma) e, se a PE ainda precisa de decisão, a cobrança -->
+          <section id="rg-passo-form" class="pe-corpo">
+            <div class="aviso aviso-info" id="rg-atual"></div>
+            <div class="ag-campo">
+              <label class="pe-rotulo" for="rg-turma">Turma</label>
+              <select id="rg-turma" class="pe-input"></select>
+            </div>
+            <div
+              class="ag-campo ag-inteiro"
+              id="rg-grade-bloco"
+              role="group"
+              aria-labelledby="rg-grade-rotulo"
+            >
+              <span class="pe-rotulo" id="rg-grade-rotulo">Novo horário *</span>
+              <div class="pe-dica" id="rg-grade-dica"></div>
+              <div class="ag-chips" id="rg-slots"></div>
+              <div class="pe-dica" id="rg-datas-dica"></div>
+              <div class="ag-chips" id="rg-datas"></div>
+              <div class="ag-escolhido" id="rg-escolhido"></div>
+            </div>
+            <div class="aviso aviso-info" id="rg-pe-tratada" style="display: none"></div>
+            <fieldset
+              id="rg-cobranca"
+              class="pe-corpo"
+              style="border: none; padding: 0; margin: 0; display: none"
+            >
+              <legend class="pe-rotulo">Cobrança da PE no novo horário * (escolha uma)</legend>
+              <div class="pe-dica" id="rg-pix-antigo" style="display: none">
+                O PIX atual da família será cancelado no Mercado Pago.
+              </div>
+              <label class="ag-opcao">
+                <input type="radio" name="rg-cobranca" value="gerar_pix" />
+                <span>
+                  <strong>Gerar um PIX novo</strong>
+                  <small>O sistema cobra e manda as mensagens do PIX à mãe, pelo WhatsApp.</small>
+                </span>
+              </label>
+              <label class="ag-opcao">
+                <input type="radio" name="rg-cobranca" value="pix_enviado" />
+                <span>
+                  <strong>PIX já enviado</strong>
+                  <small>Você já mandou o PIX à mãe. Marque como paga quando ela pagar.</small>
+                </span>
+              </label>
+              <label class="ag-opcao">
+                <input type="radio" name="rg-cobranca" value="nao_paga" />
+                <span>
+                  <strong>Não vai pagar a PE</strong>
+                  <small>Exige uma justificativa.</small>
+                </span>
+              </label>
+            </fieldset>
+            <div class="ag-campo" id="rg-email-bloco" style="display: none">
+              <label class="pe-rotulo" for="rg-email">
+                E-mail do responsável (se o sistema pedir)
+              </label>
+              <input type="email" id="rg-email" class="pe-input" autocomplete="off" />
+              <div class="pe-dica" id="rg-email-dica"></div>
+            </div>
+            <div class="ag-campo" id="rg-justificativa-bloco" style="display: none">
+              <label class="pe-rotulo" for="rg-justificativa">Justificativa (obrigatória)</label>
+              <textarea id="rg-justificativa" class="pe-input" maxlength="500"></textarea>
+              <div class="pe-dica" id="rg-justificativa-dica"></div>
+            </div>
+            <div class="pe-dica" id="rg-faltando"></div>
+            <button type="button" class="btn-presenca" id="rg-revisar" data-rg="revisar">
+              Revisar e confirmar
+            </button>
+            <button type="button" class="btn-presenca-cancelar" data-rg="fechar">Cancelar</button>
+          </section>
+
+          <!-- Passo 2 — a confirmação com o resumo em texto -->
+          <section id="rg-passo-resumo" class="pe-corpo" style="display: none">
+            <p class="presenca-pergunta">
+              Confira antes de gravar — reagendar cria uma linha nova e encerra a anterior, e a tela
+              não desfaz.
+            </p>
+            <div class="ag-resumo" id="rg-resumo-texto"></div>
+            <div class="aviso aviso-erro" id="rg-erro" role="alert" style="display: none"></div>
+            <button type="button" class="btn-presenca" id="rg-confirmar" data-rg="confirmar">
+              ✅ Confirmar e reagendar
+            </button>
+            <button type="button" class="btn-presenca-cancelar" data-rg="voltar-form">
+              ← Voltar
+            </button>
+          </section>
+
+          <!-- Passo 3 — o resultado -->
+          <section id="rg-passo-resultado" class="pe-corpo" style="display: none">
+            <div class="aviso" id="rg-resultado-texto" style="border: 1px solid var(--line)"></div>
+            <button
+              type="button"
+              class="btn-presenca"
+              id="rg-tentar-de-novo"
+              data-rg="tentar-de-novo"
+              style="display: none"
+            >
+              🔁 Tentar de novo
+            </button>
+            <button type="button" class="btn-presenca" data-rg="fechar">Fechar</button>
+          </section>
+        </div>
+      </div>
+    </div>
+
     <div id="pe-modal" class="modal-backdrop" style="display: none">
       <div
         class="modal-card presenca-card"
@@ -1614,8 +1731,8 @@
       // desligada, esta tela continua byte a byte a somente-leitura da T4:
       // `AcoesController` não desenha nenhum botão e `ApiClient.patch` nunca
       // é chamado — é o rollback de 1 minuto (docs/CRM_FASE3_PLANO.md,
-      // decisão D4/T6). "Reagendar" fica fora de propósito (decisão D5): é o
-      // único botão que CRIARIA um agendamento, e não está nesta lista.
+      // decisão D4/T6). "Reagendar" (issue #451) NÃO é desta flag: cria
+      // um agendamento e tem flag de UI própria (`FLAG_REAGENDAR_TELA`), para o rollback ser independente.
       // ═══════════════════════════════════════════════════════════════════════
 
       const ABA = BGL_CONST.CRM.ABA;
@@ -1628,6 +1745,14 @@
       const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
       function esc(valor) {
         return String(valor == null ? '' : valor).replace(/[&<>"']/g, (c) => ESCAPES[c]);
+      }
+
+      /**
+       * Flag de UI de três estados (`false` / `'hml'` / `true`): `'hml'` liga só a tela servida em /hml/,
+       * o mesmo valor que a flag do servidor usa.
+       */
+      function flagLiberada(valor) {
+        return valor === true || (valor === 'hml' && BGL_CONFIG.env === 'hml');
       }
 
       /** Valor legível, ou travessão quando a API devolveu `null`. */
@@ -2575,13 +2700,15 @@
             acao === 'proposta' ||
             acao === 'fechou' ||
             acao === 'cancelado' ||
-            acao === 'pe_paga'
+            acao === 'pe_paga' ||
+            acao === 'reagendar'
           ) {
             const local = _itemAgenda(id, bebe);
             if (!local) return;
             if (acao === 'compareceu' || acao === 'proposta') PresencaDialog.abrir(local.item);
             else if (acao === 'fechou') marcarFechou(local.item);
             else if (acao === 'pe_paga') PePagaDialog.abrir(local.item);
+            else if (acao === 'reagendar') ReagendarDialog.abrir(local.item);
             else cancelar(local.item);
           } else if (acao === 'recuperacao') {
             const local = _itemFrio(id);
@@ -3113,7 +3240,7 @@
           );
         }
 
-        /** O agendamento ATIVO do bebê escolhido, se existir (reagendar ainda não é feito pela tela). */
+        /** O agendamento ATIVO do bebê escolhido, se existir (este diálogo só CRIA; reagendar é o botão da agenda, `ReagendarDialog`). */
         function _agendamentoAtivo(nome) {
           const chave = String(nome || '')
             .trim()
@@ -3798,8 +3925,7 @@
           // O botão só existe com as DUAS flags: criar agendamento é escrita, e a flag de
           // criação nasce desligada até a validação ao vivo da linha nova na planilha.
           // `'hml'` = liberada só na tela servida em /hml/ (mesmo valor do servidor).
-          const reagendar = BGL_CONST.CRM.FLAG_REAGENDAR;
-          const liberado = reagendar === true || (reagendar === 'hml' && BGL_CONFIG.env === 'hml');
+          const liberado = flagLiberada(BGL_CONST.CRM.FLAG_REAGENDAR);
           botao.style.display = BGL_CONST.CRM.FLAG_ACOES_ESCRITA && liberado ? '' : 'none';
           botao.addEventListener('click', abrir);
           const modal = _el('agendar-modal');
@@ -3851,6 +3977,452 @@
         }
 
         return { iniciar, abrir };
+      })();
+
+      // ─── ReagendarDialog ─────────────────────────────────────────────────
+      // Issue #451 (épico #261): "📅 Reagendar" em cada item da agenda. Escolhe o NOVO horário na
+      // grade da turma (os mesmos botões do ➕ Agendar) e, quando a PE ainda precisa de decisão, a
+      // cobrança (SEM padrão); PE já paga ou tratada à mão é herdada e nada é cobrado. Resumo em texto
+      // antes de gravar, porque reagendar cria uma linha e encerra a anterior — e a tela não desfaz.
+      // Sem atualização otimista: a agenda só muda depois de a resposta chegar (aoReagendar refaz a busca).
+      //
+      // Só DOM: quem fala com a API é o `ApiClient`, e a regra de dinheiro mora no servidor
+      // (`functions/reagendar.js`, a mesma da Alice). Como os outros diálogos de escrita, o fundo NÃO
+      // cancela ao clicar.
+      const ReagendarDialog = (function () {
+        const COBRANCA = BGL_CONST.CRM.COBRANCA_PE;
+        const PE = BGL_CONST.CRM.PAGAMENTO_PE;
+        const OBS = BGL_CONST.CRM.OBSERVACAO_PE;
+        const _el = (id) => document.getElementById(id);
+
+        let _aoReagendar = null;
+        let _item = null;
+        let _grade = {}; // turma → horarios[]
+        let _gradeTurma = '';
+        let _gradeErro = '';
+        let _gradePedida = '';
+        let _slot = null;
+        let _data = '';
+        let _tentativa = null; // { json, caminho, corpo, chave, resumo } — o retry reusa a chave
+        let _enviando = false;
+
+        const _mostrar = (id, texto) => {
+          const caixa = _el(id);
+          caixa.textContent = texto || '';
+          caixa.style.display = texto ? 'block' : 'none';
+        };
+
+        function _passo(nome) {
+          for (const id of ['form', 'resumo', 'resultado']) {
+            _el('rg-passo-' + id).style.display = id === nome ? 'flex' : 'none';
+          }
+        }
+
+        /** A PE do agendamento atual já foi tratada: o novo herda e nada é cobrado. */
+        function _peTratada(item) {
+          return [PE.PAGO, PE.PIX_ENVIADO_MANUAL, PE.NAO_PAGO].includes(item.pagamentoPE);
+        }
+
+        const AVISO_PE_TRATADA = {
+          [PE.PAGO]:
+            'A PE já está paga: o pagamento passa para o novo horário e nada é cobrado de novo.',
+          [PE.PIX_ENVIADO_MANUAL]:
+            'O PIX já foi enviado à mão: o status continua no novo horário e nada é cobrado pelo sistema.',
+          [PE.NAO_PAGO]: 'A PE está dispensada: continua dispensada no novo horário.',
+        };
+
+        function _cobranca() {
+          const r = document.querySelector('input[name="rg-cobranca"]:checked');
+          return r ? r.value : '';
+        }
+
+        function _turma() {
+          return _el('rg-turma').value;
+        }
+
+        function _estaPronto() {
+          return _faltando().length === 0;
+        }
+
+        function _faltando() {
+          const falta = [];
+          if (!_turma()) falta.push('a turma');
+          if (!_data || !_slot) falta.push('o novo horário');
+          else if (_data === _item.data && _slot.hora === _item.hora)
+            falta.push('um horário diferente do de agora');
+          if (!_peTratada(_item)) {
+            const c = _cobranca();
+            if (!c) falta.push('a cobrança da PE');
+            if (c === COBRANCA.NAO_PAGA) {
+              const n = _el('rg-justificativa').value.trim().length;
+              if (n < OBS.MIN || n > OBS.MAX) falta.push('a justificativa (mín. ' + OBS.MIN + ')');
+            }
+            const email = _el('rg-email').value.trim();
+            if (c === COBRANCA.GERAR_PIX && email && !emailValido(email))
+              falta.push('um e-mail válido');
+          }
+          return falta;
+        }
+
+        function _atualizar() {
+          const c = _cobranca();
+          const naoTratada = !_peTratada(_item);
+          _el('rg-email-bloco').style.display =
+            naoTratada && c === COBRANCA.GERAR_PIX ? '' : 'none';
+          _el('rg-justificativa-bloco').style.display =
+            naoTratada && c === COBRANCA.NAO_PAGA ? '' : 'none';
+          _desenharGrade();
+          const falta = _faltando();
+          _el('rg-faltando').textContent = falta.length ? 'Falta: ' + falta.join(', ') + '.' : '';
+          _el('rg-revisar').disabled = falta.length > 0 || _enviando;
+        }
+
+        async function _carregarGrade(turma) {
+          _gradePedida = turma;
+          _gradeErro = '';
+          try {
+            const r = await ApiClient.get('/horarios', { turma });
+            _grade[turma] = r.horarios || [];
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            if (_gradeTurma === turma) {
+              _gradeErro = e.amigavel ? e.message : 'Não consegui carregar os horários agora.';
+            }
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _gradePedida = '';
+          }
+          if (_gradeTurma !== turma) return; // a turma mudou enquanto o pedido voltava
+          _atualizar();
+        }
+
+        function _aoMudarTurma() {
+          const turma = _turma();
+          if (turma !== _gradeTurma) {
+            _gradeTurma = turma;
+            _slot = null;
+            _data = '';
+            _gradeErro = '';
+          }
+          if (turma && !_grade[turma] && !_gradeErro && _gradePedida !== turma)
+            _carregarGrade(turma);
+          _atualizar();
+        }
+
+        function _desenharGrade() {
+          const turma = _gradeTurma;
+          const horarios = turma ? _grade[turma] : null;
+          let dica = '';
+          let slots = '';
+          let datas = '';
+          let datasDica = '';
+          if (!turma) dica = 'Escolha a turma para ver os horários.';
+          else if (_gradeErro) dica = _gradeErro;
+          else if (!horarios) dica = 'Carregando os horários da turma…';
+          else if (!horarios.length)
+            dica = 'Esta turma não tem horários cadastrados: não dá para reagendar.';
+          else {
+            dica = 'Horários da turma ' + turma.charAt(0).toUpperCase() + turma.slice(1) + ':';
+            slots = horarios
+              .map((h, i) => {
+                const ativo = _slot && _slot.diaSemana === h.diaSemana && _slot.hora === h.hora;
+                return (
+                  '<button type="button" class="ag-chip' +
+                  (ativo ? ' ativo' : '') +
+                  '" aria-pressed="' +
+                  (ativo ? 'true' : 'false') +
+                  '" data-rg="slot" data-rg-i="' +
+                  i +
+                  '">' +
+                  esc(AgendarForm.rotuloDoHorario(h)) +
+                  '</button>'
+                );
+              })
+              .join('');
+            if (_slot) {
+              datasDica = 'Próximas datas — ' + AgendarForm.rotuloDoHorario(_slot) + ':';
+              datas = AgendarForm.proximasDatas(_slot, Relogio.hojeISO(), Relogio.horaAgora(), 6)
+                .map(
+                  (iso) =>
+                    '<button type="button" class="ag-chip' +
+                    (iso === _data ? ' ativo' : '') +
+                    '" aria-pressed="' +
+                    (iso === _data ? 'true' : 'false') +
+                    '" data-rg="data" data-rg-data="' +
+                    iso +
+                    '">' +
+                    esc(dataCurta(iso)) +
+                    '</button>',
+                )
+                .join('');
+            }
+          }
+          _el('rg-grade-dica').innerHTML =
+            esc(dica) +
+            (_gradeErro
+              ? ' <button type="button" class="ag-chip" data-rg="grade-de-novo">Tentar de novo</button>'
+              : '');
+          _el('rg-slots').innerHTML = slots;
+          _el('rg-datas-dica').textContent = datasDica;
+          _el('rg-datas').innerHTML = datas;
+          _el('rg-escolhido').textContent =
+            _data && _slot ? 'Escolhido: ' + dataCurta(_data) + ' às ' + _slot.hora : '';
+        }
+
+        function _escolherHorario(i) {
+          const h = (_grade[_gradeTurma] || [])[Number(i)];
+          if (!h) return;
+          _slot = { diaSemana: h.diaSemana, hora: h.hora };
+          _data = '';
+          _atualizar();
+        }
+
+        function _escolherData(iso) {
+          if (!_slot) return;
+          _data = iso;
+          _atualizar();
+        }
+
+        function estaAberto() {
+          return _item !== null;
+        }
+
+        function abrir(item) {
+          _item = item;
+          _grade = {};
+          _gradeTurma = '';
+          _gradeErro = '';
+          _gradePedida = '';
+          _slot = null;
+          _data = '';
+          _tentativa = null;
+          _enviando = false;
+          _el('rg-titulo').textContent = 'Reagendar ' + ou(item.bebe, 'bebê sem nome');
+          _el('rg-atual').textContent =
+            'Agora: ' +
+            dataCurta(item.data) +
+            (item.hora ? ' às ' + item.hora : '') +
+            (item.turma ? ' — turma ' + item.turma : '') +
+            '.';
+          const turmaAtual = String(item.turma || '').toLowerCase();
+          _el('rg-turma').innerHTML =
+            '<option value="">— escolher —</option>' +
+            BGL_CONST.TURMAS.map(
+              (t) =>
+                '<option value="' +
+                esc(t) +
+                '"' +
+                (t === turmaAtual ? ' selected' : '') +
+                '>' +
+                esc(t.charAt(0).toUpperCase() + t.slice(1)) +
+                '</option>',
+            ).join('');
+          for (const r of document.querySelectorAll('input[name="rg-cobranca"]')) r.checked = false;
+          _el('rg-justificativa').value = '';
+          _el('rg-email').value = '';
+          const tratada = _peTratada(item);
+          _el('rg-cobranca').style.display = tratada ? 'none' : '';
+          _el('rg-pix-antigo').style.display = item.pagamentoPE === PE.PIX_GERADO ? '' : 'none';
+          _mostrar('rg-pe-tratada', tratada ? AVISO_PE_TRATADA[item.pagamentoPE] : '');
+          _mostrar('rg-erro', '');
+          _passo('form');
+          _el('reag-modal').style.display = 'flex';
+          _aoMudarTurma();
+        }
+
+        function fechar() {
+          _el('reag-modal').style.display = 'none';
+          _item = null;
+          _tentativa = null;
+          _enviando = false;
+        }
+
+        function _corpo() {
+          const c = _cobranca();
+          const corpo = { data: _data, hora: _slot.hora, turma: _turma() };
+          if (!_peTratada(_item)) {
+            corpo.cobranca = c;
+            if (c === COBRANCA.NAO_PAGA) corpo.justificativa = _el('rg-justificativa').value.trim();
+            const email = _el('rg-email').value.trim();
+            if (c === COBRANCA.GERAR_PIX && email) corpo.responsavel = { email };
+          }
+          return corpo;
+        }
+
+        const ROTULO_COBRANCA = {
+          [COBRANCA.GERAR_PIX]: 'um PIX novo será gerado no Mercado Pago e as mensagens vão à mãe',
+          [COBRANCA.PIX_ENVIADO]: 'o PIX já foi enviado por você (nenhum PIX novo)',
+          [COBRANCA.NAO_PAGA]: 'a PE não será paga',
+        };
+
+        function revisar() {
+          if (!_item || !_estaPronto()) return;
+          const corpo = _corpo();
+          const caminho =
+            '/leads/' +
+            encodeURIComponent(_item.id) +
+            '/agendamentos/' +
+            encodeURIComponent(_item.agendamentoId) +
+            '/reagendar';
+          const json = JSON.stringify(corpo);
+          // A chave identifica a INTENÇÃO: o retry do mesmo pedido a reusa; mudou um campo, é outro pedido.
+          if (!_tentativa || _tentativa.json !== json || _tentativa.caminho !== caminho) {
+            _tentativa = { json, caminho, corpo, chave: crypto.randomUUID() };
+          }
+          const de = dataCurta(_item.data) + (_item.hora ? ' às ' + _item.hora : '');
+          const para = dataCurta(corpo.data) + ' às ' + corpo.hora;
+          let texto = ou(_item.bebe, 'O bebê') + ': de ' + de + ' para ' + para + '.';
+          texto += '\nTurma: ' + corpo.turma.charAt(0).toUpperCase() + corpo.turma.slice(1) + '.';
+          if (_peTratada(_item)) texto += '\n' + AVISO_PE_TRATADA[_item.pagamentoPE];
+          else {
+            texto += '\nCobrança da PE: ' + ROTULO_COBRANCA[corpo.cobranca] + '.';
+            // O PIX novo cobra o MESMO valor do que vai ser cancelado (o servidor reaproveita o valor).
+            if (corpo.cobranca === COBRANCA.GERAR_PIX) {
+              texto +=
+                typeof _item.valorPE === 'number'
+                  ? '\nValor do PIX novo: R$ ' +
+                    _item.valorPE.toFixed(2).replace('.', ',') +
+                    ' (o mesmo do PIX atual).'
+                  : '\nO PIX novo cobra o mesmo valor do PIX atual; se ele ainda não foi gerado, vale a oferta de hoje.';
+            }
+            if (_item.pagamentoPE === PE.PIX_GERADO) {
+              texto += '\nO PIX atual da família será cancelado no Mercado Pago.';
+            }
+          }
+          texto += '\nA linha antiga é encerrada na planilha e uma linha nova é criada.';
+          _el('rg-resumo-texto').textContent = texto;
+          _el('rg-resumo-texto').style.whiteSpace = 'pre-wrap';
+          _mostrar('rg-erro', '');
+          _passo('resumo');
+        }
+
+        const ROTULO_FALHA_PIX = {
+          erro_mp: 'o Mercado Pago recusou o pedido',
+          sem_valor: 'o valor da PE não está cadastrado',
+          sem_email: 'falta o e-mail do responsável',
+          sem_linha: 'a linha ainda não está na planilha',
+          erro_planilha: 'a planilha não respondeu',
+          erro_lead: 'o CRM não gravou o PIX',
+          desligado: 'a geração de PIX está desligada',
+        };
+
+        function _mostrarResultado(resposta) {
+          const rg = resposta && resposta.reagendamento;
+          const espelho = resposta && resposta.espelho;
+          const pix = resposta && resposta.pix;
+          const linhaFalhou = espelho && !espelho.ok;
+          const anteriorPixFalhou = rg && rg.pix && !rg.pix.ok;
+          const anteriorLinhaFalhou = rg && rg.linha && !rg.linha.ok;
+          const pixFalhou = pix && !pix.ok;
+          const mensagensFalharam = pix && pix.ok && pix.mensagens && !pix.mensagens.ok;
+          const t = _tentativa;
+          let texto =
+            ou(_item.bebe, 'O bebê') +
+            ' reagendado(a) para ' +
+            dataCurta(t.corpo.data) +
+            ' às ' +
+            t.corpo.hora +
+            '.';
+          if (linhaFalhou) {
+            texto +=
+              '\n\n⚠️ O novo horário foi salvo no CRM, mas a linha NÃO entrou na planilha, e a linha antiga ainda NÃO foi encerrada. Clique em "Tentar de novo"; se continuar falhando, avise o Michel (não reagende de novo: o agendamento já existe).';
+          } else if (anteriorPixFalhou) {
+            texto +=
+              '\n\n⚠️ O PIX ANTIGO não pôde ser cancelado no Mercado Pago, então nenhum PIX novo foi gerado e a linha antiga ainda não foi encerrada (a mãe poderia pagar o antigo). Clique em "Tentar de novo"; se continuar falhando, avise o Michel.';
+          } else if (anteriorLinhaFalhou) {
+            texto +=
+              '\n\n⚠️ A linha ANTIGA não foi encerrada na planilha. Clique em "Tentar de novo"; se continuar falhando, avise o Michel.';
+          } else {
+            texto += '\nA linha antiga foi encerrada e a nova já está na planilha.';
+          }
+          if (rg && rg.pix && rg.pix.ok && rg.pix.cancelado) {
+            texto += '\nO PIX antigo foi cancelado no Mercado Pago.';
+          }
+          if (pix && pix.ok && !pix.jaSolicitado) {
+            texto += mensagensFalharam
+              ? '\n\n⚠️ O PIX novo foi gerado, mas as mensagens à mãe NÃO saíram. Mande este link a ela: ' +
+                (pix.pagamento && pix.pagamento.ticketUrl
+                  ? pix.pagamento.ticketUrl
+                  : '(sem link)') +
+                '\nNão clique em "Tentar de novo": o PIX já existe.'
+              : '\nPIX novo gerado e as mensagens (link e dados do pagamento) já foram enviadas à mãe.';
+          } else if (pixFalhou && !linhaFalhou && !anteriorPixFalhou && !anteriorLinhaFalhou) {
+            texto +=
+              '\n\n⚠️ O PIX novo NÃO foi gerado (' +
+              (ROTULO_FALHA_PIX[pix.motivo] || 'erro ao gerar o PIX') +
+              '). Clique em "Tentar de novo": o pedido é o mesmo e o sistema não cobra duas vezes.';
+          }
+          const falhou = linhaFalhou || anteriorPixFalhou || anteriorLinhaFalhou || pixFalhou;
+          const caixa = _el('rg-resultado-texto');
+          caixa.textContent = texto;
+          caixa.style.whiteSpace = 'pre-wrap';
+          caixa.className = 'aviso ' + (falhou || mensagensFalharam ? 'aviso-info' : '');
+          _el('rg-tentar-de-novo').style.display = falhou ? '' : 'none';
+          _passo('resultado');
+        }
+
+        async function confirmar() {
+          if (_enviando || !_tentativa) return;
+          const t = _tentativa;
+          _enviando = true;
+          _el('rg-confirmar').disabled = true;
+          _el('rg-tentar-de-novo').disabled = true;
+          _mostrar('rg-erro', '');
+          try {
+            const resposta = await ApiClient.post(t.caminho, t.corpo, {
+              'Idempotency-Key': t.chave,
+            });
+            _mostrarResultado(resposta);
+            if (_aoReagendar) _aoReagendar();
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            // Fica no resumo, com o texto: nada se perde e o retry reusa a chave.
+            _passo('resumo');
+            _mostrar(
+              'rg-erro',
+              e.amigavel ? e.message : 'Não consegui reagendar agora. Tente de novo.',
+            );
+            if (!e.amigavel) console.error('[CRM]', e);
+            // A lista estava velha (outra pessoa já reagendou ou o bebê já veio): recarrega a agenda.
+            if (e.motivo === 'nao_e_o_corrente' && _aoReagendar) _aoReagendar();
+          } finally {
+            _enviando = false;
+            _el('rg-confirmar').disabled = false;
+            _el('rg-tentar-de-novo').disabled = false;
+          }
+        }
+
+        function iniciar({ aoReagendar } = {}) {
+          _aoReagendar = aoReagendar || null;
+          const modal = _el('reag-modal');
+          modal.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-rg]');
+            if (!b || b.disabled) return;
+            const acao = b.dataset.rg;
+            if (acao === 'fechar') fechar();
+            else if (acao === 'revisar') revisar();
+            else if (acao === 'voltar-form') _passo('form');
+            else if (acao === 'confirmar' || acao === 'tentar-de-novo') confirmar();
+            else if (acao === 'slot') _escolherHorario(b.dataset.rgI);
+            else if (acao === 'data') _escolherData(b.dataset.rgData);
+            else if (acao === 'grade-de-novo') {
+              _gradeErro = '';
+              _aoMudarTurma();
+            }
+          });
+          _el('rg-turma').addEventListener('change', _aoMudarTurma);
+          _el('rg-passo-form').addEventListener('input', _atualizar);
+        }
+
+        return { abrir, iniciar, estaAberto };
       })();
 
       // ─── PreviaDialog ────────────────────────────────────────────────────
@@ -4163,6 +4735,23 @@
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('pe_paga', item.id, item.bebe),
+                }),
+              );
+            }
+            // Reagendar (issue #451): só enquanto o agendamento não aconteceu e tem identidade (a
+            // Function fecha a linha antiga pelo UUID). Flag de UI própria, separada da de escrita.
+            if (
+              escritaLigada &&
+              flagLiberada(BGL_CONST.CRM.FLAG_REAGENDAR_TELA) &&
+              item.agendamentoId &&
+              !item.compareceu &&
+              !item.fechou
+            ) {
+              partes.push(
+                botaoAcao('reagendar', '📅 Reagendar', {
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: ReagendarDialog.estaAberto(),
                 }),
               );
             }
@@ -5811,6 +6400,7 @@
           PePagaDialog.iniciar();
           // Depois de criar, a agenda atrás do diálogo se atualiza sozinha.
           AgendarDialog.iniciar({ aoCriar: atualizarAgora });
+          ReagendarDialog.iniciar({ aoReagendar: atualizarAgora });
           PreviaDialog.iniciar();
           document.getElementById('lead-modal').addEventListener('click', (e) => {
             if (e.target.id === 'lead-modal') fecharLead();

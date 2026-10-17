@@ -217,8 +217,38 @@ const BGL_CRM_AJUDA = {
           <li><b>"O PIX NÃO foi gerado":</b> o agendamento e a linha estão salvos, só o PIX não saiu (o Mercado Pago recusou, por exemplo). Clique em <b>🔁 Tentar de novo</b>: ele gera o PIX de novo, <b>sem criar outro agendamento e sem cobrar duas vezes</b>. Se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre.</li>
           <li><b>"Não respondeu a tempo" ou "a planilha/o CRM não gravou":</b> o Mercado Pago, a planilha ou o CRM demorou ou falhou no meio. <b>Nada foi enviado à mãe</b> até terminar tudo. Aguarde alguns segundos e clique em <b>🔁 Tentar de novo</b>: ele termina o que faltou e o sistema <b>não cobra duas vezes</b>.</li>
           <li><b>"O PIX foi gerado, mas as mensagens NÃO saíram":</b> o PIX existe. A tela mostra o <b>link</b>: mande-o à mãe pelo WhatsApp. <b>Não use Tentar de novo.</b></li>
-          <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. Reagendar ainda é feito na planilha, e o CRM ainda não faz.</li>
+          <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. O botão <b>📅 Reagendar</b> do próprio agendamento na agenda vai trocar o horário (veja o capítulo seguinte), mas <b>ainda está em teste e só aparece na homologação</b>: por enquanto, reagende pela planilha, como hoje.</li>
           <li>Na planilha, a linha nova mostra seu e-mail na coluna <b>agendadoPor</b>, no lugar do nome genérico de antes.</li>
+        </ul>
+      `,
+    },
+    {
+      id: 'reagendar',
+      titulo: 'Reagendar uma Primeira Experiência',
+      desde: '3.27',
+      html: `
+        <div class="aviso aviso-info"><b>Este botão ainda está em teste.</b> Por enquanto ele só aparece na versão de homologação (endereço com <code>/hml/</code>), e a homologação usa a <b>mesma planilha</b> da produção: a linha criada lá é real. Use só telefone de teste e peça ao Michel para apagar a linha depois. No sistema de verdade, continue reagendando como hoje até o Michel liberar.</div>
+        <p>O botão <b>📅 Reagendar</b> aparece em cada agendamento da agenda (Painel do Dia, Semana e Mês) <b>enquanto a criança ainda não veio</b> e o agendamento tem identidade na planilha. Ele troca o horário da Primeira Experiência: cria a linha nova, encerra a antiga e cuida do PIX da PE sozinho.</p>
+        <ol>
+          <li>Clique em <b>📅 Reagendar</b>. A janela mostra o horário de agora.</li>
+          <li><b>Escolha o novo horário</b> na grade da turma, como no ➕ Agendar: primeiro o dia e a hora, depois a data. A turma já vem escolhida e pode ser trocada.</li>
+          <li><b>A PE:</b>
+            <ul>
+              <li>Se a PE <b>já está paga</b>, o pagamento acompanha o novo horário e <b>nada é cobrado de novo</b>. A janela só avisa; você não escolhe nada.</li>
+              <li>Se a PE foi <b>enviada por PIX à mão</b> ou está <b>dispensada</b>, continua do mesmo jeito.</li>
+              <li>Se ainda <b>falta pagar</b> (PIX gerado ou esperando), você escolhe, <b>sem opção marcada de início</b>: gerar um PIX novo (o PIX atual é cancelado no Mercado Pago e as mensagens do PIX novo saem à mãe), dizer que o PIX já foi enviado (o atual também é cancelado), ou dizer que ela não vai pagar (exige justificativa).</li>
+            </ul>
+          </li>
+          <li>Clique em <b>Revisar e confirmar</b>, confira o resumo e clique em <b>✅ Confirmar e reagendar</b>. Reagendar cria uma linha e encerra outra, e a tela não desfaz.</li>
+        </ol>
+        <h3>Se algo der errado</h3>
+        <ul>
+          <li><b>"A linha NÃO entrou na planilha":</b> o novo horário está salvo no CRM, mas a planilha não recebeu a linha, e a antiga ainda não foi encerrada. Clique em <b>🔁 Tentar de novo</b>. <b>Não reagende de novo.</b></li>
+          <li><b>"O PIX ANTIGO não pôde ser cancelado":</b> nenhum PIX novo foi gerado e a linha antiga continua aberta, porque a mãe poderia pagar o antigo. Clique em <b>🔁 Tentar de novo</b>; se continuar, avise o Michel.</li>
+          <li><b>"O PIX novo NÃO foi gerado":</b> o horário e a linha estão salvos, só o PIX não saiu. Clique em <b>🔁 Tentar de novo</b>: não cobra duas vezes.</li>
+          <li><b>"O agendamento mostrado não é mais o ativo":</b> alguém já reagendou ou a criança já veio. A agenda é recarregada; confira e tente de novo se ainda fizer sentido.</li>
+          <li><b>Se o sistema pedir o e-mail da mãe</b> para gerar o PIX, volte e preencha o campo de e-mail.</li>
+          <li>Erro de conexão: o pedido fica na janela, com tudo o que você escolheu. Clique em Confirmar de novo: o sistema reconhece que é o mesmo pedido.</li>
         </ul>
       `,
     },
@@ -496,6 +526,18 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.27',
+      data: '2026-10-16',
+      mudancas: {
+        adicionado: [
+          'Botão 📅 Reagendar em cada agendamento da agenda (#451): escolhe o novo horário na grade da turma, cria a linha nova, encerra a antiga e cuida do PIX da PE com a mesma regra da Alice (PIX antigo cancelado, PE já paga acompanha o novo horário e nada é cobrado de novo). Em teste: por enquanto só aparece na versão de homologação (/hml/), que usa a mesma planilha da produção — use só telefone de teste.',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.26',
       data: '2026-10-15',
