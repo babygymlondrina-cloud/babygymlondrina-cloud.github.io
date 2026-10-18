@@ -199,7 +199,7 @@ const BGL_CRM_AJUDA = {
         <p>O botão <b>➕ Agendar</b> marca a Primeira Experiência de uma família que você captou e <b>cria a linha na planilha sozinho</b>, no lugar certo. Acabou o "colar a linha": o sistema grava, e você só confere.</p>
         <ol>
           <li><b>Procure a família primeiro.</b> Digite o <b>telefone</b> ou o <b>nome</b> (da mãe ou do bebê) e clique em 🔎 Buscar. Se a família aparecer, clique em <b>Usar esta família</b>: o formulário já vem com o cadastro dela. <b>Só cadastre uma família nova se ela não estiver na lista</b>: o botão para isso diz "Nenhuma destas é a família", justamente para ninguém criar uma família repetida só porque ela está com outro número.</li>
-          <li><b>Preencha o formulário.</b> Obrigatórios: telefone e responsável (família nova), nome e nascimento do bebê, a <b>turma</b>, o <b>horário</b> da Primeira Experiência e a <b>cobrança da PE</b>. A <b>turma é sugerida pelo nascimento</b> (Pitocos 2 a 6 meses, Sapecas 6 a 12, Exploradores 12 a 18, Artistas 18 meses a 2 anos, Atletas 2 a 4 anos). É só uma sugestão: se a turma que cabe no horário for outra, troque, e a sugestão não volta a mexer. Fora das faixas, escolha você.</li>
+          <li><b>Preencha o formulário.</b> Os <b>7 dados da família são obrigatórios</b>, para família nova ou antiga, e o sistema <b>não deixa agendar</b> se algum faltar (nem pela tela, nem pela Alice): <b>nome do responsável, e-mail, nome completo do bebê, data de nascimento, se possui alguma alergia</b> (escreva "Nenhuma" se não tiver), <b>se é prematuro(a)</b> (Sim ou Não) e <b>como chegou até nós</b>. Se o cadastro antigo da família não tiver o e-mail ou o responsável, o campo vem liberado para você completar. Além disso: telefone (família nova), a <b>turma</b>, o <b>horário</b> da Primeira Experiência e a <b>cobrança da PE</b>. A <b>turma é sugerida pelo nascimento</b> (Pitocos 2 a 6 meses, Sapecas 6 a 12, Exploradores 12 a 18, Artistas 18 meses a 2 anos, Atletas 2 a 4 anos). É só uma sugestão: se a turma que cabe no horário for outra, troque, e a sugestão não volta a mexer. Fora das faixas, escolha você.</li>
           <li><b>Escolha o horário da turma.</b> Não se digita data nem hora: com a turma escolhida, aparecem os <b>horários dela</b> (por exemplo "Terça 11:00" e "Quinta 14:00"). Clique no horário e a tela lista as <b>próximas datas</b> que caem naquele dia da semana; clique na data. A Primeira Experiência <b>só pode ser marcada dentro dos horários cadastrados</b>, nunca fora (o sistema recusa). A lista mostra os horários da turma, não as vagas: confira a lotação como sempre. Se mudar a turma, escolha o horário de novo. Se a lista disser que não conseguiu carregar, clique em "Tentar de novo".</li>
           <li><b>Escolha a cobrança da PE.</b> Não vem nada marcado de propósito:
             <ul>
@@ -528,6 +528,20 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.29',
+      data: '2026-10-18',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'Os 7 dados do agendamento passam a ser obrigatórios, pela tela e pela Alice (#454): nome do responsável, e-mail, nome completo do bebê, data de nascimento, se possui alguma alergia, se é prematuro(a) e como chegou até nós. A tela mostra o que falta antes de liberar o Revisar; a Alice recebe a lista do que faltou e pede à mãe. O nome do WhatsApp não substitui mais o nome do responsável, e o e-mail padrão do sistema não substitui o da mãe. O reagendar pela tela não pergunta nada disso (usa o cadastro da família).',
+        ],
+        corrigido: [
+          'No ➕ Agendar, o primeiro clique no horário se perdia quando você acabava de digitar em outro campo (como alergia ou "como chegou até nós"): era preciso clicar duas vezes (#454).',
+        ],
+        removido: [],
+      },
+    },
     {
       versao: '3.28',
       data: '2026-10-18',

@@ -1330,7 +1330,7 @@
                 <input type="text" id="ag-responsavel" class="pe-input" autocomplete="off" />
               </div>
               <div class="ag-campo ag-inteiro">
-                <label class="pe-rotulo" for="ag-email">E-mail</label>
+                <label class="pe-rotulo" for="ag-email">E-mail *</label>
                 <input
                   type="text"
                   id="ag-email"
@@ -1350,11 +1350,11 @@
                 <select id="ag-bebe-select" class="pe-input"></select>
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-bebe">Nome do bebê *</label>
+                <label class="pe-rotulo" for="ag-bebe">Nome completo do bebê *</label>
                 <input type="text" id="ag-bebe" class="pe-input" autocomplete="off" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-nascimento">Nascimento *</label>
+                <label class="pe-rotulo" for="ag-nascimento">Data de nascimento *</label>
                 <input type="date" id="ag-nascimento" class="pe-input" />
               </div>
               <div class="ag-campo">
@@ -1388,15 +1388,21 @@
                 <input type="hidden" id="ag-hora" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-como">Como conheceu</label>
+                <label class="pe-rotulo" for="ag-como">Como chegou até nós *</label>
                 <input type="text" id="ag-como" class="pe-input" autocomplete="off" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-alergia">Alergia</label>
-                <input type="text" id="ag-alergia" class="pe-input" autocomplete="off" />
+                <label class="pe-rotulo" for="ag-alergia">Possui alguma alergia? *</label>
+                <input
+                  type="text"
+                  id="ag-alergia"
+                  class="pe-input"
+                  autocomplete="off"
+                  placeholder='Escreva "Nenhuma" se não tiver'
+                />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-prematuro">Prematuro</label>
+                <label class="pe-rotulo" for="ag-prematuro">É prematuro(a)? *</label>
                 <select id="ag-prematuro" class="pe-input">
                   <option value="">—</option>
                   <option value="Não">Não</option>
@@ -2971,7 +2977,8 @@
             '- data — AAAA-MM-DD, o dia da Primeira Experiência',
             '- hora — HH:MM, 24 horas',
             '- turma — uma de: ' + BGL_CONST.TURMAS.join(', '),
-            '- email, comoConheceu, alergia — texto',
+            '- email, comoConheceu — texto',
+            '- alergia — texto ("Nenhuma" se a mãe disse que não tem)',
             '- prematuro — true ou false',
             '',
             'Regras:',
@@ -3033,18 +3040,22 @@
 
         /**
          * O que ainda falta para poder revisar — rótulos em linguagem da recepção.
-         * `ctx.novo`: família nova (exige telefone e responsável); `ctx.nascimentoConhecido`:
-         * o lead já tem o nascimento do bebê escolhido.
+         * `ctx.novo`: família nova (exige também o telefone).
          */
         function faltando(f, ctx) {
           const falta = [];
           if (ctx.novo && !normalizeTelefone(f.telefone)) falta.push('telefone válido');
-          if (ctx.novo && !f.responsavel.trim()) falta.push('responsável');
-          // E-mail digitado (campo editável: só família nova) tem de estar no padrão — é o pagador do PIX
-          // e o Mercado Pago recusa o resto (issue #433). Vazio é permitido; o PIX o exige no servidor.
-          if (ctx.novo && f.email.trim() && !emailValido(f.email)) falta.push('e-mail válido');
-          if (!f.bebeNome.trim()) falta.push('nome do bebê');
-          if (!f.nascimento && !ctx.nascimentoConhecido) falta.push('nascimento');
+          // Os 7 dados do agendamento são OBRIGATÓRIOS (issue #454), para família nova ou antiga: o servidor
+          // recusa o pedido sem qualquer um deles. O e-mail tem de estar no padrão — é o pagador do PIX
+          // e o Mercado Pago recusa o resto (issue #433).
+          if (!f.responsavel.trim()) falta.push('responsável');
+          if (!f.email.trim()) falta.push('e-mail');
+          else if (!emailValido(f.email)) falta.push('e-mail válido');
+          if (!f.bebeNome.trim()) falta.push('nome completo do bebê');
+          if (!f.nascimento) falta.push('nascimento');
+          if (!f.alergia.trim()) falta.push('alergia (escreva "Nenhuma" se não tiver)');
+          if (!f.prematuro) falta.push('prematuro (sim ou não)');
+          if (!f.comoConheceu.trim()) falta.push('como chegou até nós');
           if (!f.turma) falta.push('turma');
           if (!f.data || !f.hora) falta.push('horário');
           if (!f.cobranca) falta.push('cobrança da PE');
@@ -3094,14 +3105,11 @@
         /** O corpo do `POST /leads/{id}/agendamentos` (o servidor repete toda a validação). */
         function montarCorpo(f, ctx) {
           return {
-            // Família que já existe: o cadastro dela não é reescrito por este pedido.
-            // `familiaNova` deixa o servidor recusar (409) um telefone que já é de um lead.
-            ...(ctx.novo
-              ? {
-                  familiaNova: true,
-                  responsavel: { nome: f.responsavel.trim(), email: f.email.trim() },
-                }
-              : {}),
+            // `familiaNova` deixa o servidor recusar (409) um telefone que já é de um lead. O responsável e
+            // o e-mail VÃO sempre (são 2 dos 7 obrigatórios, issue #454): para a família que já existe os
+            // campos vêm do cadastro dela e só se completa o que faltava.
+            ...(ctx.novo ? { familiaNova: true } : {}),
+            responsavel: { nome: f.responsavel.trim(), email: f.email.trim() },
             bebe: {
               nome: f.bebeNome.trim(),
               nascimento: f.nascimento,
@@ -3286,7 +3294,6 @@
           const bebe = _bebeDoLead(f.bebeNome);
           return {
             novo: !_lead,
-            nascimentoConhecido: !!(bebe && bebe.nascimento),
             ofertasCarregadas: !!_ofertas,
             ofertasPendentes: !_ofertas && !_ofertasErro, // ainda carregando: não deixa passar sem o valor
             peOfertaRotulo: (() => {
@@ -3384,7 +3391,7 @@
           );
 
           const ctxAtual = _ctx(f);
-          const emailRuim = ctxAtual.novo && f.email.trim() !== '' && !emailValido(f.email);
+          const emailRuim = f.email.trim() !== '' && !emailValido(f.email);
           _mostrar(
             'ag-email-dica',
             emailRuim
@@ -3459,6 +3466,14 @@
           }
         }
 
+        // Último HTML pintado em cada bloco da grade (ver `_desenharGrade`).
+        const _pintado = {};
+        function _pintar(id, html) {
+          if (_pintado[id] === html) return;
+          _pintado[id] = html;
+          _el(id).innerHTML = html;
+        }
+
         function _desenharGrade() {
           const turma = _gradeTurma;
           const horarios = turma ? _grade[turma] : null;
@@ -3508,14 +3523,19 @@
                 .join('');
             }
           }
-          _el('ag-grade-dica').innerHTML =
+          // Só repinta o que MUDOU: o `change` de um campo de texto dispara no blur, que acontece no
+          // `mousedown` do botão seguinte; trocar o `innerHTML` ali joga o botão fora antes do `mouseup`
+          // e o PRIMEIRO clique no horário se perde (issue #454: mais campos de texto antes da grade).
+          _pintar(
+            'ag-grade-dica',
             esc(dica) +
-            (_gradeErro
-              ? ' <button type="button" class="ag-chip" data-ag="grade-de-novo">Tentar de novo</button>'
-              : '');
-          _el('ag-slots').innerHTML = slots;
+              (_gradeErro
+                ? ' <button type="button" class="ag-chip" data-ag="grade-de-novo">Tentar de novo</button>'
+                : ''),
+          );
+          _pintar('ag-slots', slots);
           _el('ag-datas-dica').textContent = datasDica;
-          _el('ag-datas').innerHTML = datas;
+          _pintar('ag-datas', datas);
           const d = _el('ag-data').value;
           const h = _el('ag-hora').value;
           _el('ag-escolhido').textContent = d && h ? 'Escolhido: ' + dataCurta(d) + ' às ' + h : '';
@@ -3596,6 +3616,7 @@
           _ofertasErro = false;
           _avisoOferta = '';
           _el('ag-pe-oferta').innerHTML = '';
+          for (const k of Object.keys(_pintado)) delete _pintado[k];
           _montarTurmas();
           _zerarFormulario();
           _el('ag-busca').value = '';
@@ -3691,10 +3712,12 @@
             ou(lead.telefone, 'sem telefone');
           _el('ag-telefone').value = lead.telefone || '';
           _el('ag-telefone').readOnly = true;
+          // Responsável e e-mail são obrigatórios: se o cadastro antigo não os tem, a equipe os completa.
           _el('ag-responsavel').value = (lead.responsavel && lead.responsavel.nome) || '';
-          _el('ag-responsavel').readOnly = true;
+          _el('ag-responsavel').readOnly = !!_el('ag-responsavel').value;
           _el('ag-email').value = (lead.responsavel && lead.responsavel.email) || '';
-          _el('ag-email').readOnly = true;
+          // E-mail torto do cadastro antigo também se corrige aqui (o Mercado Pago o recusaria).
+          _el('ag-email').readOnly = !!_el('ag-email').value && emailValido(_el('ag-email').value);
           _el('ag-como').value = lead.comoConheceu || '';
           const bebes = lead.bebes || [];
           _el('ag-bebe-escolha').style.display = bebes.length ? 'flex' : 'none';
