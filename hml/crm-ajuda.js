@@ -67,7 +67,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Cancelar</td><td>DadosAgendamento, coluna T (status de confirmação = cancelado)</td></tr>
             <tr><td>Travar ou destravar recuperação</td><td>LeadsFrios, coluna A (Travar)</td></tr>
             <tr><td>Anotações pós-PE</td><td>DadosAgendamento, colunas Y, Z e AA</td></tr>
-            <tr><td>💰 Marcar PE paga</td><td>DadosAgendamento, colunas AB (pago), AN (valor), AO (seu e-mail) e AP (o motivo)</td></tr>
+            <tr><td>💰 Marcar PE paga</td><td>DadosAgendamento, colunas AB (pago), AN (valor), AO (seu e-mail) e AP (o motivo); e a T passa de "aguardando_pagamento" para "a confirmar"</td></tr>
           </tbody>
         </table></div>
         <p>O caminho contrário também existe: o que muda na planilha chega ao CRM automaticamente, em até cerca de 30 minutos.</p>
@@ -132,7 +132,7 @@ const BGL_CRM_AJUDA = {
             <tr><td><b>Marcar presença</b></td><td>Registra que a família compareceu (planilha, coluna V) e abre a pergunta sobre a proposta (próxima seção). Depois vira "✓ Presença" e não dá para desmarcar pela tela: se marcou errado, avise o Michel. Aparece nas três faixas, porque a presença é marcada quando a mãe chega, dentro do horário corrente.</td></tr>
             <tr><td><b>Marcar fechou</b></td><td>Registra que a família fechou o plano (coluna X) e <b>manda a mensagem de boas-vindas pelo WhatsApp</b>. Só se marca uma vez; depois vira "✓ Fechou". Quem fechou continua na lista, com o selo.</td></tr>
             <tr><td><b>➕ Agendar</b></td><td>Fica no topo da tela, ao lado de ↻ Atualizar, e só aparece quando o Michel libera. Cria a Primeira Experiência de uma família e a linha na planilha. Veja a seção "Agendar uma Primeira Experiência".</td></tr>
-            <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
+            <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP, e a T de "aguardando_pagamento" para "a confirmar"). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
             <tr><td><b>Cancelar</b></td><td>Cancela o agendamento (coluna T). Pede confirmação ("Cancelar o agendamento de [bebê]? Ele sai da agenda."), por ser a ação mais difícil de desfazer.</td></tr>
             <tr><td><b>📄 Proposta</b></td><td>Só na faixa "Já passou". Abre o detalhe do lead, de onde sai a proposta.</td></tr>
             <tr><td><b>📄 Detalhe</b></td><td>Nas tabelas (Semana, Mês, Frios, lista do rodapé do Painel). Abre o detalhe do lead.</td></tr>
@@ -183,10 +183,12 @@ const BGL_CRM_AJUDA = {
           <li><b>PIX do sistema ainda pendente:</b> se já existe um PIX gerado para essa PE e ele <b>ainda não venceu</b>, o diálogo avisa. Se a família ainda puder pagá-lo, o dinheiro entra duas vezes: peça para ela ignorar o PIX antigo. PIX já vencido não pode mais ser pago, então não há aviso.</li>
           <li><b>Já confirmada pelo Mercado Pago:</b> não dá para marcar à mão, porque o pagamento já foi confirmado pelo sistema. A tela avisa e nada muda.</li>
           <li><b>Digitou o valor errado?</b> Depois de marcada, a tela não oferece corrigir (o botão some). Avise o Michel, que corrige.</li>
+          <li><b>A confirmação do dia anterior:</b> se a família estava como "aguardando pagamento" (a mensagem da véspera cobraria a PE), ela passa sozinha para "a confirmar", na planilha e no CRM, e <b>não recebe mais o aviso para pagar</b>. Confirmações já "confirmado" ou "cancelado" não mudam.</li>
+          <li>O botão mostra <b>⏳ Gravando na planilha…</b> até o servidor responder (alguns segundos): aguarde o diálogo fechar.</li>
           <li>Se o servidor recusar, o diálogo <b>continua aberto</b> com o motivo em vermelho e o que você digitou fica lá.</li>
         </ul>
-        <div class="aviso aviso-info"><b>Se vier o aviso "não atualizou a planilha":</b> a PE foi salva no CRM, mas a planilha ainda está com o estado antigo, e <b>na próxima sincronização (até cerca de 30 minutos) a PE volta a "não paga"</b>. Digite você mesma na linha do bebê: <b>AB = pago</b>, <b>AN</b> = o valor, <b>AO</b> = seu e-mail e <b>AP</b> = o motivo. Depois disso nada mais se perde.</div>
-        <p><b>Sem o botão?</b> Agendamentos antigos, sem identificação da linha, não têm o botão 💰: a marcação não teria onde ser gravada na planilha e voltaria sozinha. Nesses, marque direto na planilha (AB, AN, AO e AP).</p>
+        <div class="aviso aviso-info"><b>Se vier o aviso "não atualizou a planilha":</b> a PE foi salva no CRM, mas a planilha ainda está com o estado antigo, e <b>na próxima sincronização (até cerca de 30 minutos) a PE volta a "não paga"</b>. Digite você mesma na linha do bebê: <b>AB = pago</b>, <b>AN</b> = o valor, <b>AO</b> = seu e-mail e <b>AP</b> = o motivo; e, se a coluna <b>T</b> estiver como <b>aguardando_pagamento</b>, troque para <b>a confirmar</b> (senão a mãe recebe o aviso para pagar na véspera). Depois disso nada mais se perde.</div>
+        <p><b>Sem o botão?</b> Agendamentos antigos, sem identificação da linha, não têm o botão 💰: a marcação não teria onde ser gravada na planilha e voltaria sozinha. Nesses, marque direto na planilha (AB, AN, AO e AP) e, se a T estiver como aguardando_pagamento, troque para a confirmar.</p>
       `,
     },
     {
@@ -434,7 +436,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Q</td><td>resumo (da IA)</td><td>Guardado</td><td>Nenhuma tela mostra; para ler o resumo da conversa, só na planilha.</td></tr>
             <tr><td>R</td><td>humorDoCliente</td><td>Guardado</td><td>Nenhuma tela mostra.</td></tr>
             <tr><td>S</td><td>confirmacaoEnviada</td><td>Guardado</td><td>Não aparece; a tela mostra o resultado da confirmação (coluna T), não quando foi enviada.</td></tr>
-            <tr><td>T</td><td>statusConfirmacao</td><td>Aparece e escreve</td><td>Etiqueta de confirmação (Painel, tabelas, detalhe) e coluna Status do detalhe. "cancelado" e "reagendado" tiram o agendamento das listas do dia. O botão Cancelar grava aqui.</td></tr>
+            <tr><td>T</td><td>statusConfirmacao</td><td>Aparece e escreve</td><td>Etiqueta de confirmação (Painel, tabelas, detalhe) e coluna Status do detalhe. "cancelado" e "reagendado" tiram o agendamento das listas do dia. O botão Cancelar grava aqui, e o 💰 Marcar PE paga troca "aguardando_pagamento" por "a confirmar".</td></tr>
             <tr><td>U</td><td>agendadoPor</td><td>Escreve</td><td>Só nas linhas criadas pelo botão ➕ Agendar: o e-mail de quem criou. Nas demais, o CRM não a usa.</td></tr>
             <tr><td>V</td><td>Compareceu</td><td>Aparece e escreve</td><td>"✓ Presença", chip Compareceu do Mês e etiqueta no detalhe. Marcar presença grava aqui.</td></tr>
             <tr><td>W</td><td>PesquisaEnviada</td><td>Aparece</td><td>Chip Pesquisa enviada do Mês (só o envio, não a resposta).</td></tr>
@@ -526,6 +528,20 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.28',
+      data: '2026-10-18',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'Ao marcar a PE como paga à mão, o botão passa a mostrar "Gravando na planilha…" até o servidor responder (#455).',
+        ],
+        corrigido: [
+          'Marcar a PE como paga à mão agora tira a família de "aguardando pagamento": a confirmação passa para "a confirmar", na planilha e no CRM. Antes ela continuava "aguardando pagamento" e a mãe recebia, na véspera, o aviso para pagar uma PE que já tinha pago (#455). Linhas já marcadas antes da correção precisam ser ajustadas à mão na planilha.',
+        ],
+        removido: [],
+      },
+    },
     {
       versao: '3.27',
       data: '2026-10-16',

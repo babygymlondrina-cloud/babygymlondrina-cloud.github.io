@@ -2839,6 +2839,11 @@
               : tamanho + '/' + MAX;
           _el('pe-confirmar').disabled =
             _enviando || valor === null || tamanho < MIN || tamanho > MAX;
+          // O servidor só responde depois de gravar a planilha (alguns segundos, mais na 1ª chamada do
+          // dia): sem isso o diálogo parece travado e a lista atrás dele já mudou (issue #455).
+          _el('pe-confirmar').textContent = _enviando
+            ? '⏳ Gravando na planilha…'
+            : '💰 Marcar como paga';
         }
 
         // PIX do sistema que a família ainda pode pagar (issue #405): `pix_gerado` e
