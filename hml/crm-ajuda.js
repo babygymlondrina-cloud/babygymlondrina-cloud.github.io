@@ -315,7 +315,9 @@ const BGL_CRM_AJUDA = {
           <li>O mês inteiro numa tabela só, com a coluna <b>Data</b> primeiro. As setas <b>◀ ▶</b> trocam o mês.</li>
           <li>Chips de filtro: <b>Compareceu</b>, <b>Fechou</b>, <b>PE paga</b>, <b>Confirmado</b> e <b>Pesquisa enviada</b> (a pesquisa de satisfação já foi enviada; a resposta não aparece).</li>
           <li>Os chips se combinam: a linha precisa atender a todos os chips marcados. O número em cada chip é sempre o total do mês, não do filtro.</li>
-          <li>Mesmos botões de ação da Semana.</li>
+          <li>Cada agendamento é <b>uma linha fina</b>, como na planilha, e as ações são só o <b>símbolo</b>. Passe o mouse (ou use o Tab) sobre o ícone para ler o nome da ação. Cada ação fica sempre na mesma coluna: 🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 Marcar PE paga, 📅 Reagendar, 🚫 Cancelar e 💬 Conversa.</li>
+          <li>✅ e 🤝 ficam <b>verdes e sem clique</b> quando a presença ou o fechamento já foram marcados. Nomes compridos são cortados com reticências; o nome inteiro aparece ao passar o mouse.</li>
+          <li>As ações são as mesmas da Semana, só que sem o texto no botão. No celular não existe "passar o mouse": use o Painel do Dia ou a Semana, que mantêm o texto.</li>
         </ul>
       `,
     },
@@ -528,6 +530,20 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.31',
+      data: '2026-10-20',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'Aba Mês em linha fina, como a planilha: as ações viram só o símbolo (🔍 ✅ 🤝 📤 💰 📅 🚫 💬), com o nome no tooltip ao passar o mouse, cada uma sempre na mesma coluna. Painel do Dia e Semana não mudam (#465).',
+        ],
+        corrigido: [
+          'Na aba Mês, os botões não estouram mais a largura da tabela nem quebram em várias linhas.',
+        ],
+        removido: [],
+      },
+    },
     {
       versao: '3.30',
       data: '2026-10-20',

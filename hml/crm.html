@@ -483,6 +483,124 @@
         background: var(--ok-bg);
         color: var(--ok);
       }
+      /* Aba Mês em linha fina, como a planilha (issue #465): ações só em ícone,
+         com o texto no tooltip (hover e foco de teclado). O tooltip abre PARA
+         CIMA e alinhado à direita do botão: o `.tabela-wrap` tem overflow e
+         cortaria um balão para baixo ou para fora da última coluna. */
+      .tabela-compacta table {
+        font-size: 0.75rem;
+      }
+      .tabela-compacta th,
+      .tabela-compacta td {
+        padding: 0.2rem 0.35rem;
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      /* A tabela do Mês tem 9 colunas e não cabe nos 900px do `main`: nessa aba o container
+         abre mais (a rolagem horizontal escondia Data e Hora justo ao chegar nos ícones). */
+      main:has(.tabela-compacta) {
+        max-width: 1100px;
+      }
+      .tabela-compacta .cel-corte {
+        max-width: 8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* Cada ação tem a sua COLUNA FIXA: linha sem Enviar proposta (ou sem Detalhe) deixa o
+         buraco no lugar, e o 💬 fica no mesmo x em todas as linhas, como numa planilha.
+         Sem o Reagendar liberado a coluna dele some (`sem-reagendar`). */
+      .tabela-compacta .acoes {
+        display: grid;
+        grid-template-columns: repeat(8, 1.5rem);
+        gap: 0.1rem;
+        margin-top: 0;
+      }
+      .tabela-compacta.sem-reagendar .acoes {
+        grid-template-columns: repeat(7, 1.5rem);
+      }
+      .tabela-compacta .acoes > * {
+        grid-row: 1;
+      }
+      .tabela-compacta [data-lead].btn-icone {
+        grid-column: 1;
+      }
+      .tabela-compacta [data-acao='compareceu'],
+      .tabela-compacta .slot-icone[data-slot='compareceu'] {
+        grid-column: 2;
+      }
+      .tabela-compacta [data-acao='fechou'],
+      .tabela-compacta .slot-icone[data-slot='fechou'] {
+        grid-column: 3;
+      }
+      .tabela-compacta [data-acao='proposta'] {
+        grid-column: 4;
+      }
+      .tabela-compacta [data-acao='pe_paga'] {
+        grid-column: 5;
+      }
+      .tabela-compacta [data-acao='reagendar'] {
+        grid-column: 6;
+      }
+      .tabela-compacta [data-acao='cancelado'] {
+        grid-column: 7;
+      }
+      .tabela-compacta a.btn-icone {
+        grid-column: 8;
+      }
+      .tabela-compacta.sem-reagendar [data-acao='cancelado'] {
+        grid-column: 6;
+      }
+      .tabela-compacta.sem-reagendar a.btn-icone {
+        grid-column: 7;
+      }
+      .btn-icone,
+      .slot-icone {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.4rem;
+        padding: 0;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        line-height: 1;
+      }
+      .slot-icone {
+        border: 1.5px dashed var(--line);
+        color: var(--text-light);
+        opacity: 0.55;
+      }
+      .slot-icone.marcado {
+        border: 1.5px solid var(--ok);
+        background: var(--ok-bg);
+        opacity: 1;
+      }
+      .btn-icone[data-acao='cancelado'] {
+        border-color: var(--danger);
+      }
+      .btn-icone[data-acao='cancelado']:hover:not(:disabled) {
+        background: var(--danger);
+      }
+      .btn-icone[data-tip]:hover::after,
+      .btn-icone[data-tip]:focus-visible::after,
+      .slot-icone[data-tip]:hover::after,
+      .slot-icone[data-tip]:focus-visible::after {
+        content: attr(data-tip);
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 0.3rem);
+        z-index: 5;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        background: var(--purple-deep);
+        color: var(--white);
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+      }
       /* ─── BADGES DE ESTADO ─── */
       .badge {
         display: inline-block;
@@ -4640,17 +4758,23 @@
        * `pendente` desabilita o botão enquanto o PATCH está no ar (evita duplo
        * clique). Usado só atrás de `BGL_CONST.CRM.FLAG_ACOES_ESCRITA`.
        */
-      function botaoAcao(acao, rotulo, { id, bebe, pendente }) {
+      // `icone` (modo compacto da aba Mês, issue #465): o botão vira só o símbolo, e o
+      // rótulo (sem o emoji da frente) vai para o tooltip e o `aria-label`.
+      function botaoAcao(acao, rotulo, { id, bebe, pendente, icone }) {
+        const texto = icone ? rotulo.replace(/^[^\p{L}]+/u, '') : rotulo;
         return (
-          '<button type="button" class="btn-acao" data-acao="' +
+          '<button type="button" class="btn-acao' +
+          (icone ? ' btn-icone' : '') +
+          '" data-acao="' +
           esc(acao) +
           '" data-id="' +
           esc(id) +
           '"' +
           (bebe ? ' data-bebe="' + esc(bebe) + '"' : '') +
+          (icone ? ' data-tip="' + esc(texto) + '" aria-label="' + esc(texto) + '"' : '') +
           (pendente ? ' disabled' : '') +
           '>' +
-          esc(rotulo) +
+          esc(icone || rotulo) +
           '</button>'
         );
       }
@@ -4671,13 +4795,40 @@
           );
         }
 
+        // Símbolos do modo compacto (issue #465). Texto vem do próprio rótulo do botão.
+        const ICONES_COMPACTOS = {
+          detalhe: '🔍',
+          compareceu: '✅',
+          fechou: '🤝',
+          proposta: '📤',
+          pe_paga: '💰',
+          reagendar: '📅',
+          cancelado: '🚫',
+          conversa: '💬',
+        };
+
         /**
          * Um slot de leitura: mostra o booleano que a API devolve, sem ação
          * nenhuma. É o que a tela desenha com a flag da T6 desligada, e
          * também o que ela mostra quando a ação já foi feita (não existe
          * evento para "desmarcar" `compareceu`/`fechou` — só se marca uma vez).
          */
-        function slotT6(rotulo, marcado) {
+        function slotT6(rotulo, marcado, icone, tip, chave) {
+          if (icone) {
+            return (
+              '<span class="slot-icone' +
+              (marcado ? ' marcado' : '') +
+              '" data-slot="' +
+              esc(chave) +
+              '" role="img" tabindex="0" data-tip="' +
+              esc(tip) +
+              '" aria-label="' +
+              esc(tip) +
+              '">' +
+              esc(icone) +
+              '</span>'
+            );
+          }
           return (
             '<span class="acao-slot' +
             (marcado ? ' marcado' : '') +
@@ -4708,31 +4859,50 @@
          * #245, 2ª rodada) — `tabela()` desliga essa parte só para essa
          * chamada, mantendo Detalhe/Conversa.
          */
-        function _partesAcoes(item, { proposta, mostrarAcoesDeEscrita = true }) {
+        function _partesAcoes(item, { proposta, mostrarAcoesDeEscrita = true, compacta = false }) {
+          const ic = (chave) => (compacta ? ICONES_COMPACTOS[chave] : undefined);
           const escritaLigada = mostrarAcoesDeEscrita && BGL_CONST.CRM.FLAG_ACOES_ESCRITA;
           const partes = [];
           if (mostrarAcoesDeEscrita) {
             if (escritaLigada && !item.compareceu) {
               partes.push(
                 botaoAcao('compareceu', 'Marcar presença', {
+                  icone: ic('compareceu'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('compareceu', item.id, item.bebe),
                 }),
               );
             } else {
-              partes.push(slotT6('Presença', item.compareceu));
+              partes.push(
+                slotT6(
+                  'Presença',
+                  item.compareceu,
+                  ic('compareceu'),
+                  item.compareceu ? 'Presença marcada' : 'Presença não marcada',
+                  'compareceu',
+                ),
+              );
             }
             if (escritaLigada && !item.fechou) {
               partes.push(
                 botaoAcao('fechou', 'Marcar fechou', {
+                  icone: ic('fechou'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('fechou', item.id, item.bebe),
                 }),
               );
             } else {
-              partes.push(slotT6('Fechou', item.fechou));
+              partes.push(
+                slotT6(
+                  'Fechou',
+                  item.fechou,
+                  ic('fechou'),
+                  item.fechou ? 'Fechou marcado' : 'Fechou não marcado',
+                  'fechou',
+                ),
+              );
             }
             // Depois da presença e antes do Fechou, a proposta continua a um
             // clique: o diálogo de presença só abre uma vez (o botão some ao
@@ -4741,6 +4911,7 @@
             if (escritaLigada && item.compareceu && !item.fechou) {
               partes.push(
                 botaoAcao('proposta', '📤 Enviar proposta', {
+                  icone: ic('proposta'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('proposta', item.id, item.bebe),
@@ -4761,6 +4932,7 @@
             ) {
               partes.push(
                 botaoAcao('pe_paga', '💰 Marcar PE paga', {
+                  icone: ic('pe_paga'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('pe_paga', item.id, item.bebe),
@@ -4778,6 +4950,7 @@
             ) {
               partes.push(
                 botaoAcao('reagendar', '📅 Reagendar', {
+                  icone: ic('reagendar'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: ReagendarDialog.estaAberto(),
@@ -4787,6 +4960,7 @@
             if (escritaLigada) {
               partes.push(
                 botaoAcao('cancelado', 'Cancelar', {
+                  icone: ic('cancelado'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('cancelado', item.id, item.bebe),
@@ -4806,9 +4980,16 @@
           const wpp = LinkBuilder.conversa(item.telefone);
           if (wpp) {
             partes.push(
-              '<a class="btn-acao" href="' +
-                esc(wpp) +
-                '" target="_blank" rel="noopener">💬 Conversa</a>',
+              compacta
+                ? '<a class="btn-acao btn-icone" href="' +
+                    esc(wpp) +
+                    '" target="_blank" rel="noopener" data-tip="Conversa no WhatsApp"' +
+                    ' aria-label="Conversa no WhatsApp">' +
+                    ICONES_COMPACTOS.conversa +
+                    '</a>'
+                : '<a class="btn-acao" href="' +
+                    esc(wpp) +
+                    '" target="_blank" rel="noopener">💬 Conversa</a>',
             );
           }
           return partes;
@@ -4882,35 +5063,49 @@
          * ali a coluna repetiria em cada linha o que o cabeçalho do grupo já
          * diz.
          */
-        function tabela(itens, { comAcoesDeEscrita = true, comData = false } = {}) {
+        function tabela(
+          itens,
+          { comAcoesDeEscrita = true, comData = false, compacta = false } = {},
+        ) {
           const linhas = itens
             .map((i) => {
               const acoesCel = _partesAcoes(i, {
                 proposta: false,
                 mostrarAcoesDeEscrita: comAcoesDeEscrita,
+                compacta,
               });
               if (i.telefone) {
                 acoesCel.unshift(
-                  '<button type="button" class="btn-acao" data-lead="' +
-                    esc(i.telefone) +
-                    '">📄 Detalhe</button>',
+                  compacta
+                    ? '<button type="button" class="btn-acao btn-icone" data-lead="' +
+                        esc(i.telefone) +
+                        '" data-tip="Detalhe" aria-label="Detalhe">' +
+                        ICONES_COMPACTOS.detalhe +
+                        '</button>'
+                    : '<button type="button" class="btn-acao" data-lead="' +
+                        esc(i.telefone) +
+                        '">📄 Detalhe</button>',
                 );
               }
+              // Modo compacto: nome comprido não quebra a linha — corta com reticências
+              // e o texto inteiro fica no `title`.
+              const celCorte = (texto) =>
+                compacta
+                  ? '<td class="cel-corte" title="' +
+                    esc(ou(texto)) +
+                    '">' +
+                    esc(ou(texto)) +
+                    '</td>'
+                  : '<td>' + esc(ou(texto)) + '</td>';
               return (
                 '<tr>' +
                 (comData ? '<td>' + esc(dataCurta(i.data)) + '</td>' : '') +
                 '<td>' +
                 esc(ou(i.hora)) +
                 '</td>' +
-                '<td>' +
-                esc(ou(i.bebe)) +
-                '</td>' +
-                '<td>' +
-                esc(ou(i.nome)) +
-                '</td>' +
-                '<td>' +
-                esc(ou(i.turma)) +
-                '</td>' +
+                celCorte(i.bebe) +
+                celCorte(i.nome) +
+                celCorte(i.turma) +
                 '<td>' +
                 esc(ou(i.telefone)) +
                 '</td>' +
@@ -4928,7 +5123,14 @@
             })
             .join('');
           return (
-            '<div class="tabela-wrap"><table>' +
+            '<div class="tabela-wrap' +
+            (compacta
+              ? ' tabela-compacta' +
+                (BGL_CONST.CRM.FLAG_ACOES_ESCRITA && flagLiberada(BGL_CONST.CRM.FLAG_REAGENDAR_TELA)
+                  ? ''
+                  : ' sem-reagendar')
+              : '') +
+            '"><table>' +
             '<thead><tr>' +
             (comData ? '<th>Data</th>' : '') +
             '<th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th><th>Telefone</th>' +
@@ -5190,7 +5392,7 @@
                 filtrados.length +
                 (filtrados.length === 1 ? ' agendamento' : ' agendamentos') +
                 '</h2>' +
-                AgendaRenderer.tabela(filtrados, { comData: true });
+                AgendaRenderer.tabela(filtrados, { comData: true, compacta: true });
 
           return _navegacao(anoMes) + _filtros(itens, ativos) + corpo;
         }
