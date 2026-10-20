@@ -140,7 +140,7 @@ const BGL_CRM_AJUDA = {
           </tbody>
         </table></div>
         <p>Cada clique aparece na tela <b>na hora</b>, antes de a planilha confirmar. O botão fica desabilitado enquanto o pedido está no ar, o que evita clique duplo. Se algo falhar (sem internet, sessão expirada), a tela desfaz o que mostrou e avisa em vermelho: clique de novo.</p>
-        <p>Presença, Fechou e Cancelar funcionam no Painel, na Semana e no Mês.</p>
+        <p>Presença, Fechou e Cancelar funcionam no Painel, na Semana e no Mês. <b>Cancelar só aparece</b> enquanto a presença não foi marcada e o agendamento não fechou: quem já veio não se cancela.</p>
       `,
     },
     {
@@ -308,7 +308,7 @@ const BGL_CRM_AJUDA = {
           <li>Ao entrar na aba, a tela já rola até hoje e deixa uma faixa do dia anterior à vista: role para cima para ver os dias passados.</li>
           <li>Hoje leva o selo <b>hoje</b>. Os dias passados levam o selo <b>já passou</b> e fundo mais apagado.</li>
           <li>Nada é escondido: quem já fechou continua na lista, com o selo Fechou.</li>
-          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e botões (Marcar presença, Marcar fechou, Cancelar, Detalhe, Conversa).</li>
+          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e botões (Marcar presença, Marcar fechou, Cancelar — só enquanto a presença não foi marcada —, Detalhe, Conversa).</li>
         </ul>
         <h4>Mês</h4>
         <ul>
@@ -316,7 +316,7 @@ const BGL_CRM_AJUDA = {
           <li>Chips de filtro: <b>Compareceu</b>, <b>Fechou</b>, <b>PE paga</b>, <b>Confirmado</b> e <b>Pesquisa enviada</b> (a pesquisa de satisfação já foi enviada; a resposta não aparece).</li>
           <li>Os chips se combinam: a linha precisa atender a todos os chips marcados. O número em cada chip é sempre o total do mês, não do filtro.</li>
           <li>Cada agendamento é <b>uma linha fina</b>, como na planilha, e as ações são só o <b>símbolo</b>. Passe o mouse (ou use o Tab) sobre o ícone para ler o nome da ação. Cada ação fica sempre na mesma coluna: 🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 Marcar PE paga, 📅 Reagendar, 🚫 Cancelar e 💬 Conversa.</li>
-          <li>✅ e 🤝 ficam <b>verdes e sem clique</b> quando a presença ou o fechamento já foram marcados. Nomes compridos são cortados com reticências; o nome inteiro aparece ao passar o mouse.</li>
+          <li>Ao descer a lista, o <b>cabeçalho da tabela fica fixo</b> abaixo das abas (em telas a partir de 1160px; em tela menor a tabela rola para o lado e o cabeçalho não gruda). A linha inteira acende ao passar o mouse. ✅ e 🤝 ainda não marcados aparecem em <b>cinza</b> (e ganham cor ao passar o mouse); ficam <b>verdes e sem clique</b> quando a presença ou o fechamento já foram marcados. Nomes compridos são cortados com reticências; o nome inteiro aparece ao passar o mouse.</li>
           <li>As ações são as mesmas da Semana, só que sem o texto no botão. No celular não existe "passar o mouse": use o Painel do Dia ou a Semana, que mantêm o texto.</li>
         </ul>
       `,
@@ -530,6 +530,22 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.32',
+      data: '2026-10-20',
+      mudancas: {
+        adicionado: [
+          'Na aba Mês, a linha inteira acende ao passar o mouse, em qualquer célula (#467).',
+          'Na aba Mês, o cabeçalho da tabela fica fixo logo abaixo das abas ao descer a lista, em telas a partir de 1160px (#467).',
+        ],
+        alterado: [
+          'Na aba Mês, presença e fechou ainda não marcados aparecem em cinza e ganham cor ao passar o mouse; depois de marcados ficam coloridos, com fundo e borda verdes mais fortes (#467).',
+          'O botão Cancelar some de quem já teve a presença marcada ou já fechou, no Painel do Dia, na Semana e no Mês: quem já veio não se cancela (#467).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.31',
       data: '2026-10-20',
