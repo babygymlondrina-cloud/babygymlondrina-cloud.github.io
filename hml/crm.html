@@ -1358,7 +1358,7 @@
                 <input type="date" id="ag-nascimento" class="pe-input" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-sexo">Sexo</label>
+                <label class="pe-rotulo" for="ag-sexo">Sexo *</label>
                 <select id="ag-sexo" class="pe-input">
                   <option value="">—</option>
                   <option value="f">Menina</option>
@@ -1366,7 +1366,7 @@
                 </select>
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-turma">Turma</label>
+                <label class="pe-rotulo" for="ag-turma">Turma *</label>
                 <select id="ag-turma" class="pe-input"></select>
                 <div class="pe-dica" id="ag-turma-dica"></div>
               </div>
@@ -3045,7 +3045,7 @@
         function faltando(f, ctx) {
           const falta = [];
           if (ctx.novo && !normalizeTelefone(f.telefone)) falta.push('telefone válido');
-          // Os 7 dados do agendamento são OBRIGATÓRIOS (issue #454), para família nova ou antiga: o servidor
+          // Os 9 dados do agendamento são OBRIGATÓRIOS (issues #454 e #463), para família nova ou antiga: o servidor
           // recusa o pedido sem qualquer um deles. O e-mail tem de estar no padrão — é o pagador do PIX
           // e o Mercado Pago recusa o resto (issue #433).
           if (!f.responsavel.trim()) falta.push('responsável');
@@ -3053,6 +3053,7 @@
           else if (!emailValido(f.email)) falta.push('e-mail válido');
           if (!f.bebeNome.trim()) falta.push('nome completo do bebê');
           if (!f.nascimento) falta.push('nascimento');
+          if (!f.sexo) falta.push('sexo do bebê');
           if (!f.alergia.trim()) falta.push('alergia (escreva "Nenhuma" se não tiver)');
           if (!f.prematuro) falta.push('prematuro (sim ou não)');
           if (!f.comoConheceu.trim()) falta.push('como chegou até nós');
@@ -3106,7 +3107,7 @@
         function montarCorpo(f, ctx) {
           return {
             // `familiaNova` deixa o servidor recusar (409) um telefone que já é de um lead. O responsável e
-            // o e-mail VÃO sempre (são 2 dos 7 obrigatórios, issue #454): para a família que já existe os
+            // o e-mail VÃO sempre (são 2 dos 9 obrigatórios, issues #454 e #463): para a família que já existe os
             // campos vêm do cadastro dela e só se completa o que faltava.
             ...(ctx.novo ? { familiaNova: true } : {}),
             responsavel: { nome: f.responsavel.trim(), email: f.email.trim() },
@@ -3594,7 +3595,7 @@
 
         function _montarTurmas() {
           _el('ag-turma').innerHTML =
-            '<option value="">— escolher depois —</option>' +
+            '<option value="">— escolher —</option>' +
             BGL_CONST.TURMAS.map(
               (t) =>
                 '<option value="' +
