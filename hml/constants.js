@@ -6,7 +6,7 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.34',
+  APP_VERSION: '3.35',
   APP_DATE: '2026-10-22',
   PLANO: {
     ANUAL: 'anual',
@@ -202,7 +202,8 @@ const BGL_CONST = {
      * reagendar encerra uma linha e pode cancelar um PIX, e o rollback tem de ser independente.
      * Mesmos valores: `false` = ninguém vê · `'hml'` = só a tela servida em `/hml/` · `true` = todos.
      * Também exige `FLAG_ACOES_ESCRITA` e `BGL_REAGENDAR_LINHA` no servidor.
+     * Liberado para todos na 3.35 (issue #473). Rollback do botão: voltar para `false` (ou `'hml'`).
      */
-    FLAG_REAGENDAR_TELA: 'hml',
+    FLAG_REAGENDAR_TELA: true,
   },
 };
