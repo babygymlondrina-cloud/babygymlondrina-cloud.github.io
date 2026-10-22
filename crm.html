@@ -489,6 +489,48 @@
          cortaria um balão para baixo ou para fora da última coluna. */
       .tabela-compacta table {
         font-size: 0.75rem;
+        /* Larguras FIXAS e iguais (issue #481): cada dia é uma <table> própria e, com `auto`, o conteúdo de cada
+           uma moveria as colunas. Bebê e Mãe (sem classe no <col>) repartem o que sobra. */
+        table-layout: fixed;
+        width: 100%;
+      }
+      /* Abaixo disto a rolagem horizontal do wrap absorve a falta de espaço em vez de espremer Bebê e Mãe (as colunas
+         sem largura fixa): as fixas somam 52,7rem (Mês com Data: 56,9rem) e sobram ~8rem para cada nome. */
+      .tabela-compacta:not(.tabela-estreita) table {
+        min-width: 69rem;
+      }
+      .tabela-compacta.com-data table {
+        min-width: 73rem;
+      }
+      .tabela-compacta col.c-data {
+        width: 4.2rem;
+      }
+      .tabela-compacta col.c-hora {
+        width: 3.2rem;
+      }
+      .tabela-compacta col.c-turma {
+        width: 6.6rem;
+      }
+      .tabela-compacta col.c-tel {
+        width: 7.6rem;
+      }
+      .tabela-compacta col.c-conf {
+        width: 10.4rem;
+      }
+      .tabela-compacta col.c-pe {
+        width: 11.4rem;
+      }
+      .tabela-compacta col.c-acoes {
+        width: 13.5rem;
+      }
+      .tabela-compacta.sem-reagendar col.c-acoes {
+        width: 11.9rem;
+      }
+      .tabela-compacta .cel-corte .badge {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
       }
       .tabela-compacta th,
       .tabela-compacta td {
@@ -593,11 +635,12 @@
       /* Cabeçalho das tabelas do Mês e da Semana fixo ao rolar a página, logo abaixo do `.crm-topo` (que também é
          sticky e tem altura variável: `--crm-topo-h` é MEDIDA em JS). Sticky só funciona se o
          wrap NÃO for um contêiner de rolagem, e o `overflow-x: auto` dele é, então só onde a tabela
-         cabe MESMO COM OS RÓTULOS MAIS LONGOS ("Aguardando pagamento", "PE paga (passou para o
-         novo horário)": 1092px medidos; o `main` do Mês tem 1200px, 1176 úteis) o overflow sai; abaixo disso a
+         cabe: as colunas são de largura fixa (rótulo longo corta com reticências, não alarga) e a tabela mais
+         larga, a do Mês com Data, tem no mínimo 73rem = 1168px, contra os 1176 úteis do `main` (1200px) — por isso
+         o corte é 1200px e o overflow só sai a partir dele; abaixo disso a
          rolagem horizontal continua e o cabeçalho não gruda. Com `border-collapse: collapse` a borda não acompanha o sticky,
          por isso a linha de baixo é um `box-shadow` inset. */
-      @media (min-width: 1160px) {
+      @media (min-width: 1200px) {
         .tabela-wrap.tabela-compacta:not(.tabela-estreita) {
           overflow: visible;
         }
@@ -620,6 +663,18 @@
           z-index: 2;
           box-shadow: inset 0 -1px 0 var(--line);
         }
+      }
+      .tabela-estreita col.c-motivo {
+        width: 11rem;
+      }
+      .tabela-estreita col.c-data {
+        width: 4.5rem;
+      }
+      .tabela-estreita col.c-situacao {
+        width: 9rem;
+      }
+      .tabela-estreita col.c-acoes {
+        width: 5.8rem;
       }
       .tabela-estreita .acoes {
         grid-template-columns: repeat(3, 1.5rem);
@@ -4798,16 +4853,23 @@
         return '<span class="badge badge-' + tom + '">' + esc(texto) + '</span>';
       }
 
+      // O texto puro de cada etiqueta (o `title` das células cortadas da lista compacta): uma só fonte do rótulo.
+      function rotuloConfirmacao(valor) {
+        return valor ? ROTULO_CONFIRMACAO[valor] || valor : 'Sem confirmação';
+      }
+
+      function rotuloPagamentoPE(valor) {
+        return valor ? ROTULO_PE[valor] || valor : 'PE não paga';
+      }
+
       function badgeConfirmacao(valor) {
-        if (!valor) return badge('Sem confirmação', 'neutro');
         const tom = valor === BGL_CONST.CRM.CONFIRMACAO.CONFIRMADO ? 'ok' : 'warn';
-        return badge(ROTULO_CONFIRMACAO[valor] || valor, tom);
+        return badge(rotuloConfirmacao(valor), valor ? tom : 'neutro');
       }
 
       function badgePagamentoPE(valor) {
-        if (!valor) return badge('PE não paga', 'neutro');
         const tom = valor === BGL_CONST.CRM.PAGAMENTO_PE.PAGO ? 'ok' : 'warn';
-        return badge(ROTULO_PE[valor] || valor, tom);
+        return badge(rotuloPagamentoPE(valor), valor ? tom : 'neutro');
       }
 
       /**
@@ -5175,6 +5237,12 @@
                     esc(ou(texto)) +
                     '</td>'
                   : '<td>' + esc(ou(texto)) + '</td>';
+              // Rótulo longo ("Aguardando pagamento", "PE paga (passou para o novo horário)") não alarga a
+              // coluna: as colunas são FIXAS e iguais em todas as tabelas (issue #481); o texto inteiro vai no `title`.
+              const celBadge = (html, rotulo) =>
+                compacta
+                  ? '<td class="cel-corte" title="' + esc(rotulo) + '">' + html + '</td>'
+                  : '<td>' + html + '</td>';
               return (
                 '<tr>' +
                 (comData ? '<td>' + esc(dataCurta(i.data)) + '</td>' : '') +
@@ -5187,12 +5255,8 @@
                 '<td>' +
                 esc(ou(i.telefone)) +
                 '</td>' +
-                '<td>' +
-                badgeConfirmacao(i.confirmacao) +
-                '</td>' +
-                '<td>' +
-                badgePagamentoPE(i.pagamentoPE) +
-                '</td>' +
+                celBadge(badgeConfirmacao(i.confirmacao), rotuloConfirmacao(i.confirmacao)) +
+                celBadge(badgePagamentoPE(i.pagamentoPE), rotuloPagamentoPE(i.pagamentoPE)) +
                 '<td><div class="acoes">' +
                 acoesCel.join('') +
                 '</div></td>' +
@@ -5200,19 +5264,29 @@
               );
             })
             .join('');
+          // Cada dia é uma <table> própria: sem larguras fixas e iguais, o conteúdo de cada dia decidiria onde as
+          // colunas caem e nada alinharia de um dia para o outro (issue #481). Bebê e Mãe repartem o que sobra.
+          const colgroup = compacta
+            ? '<colgroup>' +
+              (comData ? '<col class="c-data">' : '') +
+              '<col class="c-hora"><col><col><col class="c-turma"><col class="c-tel">' +
+              '<col class="c-conf"><col class="c-pe"><col class="c-acoes"></colgroup>'
+            : '';
           return (
             '<div class="tabela-wrap' +
             (compacta
               ? ' tabela-compacta' +
+                (comData ? ' com-data' : '') +
                 (BGL_CONST.CRM.FLAG_ACOES_ESCRITA && flagLiberada(BGL_CONST.CRM.FLAG_REAGENDAR_TELA)
                   ? ''
                   : ' sem-reagendar')
               : '') +
             '"><table>' +
+            colgroup +
             '<thead><tr>' +
             (comData ? '<th>Data</th>' : '') +
             '<th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th><th>Telefone</th>' +
-            '<th>Confirmação</th><th>PE</th><th></th></tr></thead>' +
+            '<th>Confirmação</th><th>PE</th><th>Ações</th></tr></thead>' +
             '<tbody>' +
             linhas +
             '</tbody></table></div>'
@@ -5547,7 +5621,8 @@
             itens.length +
             ')</h2>' +
             '<div class="tabela-wrap tabela-compacta tabela-estreita"><table>' +
-            '<thead><tr><th>Nome</th><th>Motivo</th><th>Data</th><th></th><th></th></tr></thead>' +
+            '<colgroup><col><col class="c-motivo"><col class="c-data"><col class="c-situacao"><col class="c-acoes"></colgroup>' +
+            '<thead><tr><th>Nome</th><th>Motivo</th><th>Data</th><th></th><th>Ações</th></tr></thead>' +
             '<tbody>' +
             linhas +
             '</tbody></table></div>'

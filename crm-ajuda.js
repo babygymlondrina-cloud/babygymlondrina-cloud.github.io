@@ -219,7 +219,7 @@ const BGL_CRM_AJUDA = {
           <li><b>"O PIX NÃO foi gerado":</b> o agendamento e a linha estão salvos, só o PIX não saiu (o Mercado Pago recusou, por exemplo). Clique em <b>🔁 Tentar de novo</b>: ele gera o PIX de novo, <b>sem criar outro agendamento e sem cobrar duas vezes</b>. Se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre.</li>
           <li><b>"Não respondeu a tempo" ou "a planilha/o CRM não gravou":</b> o Mercado Pago, a planilha ou o CRM demorou ou falhou no meio. <b>Nada foi enviado à mãe</b> até terminar tudo. Aguarde alguns segundos e clique em <b>🔁 Tentar de novo</b>: ele termina o que faltou e o sistema <b>não cobra duas vezes</b>.</li>
           <li><b>"O PIX foi gerado, mas as mensagens NÃO saíram":</b> o PIX existe. A tela mostra o <b>link</b>: mande-o à mãe pelo WhatsApp. <b>Não use Tentar de novo.</b></li>
-          <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. O botão <b>📅 Reagendar</b> do próprio agendamento na agenda vai trocar o horário (veja o capítulo seguinte), mas <b>ainda está em teste e só aparece na homologação</b>: por enquanto, reagende pela planilha, como hoje.</li>
+          <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. Use o botão <b>📅 Reagendar</b> do próprio agendamento na agenda para trocar o horário (veja o capítulo seguinte).</li>
           <li>Na planilha, a linha nova mostra seu e-mail na coluna <b>agendadoPor</b>, no lugar do nome genérico de antes.</li>
         </ul>
       `,
@@ -229,7 +229,6 @@ const BGL_CRM_AJUDA = {
       titulo: 'Reagendar uma Primeira Experiência',
       desde: '3.27',
       html: `
-        <div class="aviso aviso-info"><b>Este botão ainda está em teste.</b> Por enquanto ele só aparece na versão de homologação (endereço com <code>/hml/</code>), e a homologação usa a <b>mesma planilha</b> da produção: a linha criada lá é real. Use só telefone de teste e peça ao Michel para apagar a linha depois. No sistema de verdade, continue reagendando como hoje até o Michel liberar.</div>
         <p>O botão <b>📅 Reagendar</b> aparece em cada agendamento da agenda (Painel do Dia, Semana e Mês) <b>enquanto a criança ainda não veio</b> e o agendamento tem identidade na planilha. Ele troca o horário da Primeira Experiência: cria a linha nova, encerra a antiga e cuida do PIX da PE sozinho.</p>
         <ol>
           <li>Clique em <b>📅 Reagendar</b>. A janela mostra o horário de agora.</li>
@@ -308,7 +307,7 @@ const BGL_CRM_AJUDA = {
           <li>Ao entrar na aba, a tela já rola até hoje e deixa uma faixa do dia anterior à vista: role para cima para ver os dias passados.</li>
           <li>Hoje leva o selo <b>hoje</b>. Os dias passados levam o selo <b>já passou</b> e fundo mais apagado.</li>
           <li>Nada é escondido: quem já fechou continua na lista, com o selo Fechou.</li>
-          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e as ações. Cada dia é uma tabela de <b>linha fina, como a do Mês</b>: as ações são só o símbolo (🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 PE paga, 📅 Reagendar, 🚫 Cancelar — só enquanto a presença não foi marcada —, 💬 Conversa), com o nome ao passar o mouse; a linha inteira acende e o cabeçalho de cada dia fica fixo ao descer (em telas a partir de 1160px).</li>
+          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e as ações. Cada dia é uma tabela de <b>linha fina, como a do Mês</b>, com as colunas alinhadas de um dia para o outro e a coluna dos botões chamada <b>Ações</b>: as ações são só o símbolo (🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 PE paga, 📅 Reagendar, 🚫 Cancelar — só enquanto a presença não foi marcada —, 💬 Conversa), com o nome ao passar o mouse; a linha inteira acende e o cabeçalho de cada dia fica fixo ao descer (em telas a partir de 1200px).</li>
         </ul>
         <h4>Mês</h4>
         <ul>
@@ -316,7 +315,7 @@ const BGL_CRM_AJUDA = {
           <li>Chips de filtro: <b>Compareceu</b>, <b>Fechou</b>, <b>PE paga</b>, <b>Confirmado</b> e <b>Pesquisa enviada</b> (a pesquisa de satisfação já foi enviada; a resposta não aparece).</li>
           <li>Os chips se combinam: a linha precisa atender a todos os chips marcados. O número em cada chip é sempre o total do mês, não do filtro.</li>
           <li>Cada agendamento é <b>uma linha fina</b>, como na planilha, e as ações são só o <b>símbolo</b>. Passe o mouse (ou use o Tab) sobre o ícone para ler o nome da ação. Cada ação fica sempre na mesma coluna: 🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 Marcar PE paga, 📅 Reagendar, 🚫 Cancelar e 💬 Conversa.</li>
-          <li>Ao descer a lista, o <b>cabeçalho da tabela fica fixo</b> abaixo das abas (em telas a partir de 1160px; em tela menor a tabela rola para o lado e o cabeçalho não gruda). A linha inteira acende ao passar o mouse. ✅ e 🤝 ainda não marcados aparecem em <b>cinza</b> (e ganham cor ao passar o mouse); ficam <b>verdes e sem clique</b> quando a presença ou o fechamento já foram marcados. Nomes compridos são cortados com reticências; o nome inteiro aparece ao passar o mouse.</li>
+          <li>Ao descer a lista, o <b>cabeçalho da tabela fica fixo</b> abaixo das abas (em telas a partir de 1200px; em tela menor a tabela rola para o lado e o cabeçalho não gruda). A linha inteira acende ao passar o mouse. ✅ e 🤝 ainda não marcados aparecem em <b>cinza</b> (e ganham cor ao passar o mouse); ficam <b>verdes e sem clique</b> quando a presença ou o fechamento já foram marcados. Nomes compridos são cortados com reticências; o nome inteiro aparece ao passar o mouse.</li>
           <li>As ações são as mesmas da Semana, só que sem o texto no botão. No celular não existe "passar o mouse": use o Painel do Dia ou a Semana, que mantêm o texto.</li>
         </ul>
       `,
@@ -530,6 +529,30 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.36',
+      data: '2026-10-22',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'As colunas das listas de linha fina (Semana, Mês e Frios) agora ficam no mesmo lugar de um dia para o outro: hora, bebê, mãe, turma, telefone, confirmação, PE e os ícones alinham de cima a baixo, e a coluna dos botões ganhou o título "Ações" (também no Painel do Dia). Rótulos compridos, como "PE paga (passou para o novo horário)", são cortados com reticências e aparecem inteiros ao passar o mouse. Em telas abaixo de 1200px a lista rola para o lado em vez de apertar os nomes (#481).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.35',
+      data: '2026-10-22',
+      mudancas: {
+        adicionado: [
+          'O botão 📅 Reagendar chega à equipe no sistema de verdade: cada agendamento da agenda que ainda não aconteceu pode ter o horário trocado pela tela. Ele cria a linha nova, encerra a antiga e cuida do PIX da PE sozinho, sem passar pela planilha (#473).',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.34',
       data: '2026-10-22',
