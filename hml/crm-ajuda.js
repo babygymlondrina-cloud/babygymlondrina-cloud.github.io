@@ -531,6 +531,18 @@ const BGL_CRM_AJUDA = {
   // `APP_VERSION` e o seguinte).
   novidades: [
     {
+      versao: '3.34',
+      data: '2026-10-22',
+      mudancas: {
+        adicionado: [],
+        alterado: [],
+        corrigido: [
+          'Depois de sair e entrar de novo (ou de a sessão expirar), cada clique da tela passava a valer em dobro: o ▶ da aba Mês pulava dois meses e os chips de filtro ligavam e desligavam no mesmo clique, parecendo não funcionar. Recarregar a página resolvia. Agora a tela liga os cliques uma vez só (#471).',
+        ],
+        removido: [],
+      },
+    },
+    {
       versao: '3.33',
       data: '2026-10-22',
       mudancas: {

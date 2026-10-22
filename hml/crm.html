@@ -6370,7 +6370,13 @@
           CrmController.buscar();
         }
 
+        // Uma vez só: `iniciar` roda a CADA login (`_mostrarApp`), e sem a guarda cada entrada depois
+        // de sair ou de a sessão expirar empilhava mais um timer e mais ouvintes de foco (issue #471).
+        let _ligado = false;
+
         function iniciar() {
+          if (_ligado) return;
+          _ligado = true;
           setInterval(_tique, TIQUE_MS);
           document.addEventListener('visibilitychange', aoRecuperarFoco);
           window.addEventListener('focus', aoRecuperarFoco);
@@ -6658,8 +6664,13 @@
           UIRenderer.render();
         }
 
-        function iniciar() {
-          UIRenderer.renderTabs();
+        // `iniciar` roda a CADA login (`AuthController._mostrarApp`: entrar, sair e entrar de novo, ou a
+        // sessão recusada pela API e um novo login), mas os ouvintes vivem no DOM da página inteira e
+        // só podem ser ligados UMA vez. Ligados de novo, cada clique valia em dobro: o ▶ do Mês
+        // pulava dois meses e o chip de filtro ligava e desligava no mesmo clique (issue #471).
+        let _ouvintesLigados = false;
+
+        function _ligarOuvintes() {
           document.getElementById('tabs').addEventListener('click', (e) => {
             const botao = e.target.closest('[data-aba]');
             if (botao) irPara(botao.dataset.aba);
@@ -6736,7 +6747,14 @@
           corpoLead.addEventListener('input', (e) => {
             if (e.target.id === 'pospe-editor') AcoesController.digitarPosPE(e.target.value);
           });
+        }
 
+        function iniciar() {
+          UIRenderer.renderTabs();
+          if (!_ouvintesLigados) {
+            _ouvintesLigados = true;
+            _ligarOuvintes();
+          }
           UIRenderer.render();
           buscar();
           Atualizador.iniciar();
