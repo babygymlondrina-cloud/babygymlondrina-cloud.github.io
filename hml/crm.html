@@ -483,7 +483,7 @@
         background: var(--ok-bg);
         color: var(--ok);
       }
-      /* Aba Mês em linha fina, como a planilha (issue #465): ações só em ícone,
+      /* Listas de agenda em linha fina, como a planilha (Mês: issue #465; Semana e Frios: #469): ações só em ícone,
          com o texto no tooltip (hover e foco de teclado). O tooltip abre PARA
          CIMA e alinhado à direita do botão: o `.tabela-wrap` tem overflow e
          cortaria um balão para baixo ou para fora da última coluna. */
@@ -496,9 +496,10 @@
         white-space: nowrap;
         vertical-align: middle;
       }
-      /* A tabela do Mês tem 9 colunas e não cabe nos 900px do `main`: nessa aba o container
-         abre mais (a rolagem horizontal escondia Data e Hora justo ao chegar nos ícones). */
-      main:has(.tabela-compacta) {
+      /* A tabela do Mês e as da Semana são largas (9 e 8 colunas) e não cabem nos 900px do `main`:
+         nessas abas o container abre mais (a rolagem horizontal escondia as primeiras colunas
+         justo ao chegar nos ícones). A Frios (`tabela-estreita`) não abre. */
+      main:has(.tabela-compacta:not(.tabela-estreita)) {
         max-width: 1200px;
       }
       .tabela-compacta .cel-corte {
@@ -589,7 +590,7 @@
         filter: none;
         opacity: 1;
       }
-      /* Cabeçalho da tabela do Mês fixo ao rolar a página, logo abaixo do `.crm-topo` (que também é
+      /* Cabeçalho das tabelas do Mês e da Semana fixo ao rolar a página, logo abaixo do `.crm-topo` (que também é
          sticky e tem altura variável: `--crm-topo-h` é MEDIDA em JS). Sticky só funciona se o
          wrap NÃO for um contêiner de rolagem, e o `overflow-x: auto` dele é, então só onde a tabela
          cabe MESMO COM OS RÓTULOS MAIS LONGOS ("Aguardando pagamento", "PE paga (passou para o
@@ -597,15 +598,37 @@
          rolagem horizontal continua e o cabeçalho não gruda. Com `border-collapse: collapse` a borda não acompanha o sticky,
          por isso a linha de baixo é um `box-shadow` inset. */
       @media (min-width: 1160px) {
-        .tabela-wrap.tabela-compacta {
+        .tabela-wrap.tabela-compacta:not(.tabela-estreita) {
           overflow: visible;
         }
-        .tabela-compacta th {
+        .tabela-compacta:not(.tabela-estreita) th {
           position: sticky;
           top: var(--crm-topo-h, 0px);
           z-index: 2;
           box-shadow: inset 0 -1px 0 var(--line);
         }
+      }
+      /* Frios (issue #469): 5 colunas e só 3 ações, a tabela é estreita e o cabeçalho fixo vale
+         em telas bem menores. */
+      @media (min-width: 760px) {
+        .tabela-wrap.tabela-estreita {
+          overflow: visible;
+        }
+        .tabela-estreita th {
+          position: sticky;
+          top: var(--crm-topo-h, 0px);
+          z-index: 2;
+          box-shadow: inset 0 -1px 0 var(--line);
+        }
+      }
+      .tabela-estreita .acoes {
+        grid-template-columns: repeat(3, 1.5rem);
+      }
+      .tabela-estreita [data-acao='recuperacao'] {
+        grid-column: 2;
+      }
+      .tabela-estreita a.btn-icone {
+        grid-column: 3;
       }
       /* A linha inteira acende ao passar o mouse, em qualquer célula (como a planilha). */
       .tabela-compacta tbody tr:hover td {
@@ -4793,7 +4816,7 @@
        * `pendente` desabilita o botão enquanto o PATCH está no ar (evita duplo
        * clique). Usado só atrás de `BGL_CONST.CRM.FLAG_ACOES_ESCRITA`.
        */
-      // `icone` (modo compacto da aba Mês, issue #465): o botão vira só o símbolo, e o
+      // `icone` (modo compacto: Mês #465, Semana e Frios #469): o botão vira só o símbolo, e o
       // rótulo (sem o emoji da frente) vai para o tooltip e o `aria-label`.
       function botaoAcao(acao, rotulo, { id, bebe, pendente, icone }) {
         const texto = icone ? rotulo.replace(/^[^\p{L}]+/u, '') : rotulo;
@@ -4840,7 +4863,33 @@
           reagendar: '📅',
           cancelado: '🚫',
           conversa: '💬',
+          // Frios (issue #469): o mesmo botão alterna Travar/Destravar conforme o estado do lead.
+          travar: '🔒',
+          destravar: '🔓',
         };
+
+        // Detalhe e Conversa no modo compacto (issue #469): o markup e o tooltip moram aqui, e a
+        // Semana, o Mês e a Frios usam as mesmas funções.
+        function detalheCompacto(telefone) {
+          return (
+            '<button type="button" class="btn-acao btn-icone" data-lead="' +
+            esc(telefone) +
+            '" data-tip="Detalhe" aria-label="Detalhe">' +
+            ICONES_COMPACTOS.detalhe +
+            '</button>'
+          );
+        }
+
+        function conversaCompacta(wpp) {
+          return (
+            '<a class="btn-acao btn-icone" href="' +
+            esc(wpp) +
+            '" target="_blank" rel="noopener" data-tip="Conversa no WhatsApp"' +
+            ' aria-label="Conversa no WhatsApp">' +
+            ICONES_COMPACTOS.conversa +
+            '</a>'
+          );
+        }
 
         /**
          * Um slot de leitura: mostra o booleano que a API devolve, sem ação
@@ -5019,12 +5068,7 @@
           if (wpp) {
             partes.push(
               compacta
-                ? '<a class="btn-acao btn-icone" href="' +
-                    esc(wpp) +
-                    '" target="_blank" rel="noopener" data-tip="Conversa no WhatsApp"' +
-                    ' aria-label="Conversa no WhatsApp">' +
-                    ICONES_COMPACTOS.conversa +
-                    '</a>'
+                ? conversaCompacta(wpp)
                 : '<a class="btn-acao" href="' +
                     esc(wpp) +
                     '" target="_blank" rel="noopener">💬 Conversa</a>',
@@ -5115,11 +5159,7 @@
               if (i.telefone) {
                 acoesCel.unshift(
                   compacta
-                    ? '<button type="button" class="btn-acao btn-icone" data-lead="' +
-                        esc(i.telefone) +
-                        '" data-tip="Detalhe" aria-label="Detalhe">' +
-                        ICONES_COMPACTOS.detalhe +
-                        '</button>'
+                    ? detalheCompacto(i.telefone)
                     : '<button type="button" class="btn-acao" data-lead="' +
                         esc(i.telefone) +
                         '">📄 Detalhe</button>',
@@ -5179,7 +5219,14 @@
           );
         }
 
-        return { agruparPorHora, bloco, tabela };
+        return {
+          agruparPorHora,
+          bloco,
+          tabela,
+          ICONES_COMPACTOS,
+          detalheCompacto,
+          conversaCompacta,
+        };
       })();
 
       // ─── PainelRenderer ──────────────────────────────────────────────────
@@ -5311,7 +5358,7 @@
                 (passado ? badge('já passou', 'neutro') : '') +
                 (data === hoje ? badge('hoje', 'hoje') : '') +
                 '</h2>' +
-                AgendaRenderer.tabela(lista) +
+                AgendaRenderer.tabela(lista, { compacta: true }) +
                 '</section>'
               );
             })
@@ -5447,16 +5494,15 @@
           if (!itens.length) {
             return '<div class="vazio">Nenhum lead na lista de recuperação.</div>';
           }
+          const { ICONES_COMPACTOS: ICONES } = AgendaRenderer;
+          const celCorte = (texto) =>
+            '<td class="cel-corte" title="' + esc(texto) + '">' + esc(texto) + '</td>';
           const linhas = itens
             .map((i) => {
               const wpp = LinkBuilder.conversa(i.telefone);
               const acoes = [];
               if (i.telefone) {
-                acoes.push(
-                  '<button type="button" class="btn-acao" data-lead="' +
-                    esc(i.telefone) +
-                    '">📄 Detalhe</button>',
-                );
+                acoes.push(AgendaRenderer.detalheCompacto(i.telefone));
               }
               // Travar/destravar recuperação (T6) — mesmo botão, evento
               // conforme o estado atual (`AcoesController.travar`). Não tem
@@ -5469,26 +5515,19 @@
                     i.travado ? 'Destravar recuperação' : 'Travar recuperação',
                     {
                       id: i.id,
+                      icone: i.travado ? ICONES.destravar : ICONES.travar,
                       pendente: AcoesController.estaPendente('recuperacao', i.id),
                     },
                   ),
                 );
               }
               if (wpp) {
-                acoes.push(
-                  '<a class="btn-acao" href="' +
-                    esc(wpp) +
-                    '" target="_blank" rel="noopener">💬 Conversa</a>',
-                );
+                acoes.push(AgendaRenderer.conversaCompacta(wpp));
               }
               return (
                 '<tr>' +
-                '<td>' +
-                esc(ou(i.nome)) +
-                '</td>' +
-                '<td>' +
-                esc(ROTULO_MOTIVO_FRIO[i.motivo] || ou(i.motivo)) +
-                '</td>' +
+                celCorte(ou(i.nome)) +
+                celCorte(ROTULO_MOTIVO_FRIO[i.motivo] || ou(i.motivo)) +
                 '<td>' +
                 esc(dataCurta(i.data)) +
                 '</td>' +
@@ -5507,7 +5546,7 @@
             '<h2 class="secao-titulo">Leads a recuperar (' +
             itens.length +
             ')</h2>' +
-            '<div class="tabela-wrap"><table>' +
+            '<div class="tabela-wrap tabela-compacta tabela-estreita"><table>' +
             '<thead><tr><th>Nome</th><th>Motivo</th><th>Data</th><th></th><th></th></tr></thead>' +
             '<tbody>' +
             linhas +

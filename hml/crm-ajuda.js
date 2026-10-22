@@ -135,7 +135,7 @@ const BGL_CRM_AJUDA = {
             <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP, e a T de "aguardando_pagamento" para "a confirmar"). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
             <tr><td><b>Cancelar</b></td><td>Cancela o agendamento (coluna T). Pede confirmação ("Cancelar o agendamento de [bebê]? Ele sai da agenda."), por ser a ação mais difícil de desfazer.</td></tr>
             <tr><td><b>📄 Proposta</b></td><td>Só na faixa "Já passou". Abre o detalhe do lead, de onde sai a proposta.</td></tr>
-            <tr><td><b>📄 Detalhe</b></td><td>Nas tabelas (Semana, Mês, Frios, lista do rodapé do Painel). Abre o detalhe do lead.</td></tr>
+            <tr><td><b>📄 Detalhe</b></td><td>Nas tabelas (Semana, Mês, Frios, lista do rodapé do Painel). Abre o detalhe do lead. Na Semana, no Mês e em Frios aparece como 🔍.</td></tr>
             <tr><td><b>💬 Conversa</b></td><td>Abre a conversa no WhatsApp com o telefone do lead. Só aparece se há telefone.</td></tr>
           </tbody>
         </table></div>
@@ -308,7 +308,7 @@ const BGL_CRM_AJUDA = {
           <li>Ao entrar na aba, a tela já rola até hoje e deixa uma faixa do dia anterior à vista: role para cima para ver os dias passados.</li>
           <li>Hoje leva o selo <b>hoje</b>. Os dias passados levam o selo <b>já passou</b> e fundo mais apagado.</li>
           <li>Nada é escondido: quem já fechou continua na lista, com o selo Fechou.</li>
-          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e botões (Marcar presença, Marcar fechou, Cancelar — só enquanto a presença não foi marcada —, Detalhe, Conversa).</li>
+          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e as ações. Cada dia é uma tabela de <b>linha fina, como a do Mês</b>: as ações são só o símbolo (🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 PE paga, 📅 Reagendar, 🚫 Cancelar — só enquanto a presença não foi marcada —, 💬 Conversa), com o nome ao passar o mouse; a linha inteira acende e o cabeçalho de cada dia fica fixo ao descer (em telas a partir de 1160px).</li>
         </ul>
         <h4>Mês</h4>
         <ul>
@@ -379,7 +379,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Não fechou</td><td>Compareceu e não fechou.</td></tr>
           </tbody>
         </table></div>
-        <p>Etiquetas: <b>Travado</b> (a equipe assumiu o lead) e <b>Sem telefone</b> (não dá para reengajar). Botões: <b>📄 Detalhe</b>, <b>Travar recuperação</b> (vira <b>Destravar recuperação</b> quando já está travado) e <b>💬 Conversa</b>.</p>
+        <p>Etiquetas: <b>Travado</b> (a equipe assumiu o lead) e <b>Sem telefone</b> (não dá para reengajar). A lista é de <b>linha fina, como a do Mês</b> (a linha inteira acende e o cabeçalho fica fixo ao descer, em telas a partir de 760px). As ações são só o símbolo, com o nome ao passar o mouse: <b>🔍 Detalhe</b>, <b>🔒 Travar recuperação</b> (vira <b>🔓 Destravar recuperação</b> quando já está travado) e <b>💬 Conversa</b>.</p>
         <div class="aviso aviso-info"><b>Travar vale dinheiro:</b> travar significa que você assumiu o lead. Se ele fechar um dia, <b>sem prazo</b>, a comissão de quem travou dobra. Só trave um lead que você está de fato trabalhando. O lead que fecha sai da lista de Frios.</div>
       `,
     },
@@ -530,6 +530,19 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.33',
+      data: '2026-10-22',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'As abas Semana e Frios ficam no mesmo modelo do Mês: linha fina como a planilha, ações só em símbolo com o nome ao passar o mouse, linha inteira acesa e cabeçalho da tabela fixo ao descer (#469).',
+          'Em Frios, Travar recuperação vira 🔒 e, quando o lead já está travado, Destravar recuperação vira 🔓.',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.32',
       data: '2026-10-20',
