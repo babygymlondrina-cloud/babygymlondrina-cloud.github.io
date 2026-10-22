@@ -64,6 +64,7 @@ const BGL_CRM_AJUDA = {
           <tbody>
             <tr><td>Marcar presença</td><td>DadosAgendamento, coluna V (Compareceu)</td></tr>
             <tr><td>Marcar fechou</td><td>DadosAgendamento, coluna X (Fechou)</td></tr>
+            <tr><td>↩️ Desfazer presença ou fechou</td><td>DadosAgendamento, coluna V ou X volta a desmarcada</td></tr>
             <tr><td>Cancelar</td><td>DadosAgendamento, coluna T (status de confirmação = cancelado)</td></tr>
             <tr><td>Travar ou destravar recuperação</td><td>LeadsFrios, coluna A (Travar)</td></tr>
             <tr><td>Anotações pós-PE</td><td>DadosAgendamento, colunas Y, Z e AA</td></tr>
@@ -129,8 +130,9 @@ const BGL_CRM_AJUDA = {
         <div class="tabela-wrap"><table>
           <thead><tr><th>Botão</th><th>O que faz</th></tr></thead>
           <tbody>
-            <tr><td><b>Marcar presença</b></td><td>Registra que a família compareceu (planilha, coluna V) e abre a pergunta sobre a proposta (próxima seção). Depois vira "✓ Presença" e não dá para desmarcar pela tela: se marcou errado, avise o Michel. Aparece nas três faixas, porque a presença é marcada quando a mãe chega, dentro do horário corrente.</td></tr>
+            <tr><td><b>Marcar presença</b></td><td>Registra que a família compareceu (planilha, coluna V) e abre a pergunta sobre a proposta (próxima seção). Depois vira "✓ Presença". Se marcou errado, quem tem a permissão usa o <b>↩️ Desfazer presença</b> (veja "Desfazer presença e fechou"); quem não tem, avisa o Michel. Aparece nas três faixas, porque a presença é marcada quando a mãe chega, dentro do horário corrente.</td></tr>
             <tr><td><b>Marcar fechou</b></td><td>Registra que a família fechou o plano (coluna X) e <b>manda a mensagem de boas-vindas pelo WhatsApp</b>. Só se marca uma vez; depois vira "✓ Fechou". Quem fechou continua na lista, com o selo.</td></tr>
+            <tr><td><b>↩️ Desfazer presença / ↩️ Desfazer fechou</b></td><td>Corrige um clique errado (planilha, colunas V e X voltam a vazio). Só aparece para quem tem a permissão e só em agendamento com identificação. Veja a seção "Desfazer presença e fechou".</td></tr>
             <tr><td><b>➕ Agendar</b></td><td>Fica no topo da tela, ao lado de ↻ Atualizar, e só aparece quando o Michel libera. Cria a Primeira Experiência de uma família e a linha na planilha. Veja a seção "Agendar uma Primeira Experiência".</td></tr>
             <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP, e a T de "aguardando_pagamento" para "a confirmar"). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
             <tr><td><b>Cancelar</b></td><td>Cancela o agendamento (coluna T). Pede confirmação ("Cancelar o agendamento de [bebê]? Ele sai da agenda."), por ser a ação mais difícil de desfazer.</td></tr>
@@ -293,6 +295,25 @@ const BGL_CRM_AJUDA = {
           <li>No ambiente de testes (homologação) a mensagem nunca vai para a família: vai para um número de teste, com o prefixo "[HML]".</li>
         </ul>
         <div class="aviso aviso-info"><b>Atenção:</b> mensagem enviada não tem como ser desfeita. Clique em Marcar fechou só quando a matrícula está de fato fechada.</div>
+      `,
+    },
+    {
+      id: 'desfazer',
+      titulo: 'Desfazer presença e fechou',
+      desde: '3.37',
+      html: `
+        <p>Marcou presença ou fechou no agendamento errado? Quem tem a permissão vê, ao lado do selo "✓ Presença" ou "✓ Fechou", o botão <b>↩️ Desfazer presença</b> ou <b>↩️ Desfazer fechou</b>. Quem <b>não</b> tem a permissão não vê o botão: peça ao Michel, que define quem pode.</p>
+        <ul>
+          <li>O botão só aparece em agendamento com identificação (os criados pelo CRM ou pela Alice). Nos antigos, sem identificação, a correção é na planilha.</li>
+          <li>Para desfazer a presença de quem já fechou, <b>desfaça o Fechou primeiro</b>: não existe fechou sem presença.</li>
+          <li>A tela pede confirmação e diz o que <b>não</b> volta. Ao confirmar, a marca some do CRM e a célula da planilha (V ou X) é desmarcada. Fica registrado quem desfez e quando, no histórico de alterações do lead.</li>
+        </ul>
+        <div class="aviso aviso-info"><b>O que o desfazer NÃO faz:</b><ul>
+          <li><b>Mensagem já enviada continua entregue.</b> A boas-vindas do Fechou e a proposta da presença já chegaram à família; desfazer não apaga nem reenvia nada.</li>
+          <li><b>Não mexe na recuperação.</b> Se o lead estava travado, a comissão deixa de contar quando o Fechou é desfeito: é o efeito esperado de um clique errado, mas confira antes.</li>
+        </ul></div>
+        <div class="aviso aviso-info"><b>Marcou o Fechou de novo?</b> A janela da mensagem avisa quando a boas-vindas <b>já foi enviada</b> para aquela família e abre com "Só marcar" em foco, para ela não receber a mensagem duas vezes. A decisão continua sendo sua. O aviso só enxerga o que o CRM enviou: se você mandou a boas-vindas por fora (WhatsApp Web, ou antes do histórico existir), ele não aparece.</div>
+        <div class="aviso aviso-info"><b>Aviso "não atualizou a planilha":</b> se a célula não for desmarcada, a planilha pode devolver a marca ao CRM em até cerca de 30 minutos. Desmarque a célula V ou X à mão.</div>
       `,
     },
     {
@@ -467,7 +488,7 @@ const BGL_CRM_AJUDA = {
       html: `
         <ul>
           <li><b>Agendar uma Primeira Experiência nova:</b> é o botão ➕ Agendar (veja "Agendar uma Primeira Experiência"), quando liberado. <b>Reagendar</b> ainda é na planilha. <b>Ao reagendar, crie uma linha nova. Não copie a linha existente.</b> A cópia leva o identificador do agendamento, o sistema acha que são o mesmo e o agendamento antigo some do CRM. Se já copiou, apague o conteúdo da coluna do identificador (código parecido com 8f25a6aa-7901-…) na linha nova.</li>
-          <li><b>Desmarcar presença ou fechou:</b> não existe na tela. Peça ao Michel.</li>
+          <li><b>Desmarcar presença ou fechou:</b> existe (↩️ Desfazer), mas só para quem o Michel autorizou. Se o botão não aparece para você, peça a ele.</li>
           <li><b>Dispensar a PE (a família não vai pagar) e ler o motivo gravado na AP:</b> ainda não existe na tela.</li>
           <li>Os PIX da PE e as confirmações automáticas continuam sendo gerados pelos fluxos que já existiam (Make e Alice).</li>
         </ul>
@@ -529,6 +550,21 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.37',
+      data: '2026-10-22',
+      mudancas: {
+        adicionado: [
+          'Botões ↩️ Desfazer presença e ↩️ Desfazer fechou, para corrigir um clique errado. Só aparecem para quem o Michel autorizou e só em agendamento com identificação; a confirmação diz o que não volta (mensagem e proposta já enviadas) e fica registrado quem desfez (#398).',
+          'Ao marcar o Fechou de novo depois de desfazer, a janela da mensagem avisa quando a boas-vindas já foi enviada para a família e abre com "Só marcar" em foco (#398).',
+        ],
+        alterado: [
+          'Presença e fechou já marcados deixam de ser definitivos pela tela: o "avise o Michel" do manual vale agora só para quem não tem a permissão de desfazer (#398).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.36',
       data: '2026-10-22',

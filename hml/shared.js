@@ -198,6 +198,17 @@ const ApiHttp = (function () {
         throw _erro('Sua sessão expirou. Entre de novo com o Google.', { sessaoExpirada: true });
       }
       if (res.status === 403) {
+        // 403 de PERMISSÃO de uma ação (`motivo: 'sem_permissao'`, ex.: desfazer Fechou, issue #398) não é
+        // "e-mail sem acesso à API": o servidor diz o que faltou e a tela repete, sem trocar por outra frase.
+        let recusa = null;
+        try {
+          recusa = await res.json();
+        } catch {
+          // corpo ilegível: vale a frase padrão abaixo.
+        }
+        if (recusa && recusa.motivo === 'sem_permissao' && recusa.erro) {
+          throw _erro(recusa.erro, { semAcesso: true, motivo: recusa.motivo });
+        }
         throw _erro('Seu e-mail não tem acesso à API do CRM. Peça para o Michel liberar.', {
           semAcesso: true,
         });

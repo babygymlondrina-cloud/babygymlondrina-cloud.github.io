@@ -2222,8 +2222,17 @@
         let _buscaResultados = null;
         let _buscaCarregando = false;
         let _buscaErro = null;
+        // O que ESTE login pode fazer (`GET /permissoes`, issue #398). Fechado até a API
+        // dizer que sim: a tela só esconde o botão, quem recusa de verdade é o servidor.
+        let _podeDesfazer = false;
 
         return {
+          permissoes: {
+            podeDesfazer: () => _podeDesfazer,
+            definir: (p) => {
+              _podeDesfazer = !!(p && p.desfazer === true);
+            },
+          },
           ui: {
             getAba: () => _aba,
             setAba: (v) => {
@@ -2354,7 +2363,8 @@
       // só `ApiClient.patch`.
       //
       // Os quatro eventos (docs/CRM_FASE3_PLANO.md, D3): Compareceu e Fechou só
-      // avançam (não existe evento para "desmarcar"), Cancelar tira o
+      // avançam — o desfazer (issue #398) são dois eventos à parte, com permissão
+      // por configuração (`GET /permissoes`) —, Cancelar tira o
       // agendamento da agenda (o servidor filtra `cancelado` do `view=agenda`)
       // e pede confirmação por ser difícil de desfazer, Travar/destravar
       // recuperação alterna — os três primeiros são reversíveis e de alta
@@ -2410,12 +2420,20 @@
          * saiu), e aí a equipe precisa saber das duas coisas: o aviso é a
          * junção, não o primeiro que falhou.
          */
-        function _avisoDosEfeitos(resposta, web) {
+        function _avisoDosEfeitos(resposta, web, evento) {
           const avisos = [];
           if (resposta && resposta.espelho && !resposta.espelho.ok) {
+            // Desfazer (#398): a planilha é mestre e devolveria a marca ao CRM no próximo repost
+            // (até ~30 min). Quem desfaz pode não ter a planilha — a frase diz o que pedir.
+            const celula = evento === EVENTO.FECHOU_DESFEITO ? 'X (Fechou)' : 'V (Compareceu)';
             avisos.push(
-              'Isso foi salvo no CRM, mas não atualizou a planilha automaticamente. ' +
-                'Confira a planilha para esta ação.',
+              evento === EVENTO.FECHOU_DESFEITO || evento === EVENTO.COMPARECEU_DESFEITO
+                ? 'O desfazer foi salvo no CRM, mas a planilha não foi atualizada e a marca pode voltar em até cerca de 30 minutos. ' +
+                    'Peça para desmarcar a coluna ' +
+                    celula +
+                    ' desta linha na planilha.'
+                : 'Isso foi salvo no CRM, mas não atualizou a planilha automaticamente. ' +
+                    'Confira a planilha para esta ação.',
             );
           }
           const whatsappFalhou = resposta && resposta.whatsapp && !resposta.whatsapp.ok;
@@ -2474,7 +2492,7 @@
             });
             // Sem `espelho`/`whatsapp` na resposta não houve tentativa — o
             // aviso anterior fica como está (ver `_avisoDosEfeitos`).
-            const aviso = _avisoDosEfeitos(resposta, web);
+            const aviso = _avisoDosEfeitos(resposta, web, evento);
             if (resposta && (resposta.espelho || resposta.whatsapp)) {
               CrmState.ui.setAvisoAcao(aviso);
             }
@@ -2736,11 +2754,21 @@
             if (previa.vaiSair) {
               const ligado = previa.envioLigado;
               const hrefWeb = (texto) => _linkWhatsAppWeb(item.telefone, texto);
+              // Fechou desfeito e marcado de novo (#398): a família já recebeu estas boas-vindas. O
+              // padrão do diálogo vira "Só marcar", e a equipe vê o aviso — mas a decisão é dela.
+              const jaEnviada = ligado && previa.jaEnviada;
               const r = await PreviaDialog.abrir({
                 titulo: 'Fechou — ' + ou(item.bebe, 'bebê sem nome'),
-                nota: ligado
-                  ? 'Confira a mensagem de boas-vindas antes de marcar — você pode editar. Sai pela Alice para o WhatsApp da família.'
-                  : 'O envio automático está desligado: marcar NÃO manda mensagem. Se quiser avisar a família, abra o WhatsApp Web com o texto abaixo.',
+                nota:
+                  (jaEnviada
+                    ? '⚠️ A mensagem de boas-vindas JÁ foi enviada para esta família' +
+                      (previa.jaEnviada.em ? ' (' + instanteBr(previa.jaEnviada.em) + ')' : '') +
+                      '. Se enviar de novo, ela recebe DUAS. O mais seguro é "Só marcar". '
+                    : '') +
+                  (ligado
+                    ? 'Confira a mensagem de boas-vindas antes de marcar — você pode editar. Sai pela Alice para o WhatsApp da família.'
+                    : 'O envio automático está desligado: marcar NÃO manda mensagem. Se quiser avisar a família, abra o WhatsApp Web com o texto abaixo.'),
+                padraoSecundario: !!jaEnviada,
                 texto: previa.texto,
                 rotuloEnviar: ligado ? '✅ Marcar e enviar' : '✅ Marcar fechou',
                 rotuloSecundario: ligado ? '☑️ Só marcar, sem mensagem' : null,
@@ -2787,6 +2815,39 @@
             },
             reverter: () => {
               item.fechou = antes;
+            },
+          });
+        }
+
+        /**
+         * Desfazer Presença/Fechou marcados por engano (issue #398). Pede confirmação dizendo o que
+         * NÃO é desfeito — a mensagem entregue e a proposta enviada não têm volta, e o desfazer nunca
+         * reenvia nem "desenvia" nada. Só com `agendamentoId`: é ele que acha a linha na planilha.
+         */
+        function desfazer(item, qual) {
+          const ehFechou = qual === 'fechou';
+          const nome = item.bebe || 'este bebê';
+          const texto = ehFechou
+            ? 'Desfazer o Fechou de ' +
+              nome +
+              '?\n\n• A mensagem de boas-vindas, se já saiu, continua entregue.\n• Se este lead estava travado na recuperação, a comissão deixa de contar.\n• Fica registrado quem desfez.'
+            : 'Desfazer a presença de ' +
+              nome +
+              '?\n\n• A proposta, se já foi enviada, continua enviada e o link continua valendo.\n• Fica registrado quem desfez.';
+          if (!window.confirm(texto)) return;
+          const campo = ehFechou ? 'fechou' : 'compareceu';
+          const antes = item[campo];
+          _executar({
+            acao: ehFechou ? EVENTO.FECHOU_DESFEITO : EVENTO.COMPARECEU_DESFEITO,
+            evento: ehFechou ? EVENTO.FECHOU_DESFEITO : EVENTO.COMPARECEU_DESFEITO,
+            id: item.id,
+            bebe: item.bebe,
+            agendamentoId: item.agendamentoId,
+            aplicarOtimista: () => {
+              item[campo] = false;
+            },
+            reverter: () => {
+              item[campo] = antes;
             },
           });
         }
@@ -2938,12 +2999,16 @@
             acao === 'fechou' ||
             acao === 'cancelado' ||
             acao === 'pe_paga' ||
-            acao === 'reagendar'
+            acao === 'reagendar' ||
+            acao === EVENTO.COMPARECEU_DESFEITO ||
+            acao === EVENTO.FECHOU_DESFEITO
           ) {
             const local = _itemAgenda(id, bebe);
             if (!local) return;
             if (acao === 'compareceu' || acao === 'proposta') PresencaDialog.abrir(local.item);
             else if (acao === 'fechou') marcarFechou(local.item);
+            else if (acao === EVENTO.COMPARECEU_DESFEITO) desfazer(local.item, 'compareceu');
+            else if (acao === EVENTO.FECHOU_DESFEITO) desfazer(local.item, 'fechou');
             else if (acao === 'pe_paga') PePagaDialog.abrir(local.item);
             else if (acao === 'reagendar') ReagendarDialog.abrir(local.item);
             else cancelar(local.item);
@@ -4704,7 +4769,15 @@
           if (_hrefWeb) _el('previa-web').href = _hrefWeb(texto);
         }
 
-        function abrir({ titulo, nota, texto, rotuloEnviar, rotuloSecundario, hrefWeb }) {
+        function abrir({
+          titulo,
+          nota,
+          texto,
+          rotuloEnviar,
+          rotuloSecundario,
+          hrefWeb,
+          padraoSecundario,
+        }) {
           // Um diálogo por vez: abrir outro cancela o anterior.
           if (_resolver) _concluir('cancelar');
           _hrefWeb = hrefWeb || null;
@@ -4718,7 +4791,9 @@
           _el('previa-web').style.display = _hrefWeb ? 'block' : 'none';
           _atualizar();
           _el('previa-modal').style.display = 'flex';
-          _el('previa-texto').focus();
+          // `padraoSecundario`: o foco vai para a opção segura ("Só marcar"), não para o texto.
+          if (padraoSecundario && rotuloSecundario) sec.focus();
+          else _el('previa-texto').focus();
           return new Promise((resolve) => {
             _resolver = resolve;
           });
@@ -4920,6 +4995,8 @@
           detalhe: '🔍',
           compareceu: '✅',
           fechou: '🤝',
+          compareceu_desfeito: '↩️',
+          fechou_desfeito: '↩️',
           proposta: '📤',
           pe_paga: '💰',
           reagendar: '📅',
@@ -4956,8 +5033,8 @@
         /**
          * Um slot de leitura: mostra o booleano que a API devolve, sem ação
          * nenhuma. É o que a tela desenha com a flag da T6 desligada, e
-         * também o que ela mostra quando a ação já foi feita (não existe
-         * evento para "desmarcar" `compareceu`/`fechou` — só se marca uma vez).
+         * também o que ela mostra quando a ação já foi feita (o botão de marcar
+         * só marca; desfazer é outro botão, issue #398, para quem tem permissão).
          */
         function slotT6(rotulo, marcado, icone, tip, chave) {
           if (icone) {
@@ -5054,6 +5131,32 @@
             // clique: o diálogo de presença só abre uma vez (o botão some ao
             // marcar), e "Editar a proposta" ou um erro na proposta padrão não
             // podem deixar a equipe sem como enviar a proposta pelo CRM.
+            // Desfazer (issue #398): só a quem a configuração `config_servidor/crm` autoriza (`GET /permissoes`)
+            // e só com `agendamentoId` — sem a identidade da linha o write-back não a acha e a próxima
+            // sincronização da planilha devolveria a marca. Presença só se desfaz com o Fechou já
+            // desfeito (o servidor recusa com 409 também).
+            const podeDesfazer =
+              escritaLigada && item.agendamentoId && CrmState.permissoes.podeDesfazer();
+            if (podeDesfazer && item.compareceu && !item.fechou) {
+              partes.push(
+                botaoAcao('compareceu_desfeito', '↩️ Desfazer presença', {
+                  icone: ic('compareceu_desfeito'),
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('compareceu_desfeito', item.id, item.bebe),
+                }),
+              );
+            }
+            if (podeDesfazer && item.fechou) {
+              partes.push(
+                botaoAcao('fechou_desfeito', '↩️ Desfazer fechou', {
+                  icone: ic('fechou_desfeito'),
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('fechou_desfeito', item.id, item.bebe),
+                }),
+              );
+            }
             if (escritaLigada && item.compareceu && !item.fechou) {
               partes.push(
                 botaoAcao('proposta', '📤 Enviar proposta', {
@@ -6824,7 +6927,23 @@
           });
         }
 
+        /**
+         * `GET /permissoes` (issue #398): decide só se o botão Desfazer aparece. Falha = sem botão
+         * (fechado), em silêncio: não é motivo para incomodar quem não vai desfazer nada.
+         */
+        function carregarPermissoes() {
+          return ApiClient.get('/permissoes')
+            .then((p) => {
+              CrmState.permissoes.definir(p);
+              UIRenderer.render();
+            })
+            .catch(() => {});
+        }
+
         function iniciar() {
+          // Sem a flag de escrita não há botão nenhum: a tela fica somente leitura, sem a chamada.
+          // Roda a cada login (a permissão é da pessoa que entrou).
+          if (BGL_CONST.CRM.FLAG_ACOES_ESCRITA) carregarPermissoes();
           UIRenderer.renderTabs();
           if (!_ouvintesLigados) {
             _ouvintesLigados = true;
