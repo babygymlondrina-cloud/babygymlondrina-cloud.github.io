@@ -483,6 +483,182 @@
         background: var(--ok-bg);
         color: var(--ok);
       }
+      /* Listas de agenda em linha fina, como a planilha (Mês: issue #465; Semana e Frios: #469): ações só em ícone,
+         com o texto no tooltip (hover e foco de teclado). O tooltip abre PARA
+         CIMA e alinhado à direita do botão: o `.tabela-wrap` tem overflow e
+         cortaria um balão para baixo ou para fora da última coluna. */
+      .tabela-compacta table {
+        font-size: 0.75rem;
+      }
+      .tabela-compacta th,
+      .tabela-compacta td {
+        padding: 0.2rem 0.35rem;
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      /* A tabela do Mês e as da Semana são largas (9 e 8 colunas) e não cabem nos 900px do `main`:
+         nessas abas o container abre mais (a rolagem horizontal escondia as primeiras colunas
+         justo ao chegar nos ícones). A Frios (`tabela-estreita`) não abre. */
+      main:has(.tabela-compacta:not(.tabela-estreita)) {
+        max-width: 1200px;
+      }
+      .tabela-compacta .cel-corte {
+        max-width: 8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* Cada ação tem a sua COLUNA FIXA: linha sem Enviar proposta (ou sem Detalhe) deixa o
+         buraco no lugar, e o 💬 fica no mesmo x em todas as linhas, como numa planilha.
+         Sem o Reagendar liberado a coluna dele some (`sem-reagendar`). */
+      .tabela-compacta .acoes {
+        display: grid;
+        grid-template-columns: repeat(8, 1.5rem);
+        gap: 0.1rem;
+        margin-top: 0;
+      }
+      .tabela-compacta.sem-reagendar .acoes {
+        grid-template-columns: repeat(7, 1.5rem);
+      }
+      .tabela-compacta .acoes > * {
+        grid-row: 1;
+      }
+      .tabela-compacta [data-lead].btn-icone {
+        grid-column: 1;
+      }
+      .tabela-compacta [data-acao='compareceu'],
+      .tabela-compacta .slot-icone[data-slot='compareceu'] {
+        grid-column: 2;
+      }
+      .tabela-compacta [data-acao='fechou'],
+      .tabela-compacta .slot-icone[data-slot='fechou'] {
+        grid-column: 3;
+      }
+      .tabela-compacta [data-acao='proposta'] {
+        grid-column: 4;
+      }
+      .tabela-compacta [data-acao='pe_paga'] {
+        grid-column: 5;
+      }
+      .tabela-compacta [data-acao='reagendar'] {
+        grid-column: 6;
+      }
+      .tabela-compacta [data-acao='cancelado'] {
+        grid-column: 7;
+      }
+      .tabela-compacta a.btn-icone {
+        grid-column: 8;
+      }
+      .tabela-compacta.sem-reagendar [data-acao='cancelado'] {
+        grid-column: 6;
+      }
+      .tabela-compacta.sem-reagendar a.btn-icone {
+        grid-column: 7;
+      }
+      .btn-icone,
+      .slot-icone {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.4rem;
+        padding: 0;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        line-height: 1;
+      }
+      .slot-icone {
+        border: 1.5px dashed var(--line);
+        color: var(--text-light);
+        opacity: 0.55;
+      }
+      /* Marcado (presença/fechou): ícone COLORIDO sobre fundo e borda verdes mais fortes. O
+         ainda-não-marcado é o mesmo ícone sem cor (`.ico` em cinza), que ganha cor no hover. */
+      .slot-icone.marcado {
+        border: 2px solid var(--ok);
+        background: var(--ok-bg);
+        box-shadow: 0 0 0 1px var(--ok-bg);
+        opacity: 1;
+      }
+      .btn-icone[data-acao='compareceu'] .ico,
+      .btn-icone[data-acao='fechou'] .ico {
+        filter: grayscale(1);
+        opacity: 0.75;
+      }
+      .btn-icone[data-acao='compareceu']:hover .ico,
+      .btn-icone[data-acao='fechou']:hover .ico {
+        filter: none;
+        opacity: 1;
+      }
+      /* Cabeçalho das tabelas do Mês e da Semana fixo ao rolar a página, logo abaixo do `.crm-topo` (que também é
+         sticky e tem altura variável: `--crm-topo-h` é MEDIDA em JS). Sticky só funciona se o
+         wrap NÃO for um contêiner de rolagem, e o `overflow-x: auto` dele é, então só onde a tabela
+         cabe MESMO COM OS RÓTULOS MAIS LONGOS ("Aguardando pagamento", "PE paga (passou para o
+         novo horário)": 1092px medidos; o `main` do Mês tem 1200px, 1176 úteis) o overflow sai; abaixo disso a
+         rolagem horizontal continua e o cabeçalho não gruda. Com `border-collapse: collapse` a borda não acompanha o sticky,
+         por isso a linha de baixo é um `box-shadow` inset. */
+      @media (min-width: 1160px) {
+        .tabela-wrap.tabela-compacta:not(.tabela-estreita) {
+          overflow: visible;
+        }
+        .tabela-compacta:not(.tabela-estreita) th {
+          position: sticky;
+          top: var(--crm-topo-h, 0px);
+          z-index: 2;
+          box-shadow: inset 0 -1px 0 var(--line);
+        }
+      }
+      /* Frios (issue #469): 5 colunas e só 3 ações, a tabela é estreita e o cabeçalho fixo vale
+         em telas bem menores. */
+      @media (min-width: 760px) {
+        .tabela-wrap.tabela-estreita {
+          overflow: visible;
+        }
+        .tabela-estreita th {
+          position: sticky;
+          top: var(--crm-topo-h, 0px);
+          z-index: 2;
+          box-shadow: inset 0 -1px 0 var(--line);
+        }
+      }
+      .tabela-estreita .acoes {
+        grid-template-columns: repeat(3, 1.5rem);
+      }
+      .tabela-estreita [data-acao='recuperacao'] {
+        grid-column: 2;
+      }
+      .tabela-estreita a.btn-icone {
+        grid-column: 3;
+      }
+      /* A linha inteira acende ao passar o mouse, em qualquer célula (como a planilha). */
+      .tabela-compacta tbody tr:hover td {
+        background: var(--tint-purple);
+      }
+      .btn-icone[data-acao='cancelado'] {
+        border-color: var(--danger);
+      }
+      .btn-icone[data-acao='cancelado']:hover:not(:disabled) {
+        background: var(--danger);
+      }
+      .btn-icone[data-tip]:hover::after,
+      .btn-icone[data-tip]:focus-visible::after,
+      .slot-icone[data-tip]:hover::after,
+      .slot-icone[data-tip]:focus-visible::after {
+        content: attr(data-tip);
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 0.3rem);
+        z-index: 5;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        background: var(--purple-deep);
+        color: var(--white);
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.72rem;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+      }
       /* ─── BADGES DE ESTADO ─── */
       .badge {
         display: inline-block;
@@ -1330,7 +1506,7 @@
                 <input type="text" id="ag-responsavel" class="pe-input" autocomplete="off" />
               </div>
               <div class="ag-campo ag-inteiro">
-                <label class="pe-rotulo" for="ag-email">E-mail</label>
+                <label class="pe-rotulo" for="ag-email">E-mail *</label>
                 <input
                   type="text"
                   id="ag-email"
@@ -1350,15 +1526,15 @@
                 <select id="ag-bebe-select" class="pe-input"></select>
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-bebe">Nome do bebê *</label>
+                <label class="pe-rotulo" for="ag-bebe">Nome completo do bebê *</label>
                 <input type="text" id="ag-bebe" class="pe-input" autocomplete="off" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-nascimento">Nascimento *</label>
+                <label class="pe-rotulo" for="ag-nascimento">Data de nascimento *</label>
                 <input type="date" id="ag-nascimento" class="pe-input" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-sexo">Sexo</label>
+                <label class="pe-rotulo" for="ag-sexo">Sexo *</label>
                 <select id="ag-sexo" class="pe-input">
                   <option value="">—</option>
                   <option value="f">Menina</option>
@@ -1366,7 +1542,7 @@
                 </select>
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-turma">Turma</label>
+                <label class="pe-rotulo" for="ag-turma">Turma *</label>
                 <select id="ag-turma" class="pe-input"></select>
                 <div class="pe-dica" id="ag-turma-dica"></div>
               </div>
@@ -1388,15 +1564,21 @@
                 <input type="hidden" id="ag-hora" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-como">Como conheceu</label>
+                <label class="pe-rotulo" for="ag-como">Como chegou até nós *</label>
                 <input type="text" id="ag-como" class="pe-input" autocomplete="off" />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-alergia">Alergia</label>
-                <input type="text" id="ag-alergia" class="pe-input" autocomplete="off" />
+                <label class="pe-rotulo" for="ag-alergia">Possui alguma alergia? *</label>
+                <input
+                  type="text"
+                  id="ag-alergia"
+                  class="pe-input"
+                  autocomplete="off"
+                  placeholder='Escreva "Nenhuma" se não tiver'
+                />
               </div>
               <div class="ag-campo">
-                <label class="pe-rotulo" for="ag-prematuro">Prematuro</label>
+                <label class="pe-rotulo" for="ag-prematuro">É prematuro(a)? *</label>
                 <select id="ag-prematuro" class="pe-input">
                   <option value="">—</option>
                   <option value="Não">Não</option>
@@ -1485,6 +1667,123 @@
               🔁 Tentar de novo
             </button>
             <button type="button" class="btn-presenca" data-ag="fechar">Fechar</button>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="reag-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card agendar-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rg-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="rg-titulo">Reagendar</h2>
+          <button class="modal-close" data-rg="fechar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body pe-corpo">
+          <!-- Passo 1 — o novo horário (da grade da turma) e, se a PE ainda precisa de decisão, a cobrança -->
+          <section id="rg-passo-form" class="pe-corpo">
+            <div class="aviso aviso-info" id="rg-atual"></div>
+            <div class="ag-campo">
+              <label class="pe-rotulo" for="rg-turma">Turma</label>
+              <select id="rg-turma" class="pe-input"></select>
+            </div>
+            <div
+              class="ag-campo ag-inteiro"
+              id="rg-grade-bloco"
+              role="group"
+              aria-labelledby="rg-grade-rotulo"
+            >
+              <span class="pe-rotulo" id="rg-grade-rotulo">Novo horário *</span>
+              <div class="pe-dica" id="rg-grade-dica"></div>
+              <div class="ag-chips" id="rg-slots"></div>
+              <div class="pe-dica" id="rg-datas-dica"></div>
+              <div class="ag-chips" id="rg-datas"></div>
+              <div class="ag-escolhido" id="rg-escolhido"></div>
+            </div>
+            <div class="aviso aviso-info" id="rg-pe-tratada" style="display: none"></div>
+            <fieldset
+              id="rg-cobranca"
+              class="pe-corpo"
+              style="border: none; padding: 0; margin: 0; display: none"
+            >
+              <legend class="pe-rotulo">Cobrança da PE no novo horário * (escolha uma)</legend>
+              <div class="pe-dica" id="rg-pix-antigo" style="display: none">
+                O PIX atual da família será cancelado no Mercado Pago.
+              </div>
+              <label class="ag-opcao">
+                <input type="radio" name="rg-cobranca" value="gerar_pix" />
+                <span>
+                  <strong>Gerar um PIX novo</strong>
+                  <small>O sistema cobra e manda as mensagens do PIX à mãe, pelo WhatsApp.</small>
+                </span>
+              </label>
+              <label class="ag-opcao">
+                <input type="radio" name="rg-cobranca" value="pix_enviado" />
+                <span>
+                  <strong>PIX já enviado</strong>
+                  <small>Você já mandou o PIX à mãe. Marque como paga quando ela pagar.</small>
+                </span>
+              </label>
+              <label class="ag-opcao">
+                <input type="radio" name="rg-cobranca" value="nao_paga" />
+                <span>
+                  <strong>Não vai pagar a PE</strong>
+                  <small>Exige uma justificativa.</small>
+                </span>
+              </label>
+            </fieldset>
+            <div class="ag-campo" id="rg-email-bloco" style="display: none">
+              <label class="pe-rotulo" for="rg-email">
+                E-mail do responsável (se o sistema pedir)
+              </label>
+              <input type="email" id="rg-email" class="pe-input" autocomplete="off" />
+              <div class="pe-dica" id="rg-email-dica"></div>
+            </div>
+            <div class="ag-campo" id="rg-justificativa-bloco" style="display: none">
+              <label class="pe-rotulo" for="rg-justificativa">Justificativa (obrigatória)</label>
+              <textarea id="rg-justificativa" class="pe-input" maxlength="500"></textarea>
+              <div class="pe-dica" id="rg-justificativa-dica"></div>
+            </div>
+            <div class="pe-dica" id="rg-faltando"></div>
+            <button type="button" class="btn-presenca" id="rg-revisar" data-rg="revisar">
+              Revisar e confirmar
+            </button>
+            <button type="button" class="btn-presenca-cancelar" data-rg="fechar">Cancelar</button>
+          </section>
+
+          <!-- Passo 2 — a confirmação com o resumo em texto -->
+          <section id="rg-passo-resumo" class="pe-corpo" style="display: none">
+            <p class="presenca-pergunta">
+              Confira antes de gravar — reagendar cria uma linha nova e encerra a anterior, e a tela
+              não desfaz.
+            </p>
+            <div class="ag-resumo" id="rg-resumo-texto"></div>
+            <div class="aviso aviso-erro" id="rg-erro" role="alert" style="display: none"></div>
+            <button type="button" class="btn-presenca" id="rg-confirmar" data-rg="confirmar">
+              ✅ Confirmar e reagendar
+            </button>
+            <button type="button" class="btn-presenca-cancelar" data-rg="voltar-form">
+              ← Voltar
+            </button>
+          </section>
+
+          <!-- Passo 3 — o resultado -->
+          <section id="rg-passo-resultado" class="pe-corpo" style="display: none">
+            <div class="aviso" id="rg-resultado-texto" style="border: 1px solid var(--line)"></div>
+            <button
+              type="button"
+              class="btn-presenca"
+              id="rg-tentar-de-novo"
+              data-rg="tentar-de-novo"
+              style="display: none"
+            >
+              🔁 Tentar de novo
+            </button>
+            <button type="button" class="btn-presenca" data-rg="fechar">Fechar</button>
           </section>
         </div>
       </div>
@@ -1614,8 +1913,8 @@
       // desligada, esta tela continua byte a byte a somente-leitura da T4:
       // `AcoesController` não desenha nenhum botão e `ApiClient.patch` nunca
       // é chamado — é o rollback de 1 minuto (docs/CRM_FASE3_PLANO.md,
-      // decisão D4/T6). "Reagendar" fica fora de propósito (decisão D5): é o
-      // único botão que CRIARIA um agendamento, e não está nesta lista.
+      // decisão D4/T6). "Reagendar" (issue #451) NÃO é desta flag: cria
+      // um agendamento e tem flag de UI própria (`FLAG_REAGENDAR_TELA`), para o rollback ser independente.
       // ═══════════════════════════════════════════════════════════════════════
 
       const ABA = BGL_CONST.CRM.ABA;
@@ -1628,6 +1927,14 @@
       const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
       function esc(valor) {
         return String(valor == null ? '' : valor).replace(/[&<>"']/g, (c) => ESCAPES[c]);
+      }
+
+      /**
+       * Flag de UI de três estados (`false` / `'hml'` / `true`): `'hml'` liga só a tela servida em /hml/,
+       * o mesmo valor que a flag do servidor usa.
+       */
+      function flagLiberada(valor) {
+        return valor === true || (valor === 'hml' && BGL_CONFIG.env === 'hml');
       }
 
       /** Valor legível, ou travessão quando a API devolveu `null`. */
@@ -2575,13 +2882,15 @@
             acao === 'proposta' ||
             acao === 'fechou' ||
             acao === 'cancelado' ||
-            acao === 'pe_paga'
+            acao === 'pe_paga' ||
+            acao === 'reagendar'
           ) {
             const local = _itemAgenda(id, bebe);
             if (!local) return;
             if (acao === 'compareceu' || acao === 'proposta') PresencaDialog.abrir(local.item);
             else if (acao === 'fechou') marcarFechou(local.item);
             else if (acao === 'pe_paga') PePagaDialog.abrir(local.item);
+            else if (acao === 'reagendar') ReagendarDialog.abrir(local.item);
             else cancelar(local.item);
           } else if (acao === 'recuperacao') {
             const local = _itemFrio(id);
@@ -2712,6 +3021,11 @@
               : tamanho + '/' + MAX;
           _el('pe-confirmar').disabled =
             _enviando || valor === null || tamanho < MIN || tamanho > MAX;
+          // O servidor só responde depois de gravar a planilha (alguns segundos, mais na 1ª chamada do
+          // dia): sem isso o diálogo parece travado e a lista atrás dele já mudou (issue #455).
+          _el('pe-confirmar').textContent = _enviando
+            ? '⏳ Gravando na planilha…'
+            : '💰 Marcar como paga';
         }
 
         // PIX do sistema que a família ainda pode pagar (issue #405): `pix_gerado` e
@@ -2839,7 +3153,8 @@
             '- data — AAAA-MM-DD, o dia da Primeira Experiência',
             '- hora — HH:MM, 24 horas',
             '- turma — uma de: ' + BGL_CONST.TURMAS.join(', '),
-            '- email, comoConheceu, alergia — texto',
+            '- email, comoConheceu — texto',
+            '- alergia — texto ("Nenhuma" se a mãe disse que não tem)',
             '- prematuro — true ou false',
             '',
             'Regras:',
@@ -2901,18 +3216,23 @@
 
         /**
          * O que ainda falta para poder revisar — rótulos em linguagem da recepção.
-         * `ctx.novo`: família nova (exige telefone e responsável); `ctx.nascimentoConhecido`:
-         * o lead já tem o nascimento do bebê escolhido.
+         * `ctx.novo`: família nova (exige também o telefone).
          */
         function faltando(f, ctx) {
           const falta = [];
           if (ctx.novo && !normalizeTelefone(f.telefone)) falta.push('telefone válido');
-          if (ctx.novo && !f.responsavel.trim()) falta.push('responsável');
-          // E-mail digitado (campo editável: só família nova) tem de estar no padrão — é o pagador do PIX
-          // e o Mercado Pago recusa o resto (issue #433). Vazio é permitido; o PIX o exige no servidor.
-          if (ctx.novo && f.email.trim() && !emailValido(f.email)) falta.push('e-mail válido');
-          if (!f.bebeNome.trim()) falta.push('nome do bebê');
-          if (!f.nascimento && !ctx.nascimentoConhecido) falta.push('nascimento');
+          // Os 9 dados do agendamento são OBRIGATÓRIOS (issues #454 e #463), para família nova ou antiga: o servidor
+          // recusa o pedido sem qualquer um deles. O e-mail tem de estar no padrão — é o pagador do PIX
+          // e o Mercado Pago recusa o resto (issue #433).
+          if (!f.responsavel.trim()) falta.push('responsável');
+          if (!f.email.trim()) falta.push('e-mail');
+          else if (!emailValido(f.email)) falta.push('e-mail válido');
+          if (!f.bebeNome.trim()) falta.push('nome completo do bebê');
+          if (!f.nascimento) falta.push('nascimento');
+          if (!f.sexo) falta.push('sexo do bebê');
+          if (!f.alergia.trim()) falta.push('alergia (escreva "Nenhuma" se não tiver)');
+          if (!f.prematuro) falta.push('prematuro (sim ou não)');
+          if (!f.comoConheceu.trim()) falta.push('como chegou até nós');
           if (!f.turma) falta.push('turma');
           if (!f.data || !f.hora) falta.push('horário');
           if (!f.cobranca) falta.push('cobrança da PE');
@@ -2962,14 +3282,11 @@
         /** O corpo do `POST /leads/{id}/agendamentos` (o servidor repete toda a validação). */
         function montarCorpo(f, ctx) {
           return {
-            // Família que já existe: o cadastro dela não é reescrito por este pedido.
-            // `familiaNova` deixa o servidor recusar (409) um telefone que já é de um lead.
-            ...(ctx.novo
-              ? {
-                  familiaNova: true,
-                  responsavel: { nome: f.responsavel.trim(), email: f.email.trim() },
-                }
-              : {}),
+            // `familiaNova` deixa o servidor recusar (409) um telefone que já é de um lead. O responsável e
+            // o e-mail VÃO sempre (são 2 dos 9 obrigatórios, issues #454 e #463): para a família que já existe os
+            // campos vêm do cadastro dela e só se completa o que faltava.
+            ...(ctx.novo ? { familiaNova: true } : {}),
+            responsavel: { nome: f.responsavel.trim(), email: f.email.trim() },
             bebe: {
               nome: f.bebeNome.trim(),
               nascimento: f.nascimento,
@@ -3113,7 +3430,7 @@
           );
         }
 
-        /** O agendamento ATIVO do bebê escolhido, se existir (reagendar ainda não é feito pela tela). */
+        /** O agendamento ATIVO do bebê escolhido, se existir (este diálogo só CRIA; reagendar é o botão da agenda, `ReagendarDialog`). */
         function _agendamentoAtivo(nome) {
           const chave = String(nome || '')
             .trim()
@@ -3154,7 +3471,6 @@
           const bebe = _bebeDoLead(f.bebeNome);
           return {
             novo: !_lead,
-            nascimentoConhecido: !!(bebe && bebe.nascimento),
             ofertasCarregadas: !!_ofertas,
             ofertasPendentes: !_ofertas && !_ofertasErro, // ainda carregando: não deixa passar sem o valor
             peOfertaRotulo: (() => {
@@ -3252,7 +3568,7 @@
           );
 
           const ctxAtual = _ctx(f);
-          const emailRuim = ctxAtual.novo && f.email.trim() !== '' && !emailValido(f.email);
+          const emailRuim = f.email.trim() !== '' && !emailValido(f.email);
           _mostrar(
             'ag-email-dica',
             emailRuim
@@ -3327,6 +3643,14 @@
           }
         }
 
+        // Último HTML pintado em cada bloco da grade (ver `_desenharGrade`).
+        const _pintado = {};
+        function _pintar(id, html) {
+          if (_pintado[id] === html) return;
+          _pintado[id] = html;
+          _el(id).innerHTML = html;
+        }
+
         function _desenharGrade() {
           const turma = _gradeTurma;
           const horarios = turma ? _grade[turma] : null;
@@ -3376,14 +3700,19 @@
                 .join('');
             }
           }
-          _el('ag-grade-dica').innerHTML =
+          // Só repinta o que MUDOU: o `change` de um campo de texto dispara no blur, que acontece no
+          // `mousedown` do botão seguinte; trocar o `innerHTML` ali joga o botão fora antes do `mouseup`
+          // e o PRIMEIRO clique no horário se perde (issue #454: mais campos de texto antes da grade).
+          _pintar(
+            'ag-grade-dica',
             esc(dica) +
-            (_gradeErro
-              ? ' <button type="button" class="ag-chip" data-ag="grade-de-novo">Tentar de novo</button>'
-              : '');
-          _el('ag-slots').innerHTML = slots;
+              (_gradeErro
+                ? ' <button type="button" class="ag-chip" data-ag="grade-de-novo">Tentar de novo</button>'
+                : ''),
+          );
+          _pintar('ag-slots', slots);
           _el('ag-datas-dica').textContent = datasDica;
-          _el('ag-datas').innerHTML = datas;
+          _pintar('ag-datas', datas);
           const d = _el('ag-data').value;
           const h = _el('ag-hora').value;
           _el('ag-escolhido').textContent = d && h ? 'Escolhido: ' + dataCurta(d) + ' às ' + h : '';
@@ -3442,7 +3771,7 @@
 
         function _montarTurmas() {
           _el('ag-turma').innerHTML =
-            '<option value="">— escolher depois —</option>' +
+            '<option value="">— escolher —</option>' +
             BGL_CONST.TURMAS.map(
               (t) =>
                 '<option value="' +
@@ -3464,6 +3793,7 @@
           _ofertasErro = false;
           _avisoOferta = '';
           _el('ag-pe-oferta').innerHTML = '';
+          for (const k of Object.keys(_pintado)) delete _pintado[k];
           _montarTurmas();
           _zerarFormulario();
           _el('ag-busca').value = '';
@@ -3559,10 +3889,12 @@
             ou(lead.telefone, 'sem telefone');
           _el('ag-telefone').value = lead.telefone || '';
           _el('ag-telefone').readOnly = true;
+          // Responsável e e-mail são obrigatórios: se o cadastro antigo não os tem, a equipe os completa.
           _el('ag-responsavel').value = (lead.responsavel && lead.responsavel.nome) || '';
-          _el('ag-responsavel').readOnly = true;
+          _el('ag-responsavel').readOnly = !!_el('ag-responsavel').value;
           _el('ag-email').value = (lead.responsavel && lead.responsavel.email) || '';
-          _el('ag-email').readOnly = true;
+          // E-mail torto do cadastro antigo também se corrige aqui (o Mercado Pago o recusaria).
+          _el('ag-email').readOnly = !!_el('ag-email').value && emailValido(_el('ag-email').value);
           _el('ag-como').value = lead.comoConheceu || '';
           const bebes = lead.bebes || [];
           _el('ag-bebe-escolha').style.display = bebes.length ? 'flex' : 'none';
@@ -3798,8 +4130,7 @@
           // O botão só existe com as DUAS flags: criar agendamento é escrita, e a flag de
           // criação nasce desligada até a validação ao vivo da linha nova na planilha.
           // `'hml'` = liberada só na tela servida em /hml/ (mesmo valor do servidor).
-          const reagendar = BGL_CONST.CRM.FLAG_REAGENDAR;
-          const liberado = reagendar === true || (reagendar === 'hml' && BGL_CONFIG.env === 'hml');
+          const liberado = flagLiberada(BGL_CONST.CRM.FLAG_REAGENDAR);
           botao.style.display = BGL_CONST.CRM.FLAG_ACOES_ESCRITA && liberado ? '' : 'none';
           botao.addEventListener('click', abrir);
           const modal = _el('agendar-modal');
@@ -3851,6 +4182,452 @@
         }
 
         return { iniciar, abrir };
+      })();
+
+      // ─── ReagendarDialog ─────────────────────────────────────────────────
+      // Issue #451 (épico #261): "📅 Reagendar" em cada item da agenda. Escolhe o NOVO horário na
+      // grade da turma (os mesmos botões do ➕ Agendar) e, quando a PE ainda precisa de decisão, a
+      // cobrança (SEM padrão); PE já paga ou tratada à mão é herdada e nada é cobrado. Resumo em texto
+      // antes de gravar, porque reagendar cria uma linha e encerra a anterior — e a tela não desfaz.
+      // Sem atualização otimista: a agenda só muda depois de a resposta chegar (aoReagendar refaz a busca).
+      //
+      // Só DOM: quem fala com a API é o `ApiClient`, e a regra de dinheiro mora no servidor
+      // (`functions/reagendar.js`, a mesma da Alice). Como os outros diálogos de escrita, o fundo NÃO
+      // cancela ao clicar.
+      const ReagendarDialog = (function () {
+        const COBRANCA = BGL_CONST.CRM.COBRANCA_PE;
+        const PE = BGL_CONST.CRM.PAGAMENTO_PE;
+        const OBS = BGL_CONST.CRM.OBSERVACAO_PE;
+        const _el = (id) => document.getElementById(id);
+
+        let _aoReagendar = null;
+        let _item = null;
+        let _grade = {}; // turma → horarios[]
+        let _gradeTurma = '';
+        let _gradeErro = '';
+        let _gradePedida = '';
+        let _slot = null;
+        let _data = '';
+        let _tentativa = null; // { json, caminho, corpo, chave, resumo } — o retry reusa a chave
+        let _enviando = false;
+
+        const _mostrar = (id, texto) => {
+          const caixa = _el(id);
+          caixa.textContent = texto || '';
+          caixa.style.display = texto ? 'block' : 'none';
+        };
+
+        function _passo(nome) {
+          for (const id of ['form', 'resumo', 'resultado']) {
+            _el('rg-passo-' + id).style.display = id === nome ? 'flex' : 'none';
+          }
+        }
+
+        /** A PE do agendamento atual já foi tratada: o novo herda e nada é cobrado. */
+        function _peTratada(item) {
+          return [PE.PAGO, PE.PIX_ENVIADO_MANUAL, PE.NAO_PAGO].includes(item.pagamentoPE);
+        }
+
+        const AVISO_PE_TRATADA = {
+          [PE.PAGO]:
+            'A PE já está paga: o pagamento passa para o novo horário e nada é cobrado de novo.',
+          [PE.PIX_ENVIADO_MANUAL]:
+            'O PIX já foi enviado à mão: o status continua no novo horário e nada é cobrado pelo sistema.',
+          [PE.NAO_PAGO]: 'A PE está dispensada: continua dispensada no novo horário.',
+        };
+
+        function _cobranca() {
+          const r = document.querySelector('input[name="rg-cobranca"]:checked');
+          return r ? r.value : '';
+        }
+
+        function _turma() {
+          return _el('rg-turma').value;
+        }
+
+        function _estaPronto() {
+          return _faltando().length === 0;
+        }
+
+        function _faltando() {
+          const falta = [];
+          if (!_turma()) falta.push('a turma');
+          if (!_data || !_slot) falta.push('o novo horário');
+          else if (_data === _item.data && _slot.hora === _item.hora)
+            falta.push('um horário diferente do de agora');
+          if (!_peTratada(_item)) {
+            const c = _cobranca();
+            if (!c) falta.push('a cobrança da PE');
+            if (c === COBRANCA.NAO_PAGA) {
+              const n = _el('rg-justificativa').value.trim().length;
+              if (n < OBS.MIN || n > OBS.MAX) falta.push('a justificativa (mín. ' + OBS.MIN + ')');
+            }
+            const email = _el('rg-email').value.trim();
+            if (c === COBRANCA.GERAR_PIX && email && !emailValido(email))
+              falta.push('um e-mail válido');
+          }
+          return falta;
+        }
+
+        function _atualizar() {
+          const c = _cobranca();
+          const naoTratada = !_peTratada(_item);
+          _el('rg-email-bloco').style.display =
+            naoTratada && c === COBRANCA.GERAR_PIX ? '' : 'none';
+          _el('rg-justificativa-bloco').style.display =
+            naoTratada && c === COBRANCA.NAO_PAGA ? '' : 'none';
+          _desenharGrade();
+          const falta = _faltando();
+          _el('rg-faltando').textContent = falta.length ? 'Falta: ' + falta.join(', ') + '.' : '';
+          _el('rg-revisar').disabled = falta.length > 0 || _enviando;
+        }
+
+        async function _carregarGrade(turma) {
+          _gradePedida = turma;
+          _gradeErro = '';
+          try {
+            const r = await ApiClient.get('/horarios', { turma });
+            _grade[turma] = r.horarios || [];
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            if (_gradeTurma === turma) {
+              _gradeErro = e.amigavel ? e.message : 'Não consegui carregar os horários agora.';
+            }
+            if (!e.amigavel) console.error('[CRM]', e);
+          } finally {
+            _gradePedida = '';
+          }
+          if (_gradeTurma !== turma) return; // a turma mudou enquanto o pedido voltava
+          _atualizar();
+        }
+
+        function _aoMudarTurma() {
+          const turma = _turma();
+          if (turma !== _gradeTurma) {
+            _gradeTurma = turma;
+            _slot = null;
+            _data = '';
+            _gradeErro = '';
+          }
+          if (turma && !_grade[turma] && !_gradeErro && _gradePedida !== turma)
+            _carregarGrade(turma);
+          _atualizar();
+        }
+
+        function _desenharGrade() {
+          const turma = _gradeTurma;
+          const horarios = turma ? _grade[turma] : null;
+          let dica = '';
+          let slots = '';
+          let datas = '';
+          let datasDica = '';
+          if (!turma) dica = 'Escolha a turma para ver os horários.';
+          else if (_gradeErro) dica = _gradeErro;
+          else if (!horarios) dica = 'Carregando os horários da turma…';
+          else if (!horarios.length)
+            dica = 'Esta turma não tem horários cadastrados: não dá para reagendar.';
+          else {
+            dica = 'Horários da turma ' + turma.charAt(0).toUpperCase() + turma.slice(1) + ':';
+            slots = horarios
+              .map((h, i) => {
+                const ativo = _slot && _slot.diaSemana === h.diaSemana && _slot.hora === h.hora;
+                return (
+                  '<button type="button" class="ag-chip' +
+                  (ativo ? ' ativo' : '') +
+                  '" aria-pressed="' +
+                  (ativo ? 'true' : 'false') +
+                  '" data-rg="slot" data-rg-i="' +
+                  i +
+                  '">' +
+                  esc(AgendarForm.rotuloDoHorario(h)) +
+                  '</button>'
+                );
+              })
+              .join('');
+            if (_slot) {
+              datasDica = 'Próximas datas — ' + AgendarForm.rotuloDoHorario(_slot) + ':';
+              datas = AgendarForm.proximasDatas(_slot, Relogio.hojeISO(), Relogio.horaAgora(), 6)
+                .map(
+                  (iso) =>
+                    '<button type="button" class="ag-chip' +
+                    (iso === _data ? ' ativo' : '') +
+                    '" aria-pressed="' +
+                    (iso === _data ? 'true' : 'false') +
+                    '" data-rg="data" data-rg-data="' +
+                    iso +
+                    '">' +
+                    esc(dataCurta(iso)) +
+                    '</button>',
+                )
+                .join('');
+            }
+          }
+          _el('rg-grade-dica').innerHTML =
+            esc(dica) +
+            (_gradeErro
+              ? ' <button type="button" class="ag-chip" data-rg="grade-de-novo">Tentar de novo</button>'
+              : '');
+          _el('rg-slots').innerHTML = slots;
+          _el('rg-datas-dica').textContent = datasDica;
+          _el('rg-datas').innerHTML = datas;
+          _el('rg-escolhido').textContent =
+            _data && _slot ? 'Escolhido: ' + dataCurta(_data) + ' às ' + _slot.hora : '';
+        }
+
+        function _escolherHorario(i) {
+          const h = (_grade[_gradeTurma] || [])[Number(i)];
+          if (!h) return;
+          _slot = { diaSemana: h.diaSemana, hora: h.hora };
+          _data = '';
+          _atualizar();
+        }
+
+        function _escolherData(iso) {
+          if (!_slot) return;
+          _data = iso;
+          _atualizar();
+        }
+
+        function estaAberto() {
+          return _item !== null;
+        }
+
+        function abrir(item) {
+          _item = item;
+          _grade = {};
+          _gradeTurma = '';
+          _gradeErro = '';
+          _gradePedida = '';
+          _slot = null;
+          _data = '';
+          _tentativa = null;
+          _enviando = false;
+          _el('rg-titulo').textContent = 'Reagendar ' + ou(item.bebe, 'bebê sem nome');
+          _el('rg-atual').textContent =
+            'Agora: ' +
+            dataCurta(item.data) +
+            (item.hora ? ' às ' + item.hora : '') +
+            (item.turma ? ' — turma ' + item.turma : '') +
+            '.';
+          const turmaAtual = String(item.turma || '').toLowerCase();
+          _el('rg-turma').innerHTML =
+            '<option value="">— escolher —</option>' +
+            BGL_CONST.TURMAS.map(
+              (t) =>
+                '<option value="' +
+                esc(t) +
+                '"' +
+                (t === turmaAtual ? ' selected' : '') +
+                '>' +
+                esc(t.charAt(0).toUpperCase() + t.slice(1)) +
+                '</option>',
+            ).join('');
+          for (const r of document.querySelectorAll('input[name="rg-cobranca"]')) r.checked = false;
+          _el('rg-justificativa').value = '';
+          _el('rg-email').value = '';
+          const tratada = _peTratada(item);
+          _el('rg-cobranca').style.display = tratada ? 'none' : '';
+          _el('rg-pix-antigo').style.display = item.pagamentoPE === PE.PIX_GERADO ? '' : 'none';
+          _mostrar('rg-pe-tratada', tratada ? AVISO_PE_TRATADA[item.pagamentoPE] : '');
+          _mostrar('rg-erro', '');
+          _passo('form');
+          _el('reag-modal').style.display = 'flex';
+          _aoMudarTurma();
+        }
+
+        function fechar() {
+          _el('reag-modal').style.display = 'none';
+          _item = null;
+          _tentativa = null;
+          _enviando = false;
+        }
+
+        function _corpo() {
+          const c = _cobranca();
+          const corpo = { data: _data, hora: _slot.hora, turma: _turma() };
+          if (!_peTratada(_item)) {
+            corpo.cobranca = c;
+            if (c === COBRANCA.NAO_PAGA) corpo.justificativa = _el('rg-justificativa').value.trim();
+            const email = _el('rg-email').value.trim();
+            if (c === COBRANCA.GERAR_PIX && email) corpo.responsavel = { email };
+          }
+          return corpo;
+        }
+
+        const ROTULO_COBRANCA = {
+          [COBRANCA.GERAR_PIX]: 'um PIX novo será gerado no Mercado Pago e as mensagens vão à mãe',
+          [COBRANCA.PIX_ENVIADO]: 'o PIX já foi enviado por você (nenhum PIX novo)',
+          [COBRANCA.NAO_PAGA]: 'a PE não será paga',
+        };
+
+        function revisar() {
+          if (!_item || !_estaPronto()) return;
+          const corpo = _corpo();
+          const caminho =
+            '/leads/' +
+            encodeURIComponent(_item.id) +
+            '/agendamentos/' +
+            encodeURIComponent(_item.agendamentoId) +
+            '/reagendar';
+          const json = JSON.stringify(corpo);
+          // A chave identifica a INTENÇÃO: o retry do mesmo pedido a reusa; mudou um campo, é outro pedido.
+          if (!_tentativa || _tentativa.json !== json || _tentativa.caminho !== caminho) {
+            _tentativa = { json, caminho, corpo, chave: crypto.randomUUID() };
+          }
+          const de = dataCurta(_item.data) + (_item.hora ? ' às ' + _item.hora : '');
+          const para = dataCurta(corpo.data) + ' às ' + corpo.hora;
+          let texto = ou(_item.bebe, 'O bebê') + ': de ' + de + ' para ' + para + '.';
+          texto += '\nTurma: ' + corpo.turma.charAt(0).toUpperCase() + corpo.turma.slice(1) + '.';
+          if (_peTratada(_item)) texto += '\n' + AVISO_PE_TRATADA[_item.pagamentoPE];
+          else {
+            texto += '\nCobrança da PE: ' + ROTULO_COBRANCA[corpo.cobranca] + '.';
+            // O PIX novo cobra o MESMO valor do que vai ser cancelado (o servidor reaproveita o valor).
+            if (corpo.cobranca === COBRANCA.GERAR_PIX) {
+              texto +=
+                typeof _item.valorPE === 'number'
+                  ? '\nValor do PIX novo: R$ ' +
+                    _item.valorPE.toFixed(2).replace('.', ',') +
+                    ' (o mesmo do PIX atual).'
+                  : '\nO PIX novo cobra o mesmo valor do PIX atual; se ele ainda não foi gerado, vale a oferta de hoje.';
+            }
+            if (_item.pagamentoPE === PE.PIX_GERADO) {
+              texto += '\nO PIX atual da família será cancelado no Mercado Pago.';
+            }
+          }
+          texto += '\nA linha antiga é encerrada na planilha e uma linha nova é criada.';
+          _el('rg-resumo-texto').textContent = texto;
+          _el('rg-resumo-texto').style.whiteSpace = 'pre-wrap';
+          _mostrar('rg-erro', '');
+          _passo('resumo');
+        }
+
+        const ROTULO_FALHA_PIX = {
+          erro_mp: 'o Mercado Pago recusou o pedido',
+          sem_valor: 'o valor da PE não está cadastrado',
+          sem_email: 'falta o e-mail do responsável',
+          sem_linha: 'a linha ainda não está na planilha',
+          erro_planilha: 'a planilha não respondeu',
+          erro_lead: 'o CRM não gravou o PIX',
+          desligado: 'a geração de PIX está desligada',
+        };
+
+        function _mostrarResultado(resposta) {
+          const rg = resposta && resposta.reagendamento;
+          const espelho = resposta && resposta.espelho;
+          const pix = resposta && resposta.pix;
+          const linhaFalhou = espelho && !espelho.ok;
+          const anteriorPixFalhou = rg && rg.pix && !rg.pix.ok;
+          const anteriorLinhaFalhou = rg && rg.linha && !rg.linha.ok;
+          const pixFalhou = pix && !pix.ok;
+          const mensagensFalharam = pix && pix.ok && pix.mensagens && !pix.mensagens.ok;
+          const t = _tentativa;
+          let texto =
+            ou(_item.bebe, 'O bebê') +
+            ' reagendado(a) para ' +
+            dataCurta(t.corpo.data) +
+            ' às ' +
+            t.corpo.hora +
+            '.';
+          if (linhaFalhou) {
+            texto +=
+              '\n\n⚠️ O novo horário foi salvo no CRM, mas a linha NÃO entrou na planilha, e a linha antiga ainda NÃO foi encerrada. Clique em "Tentar de novo"; se continuar falhando, avise o Michel (não reagende de novo: o agendamento já existe).';
+          } else if (anteriorPixFalhou) {
+            texto +=
+              '\n\n⚠️ O PIX ANTIGO não pôde ser cancelado no Mercado Pago, então nenhum PIX novo foi gerado e a linha antiga ainda não foi encerrada (a mãe poderia pagar o antigo). Clique em "Tentar de novo"; se continuar falhando, avise o Michel.';
+          } else if (anteriorLinhaFalhou) {
+            texto +=
+              '\n\n⚠️ A linha ANTIGA não foi encerrada na planilha. Clique em "Tentar de novo"; se continuar falhando, avise o Michel.';
+          } else {
+            texto += '\nA linha antiga foi encerrada e a nova já está na planilha.';
+          }
+          if (rg && rg.pix && rg.pix.ok && rg.pix.cancelado) {
+            texto += '\nO PIX antigo foi cancelado no Mercado Pago.';
+          }
+          if (pix && pix.ok && !pix.jaSolicitado) {
+            texto += mensagensFalharam
+              ? '\n\n⚠️ O PIX novo foi gerado, mas as mensagens à mãe NÃO saíram. Mande este link a ela: ' +
+                (pix.pagamento && pix.pagamento.ticketUrl
+                  ? pix.pagamento.ticketUrl
+                  : '(sem link)') +
+                '\nNão clique em "Tentar de novo": o PIX já existe.'
+              : '\nPIX novo gerado e as mensagens (link e dados do pagamento) já foram enviadas à mãe.';
+          } else if (pixFalhou && !linhaFalhou && !anteriorPixFalhou && !anteriorLinhaFalhou) {
+            texto +=
+              '\n\n⚠️ O PIX novo NÃO foi gerado (' +
+              (ROTULO_FALHA_PIX[pix.motivo] || 'erro ao gerar o PIX') +
+              '). Clique em "Tentar de novo": o pedido é o mesmo e o sistema não cobra duas vezes.';
+          }
+          const falhou = linhaFalhou || anteriorPixFalhou || anteriorLinhaFalhou || pixFalhou;
+          const caixa = _el('rg-resultado-texto');
+          caixa.textContent = texto;
+          caixa.style.whiteSpace = 'pre-wrap';
+          caixa.className = 'aviso ' + (falhou || mensagensFalharam ? 'aviso-info' : '');
+          _el('rg-tentar-de-novo').style.display = falhou ? '' : 'none';
+          _passo('resultado');
+        }
+
+        async function confirmar() {
+          if (_enviando || !_tentativa) return;
+          const t = _tentativa;
+          _enviando = true;
+          _el('rg-confirmar').disabled = true;
+          _el('rg-tentar-de-novo').disabled = true;
+          _mostrar('rg-erro', '');
+          try {
+            const resposta = await ApiClient.post(t.caminho, t.corpo, {
+              'Idempotency-Key': t.chave,
+            });
+            _mostrarResultado(resposta);
+            if (_aoReagendar) _aoReagendar();
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              fechar();
+              AuthController.expirar(e.message);
+              return;
+            }
+            // Fica no resumo, com o texto: nada se perde e o retry reusa a chave.
+            _passo('resumo');
+            _mostrar(
+              'rg-erro',
+              e.amigavel ? e.message : 'Não consegui reagendar agora. Tente de novo.',
+            );
+            if (!e.amigavel) console.error('[CRM]', e);
+            // A lista estava velha (outra pessoa já reagendou ou o bebê já veio): recarrega a agenda.
+            if (e.motivo === 'nao_e_o_corrente' && _aoReagendar) _aoReagendar();
+          } finally {
+            _enviando = false;
+            _el('rg-confirmar').disabled = false;
+            _el('rg-tentar-de-novo').disabled = false;
+          }
+        }
+
+        function iniciar({ aoReagendar } = {}) {
+          _aoReagendar = aoReagendar || null;
+          const modal = _el('reag-modal');
+          modal.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-rg]');
+            if (!b || b.disabled) return;
+            const acao = b.dataset.rg;
+            if (acao === 'fechar') fechar();
+            else if (acao === 'revisar') revisar();
+            else if (acao === 'voltar-form') _passo('form');
+            else if (acao === 'confirmar' || acao === 'tentar-de-novo') confirmar();
+            else if (acao === 'slot') _escolherHorario(b.dataset.rgI);
+            else if (acao === 'data') _escolherData(b.dataset.rgData);
+            else if (acao === 'grade-de-novo') {
+              _gradeErro = '';
+              _aoMudarTurma();
+            }
+          });
+          _el('rg-turma').addEventListener('change', _aoMudarTurma);
+          _el('rg-passo-form').addEventListener('input', _atualizar);
+        }
+
+        return { abrir, iniciar, estaAberto };
       })();
 
       // ─── PreviaDialog ────────────────────────────────────────────────────
@@ -4039,17 +4816,23 @@
        * `pendente` desabilita o botão enquanto o PATCH está no ar (evita duplo
        * clique). Usado só atrás de `BGL_CONST.CRM.FLAG_ACOES_ESCRITA`.
        */
-      function botaoAcao(acao, rotulo, { id, bebe, pendente }) {
+      // `icone` (modo compacto: Mês #465, Semana e Frios #469): o botão vira só o símbolo, e o
+      // rótulo (sem o emoji da frente) vai para o tooltip e o `aria-label`.
+      function botaoAcao(acao, rotulo, { id, bebe, pendente, icone }) {
+        const texto = icone ? rotulo.replace(/^[^\p{L}]+/u, '') : rotulo;
         return (
-          '<button type="button" class="btn-acao" data-acao="' +
+          '<button type="button" class="btn-acao' +
+          (icone ? ' btn-icone' : '') +
+          '" data-acao="' +
           esc(acao) +
           '" data-id="' +
           esc(id) +
           '"' +
           (bebe ? ' data-bebe="' + esc(bebe) + '"' : '') +
+          (icone ? ' data-tip="' + esc(texto) + '" aria-label="' + esc(texto) + '"' : '') +
           (pendente ? ' disabled' : '') +
           '>' +
-          esc(rotulo) +
+          (icone ? '<span class="ico">' + esc(icone) + '</span>' : esc(rotulo)) +
           '</button>'
         );
       }
@@ -4070,13 +4853,66 @@
           );
         }
 
+        // Símbolos do modo compacto (issue #465). Texto vem do próprio rótulo do botão.
+        const ICONES_COMPACTOS = {
+          detalhe: '🔍',
+          compareceu: '✅',
+          fechou: '🤝',
+          proposta: '📤',
+          pe_paga: '💰',
+          reagendar: '📅',
+          cancelado: '🚫',
+          conversa: '💬',
+          // Frios (issue #469): o mesmo botão alterna Travar/Destravar conforme o estado do lead.
+          travar: '🔒',
+          destravar: '🔓',
+        };
+
+        // Detalhe e Conversa no modo compacto (issue #469): o markup e o tooltip moram aqui, e a
+        // Semana, o Mês e a Frios usam as mesmas funções.
+        function detalheCompacto(telefone) {
+          return (
+            '<button type="button" class="btn-acao btn-icone" data-lead="' +
+            esc(telefone) +
+            '" data-tip="Detalhe" aria-label="Detalhe">' +
+            ICONES_COMPACTOS.detalhe +
+            '</button>'
+          );
+        }
+
+        function conversaCompacta(wpp) {
+          return (
+            '<a class="btn-acao btn-icone" href="' +
+            esc(wpp) +
+            '" target="_blank" rel="noopener" data-tip="Conversa no WhatsApp"' +
+            ' aria-label="Conversa no WhatsApp">' +
+            ICONES_COMPACTOS.conversa +
+            '</a>'
+          );
+        }
+
         /**
          * Um slot de leitura: mostra o booleano que a API devolve, sem ação
          * nenhuma. É o que a tela desenha com a flag da T6 desligada, e
          * também o que ela mostra quando a ação já foi feita (não existe
          * evento para "desmarcar" `compareceu`/`fechou` — só se marca uma vez).
          */
-        function slotT6(rotulo, marcado) {
+        function slotT6(rotulo, marcado, icone, tip, chave) {
+          if (icone) {
+            return (
+              '<span class="slot-icone' +
+              (marcado ? ' marcado' : '') +
+              '" data-slot="' +
+              esc(chave) +
+              '" role="img" tabindex="0" data-tip="' +
+              esc(tip) +
+              '" aria-label="' +
+              esc(tip) +
+              '">' +
+              esc(icone) +
+              '</span>'
+            );
+          }
           return (
             '<span class="acao-slot' +
             (marcado ? ' marcado' : '') +
@@ -4107,31 +4943,50 @@
          * #245, 2ª rodada) — `tabela()` desliga essa parte só para essa
          * chamada, mantendo Detalhe/Conversa.
          */
-        function _partesAcoes(item, { proposta, mostrarAcoesDeEscrita = true }) {
+        function _partesAcoes(item, { proposta, mostrarAcoesDeEscrita = true, compacta = false }) {
+          const ic = (chave) => (compacta ? ICONES_COMPACTOS[chave] : undefined);
           const escritaLigada = mostrarAcoesDeEscrita && BGL_CONST.CRM.FLAG_ACOES_ESCRITA;
           const partes = [];
           if (mostrarAcoesDeEscrita) {
             if (escritaLigada && !item.compareceu) {
               partes.push(
                 botaoAcao('compareceu', 'Marcar presença', {
+                  icone: ic('compareceu'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('compareceu', item.id, item.bebe),
                 }),
               );
             } else {
-              partes.push(slotT6('Presença', item.compareceu));
+              partes.push(
+                slotT6(
+                  'Presença',
+                  item.compareceu,
+                  ic('compareceu'),
+                  item.compareceu ? 'Presença marcada' : 'Presença não marcada',
+                  'compareceu',
+                ),
+              );
             }
             if (escritaLigada && !item.fechou) {
               partes.push(
                 botaoAcao('fechou', 'Marcar fechou', {
+                  icone: ic('fechou'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('fechou', item.id, item.bebe),
                 }),
               );
             } else {
-              partes.push(slotT6('Fechou', item.fechou));
+              partes.push(
+                slotT6(
+                  'Fechou',
+                  item.fechou,
+                  ic('fechou'),
+                  item.fechou ? 'Fechou marcado' : 'Fechou não marcado',
+                  'fechou',
+                ),
+              );
             }
             // Depois da presença e antes do Fechou, a proposta continua a um
             // clique: o diálogo de presença só abre uma vez (o botão some ao
@@ -4140,6 +4995,7 @@
             if (escritaLigada && item.compareceu && !item.fechou) {
               partes.push(
                 botaoAcao('proposta', '📤 Enviar proposta', {
+                  icone: ic('proposta'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('proposta', item.id, item.bebe),
@@ -4160,15 +5016,38 @@
             ) {
               partes.push(
                 botaoAcao('pe_paga', '💰 Marcar PE paga', {
+                  icone: ic('pe_paga'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('pe_paga', item.id, item.bebe),
                 }),
               );
             }
-            if (escritaLigada) {
+            // Reagendar (issue #451): só enquanto o agendamento não aconteceu e tem identidade (a
+            // Function fecha a linha antiga pelo UUID). Flag de UI própria, separada da de escrita.
+            if (
+              escritaLigada &&
+              flagLiberada(BGL_CONST.CRM.FLAG_REAGENDAR_TELA) &&
+              item.agendamentoId &&
+              !item.compareceu &&
+              !item.fechou
+            ) {
+              partes.push(
+                botaoAcao('reagendar', '📅 Reagendar', {
+                  icone: ic('reagendar'),
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: ReagendarDialog.estaAberto(),
+                }),
+              );
+            }
+            // Quem já veio (presença marcada) ou já fechou não se cancela: o botão some
+            // (issue #467). O servidor aceita `cancelado` em qualquer agendamento, então a
+            // regra mora só na tela.
+            if (escritaLigada && !item.compareceu && !item.fechou) {
               partes.push(
                 botaoAcao('cancelado', 'Cancelar', {
+                  icone: ic('cancelado'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('cancelado', item.id, item.bebe),
@@ -4188,9 +5067,11 @@
           const wpp = LinkBuilder.conversa(item.telefone);
           if (wpp) {
             partes.push(
-              '<a class="btn-acao" href="' +
-                esc(wpp) +
-                '" target="_blank" rel="noopener">💬 Conversa</a>',
+              compacta
+                ? conversaCompacta(wpp)
+                : '<a class="btn-acao" href="' +
+                    esc(wpp) +
+                    '" target="_blank" rel="noopener">💬 Conversa</a>',
             );
           }
           return partes;
@@ -4264,35 +5145,45 @@
          * ali a coluna repetiria em cada linha o que o cabeçalho do grupo já
          * diz.
          */
-        function tabela(itens, { comAcoesDeEscrita = true, comData = false } = {}) {
+        function tabela(
+          itens,
+          { comAcoesDeEscrita = true, comData = false, compacta = false } = {},
+        ) {
           const linhas = itens
             .map((i) => {
               const acoesCel = _partesAcoes(i, {
                 proposta: false,
                 mostrarAcoesDeEscrita: comAcoesDeEscrita,
+                compacta,
               });
               if (i.telefone) {
                 acoesCel.unshift(
-                  '<button type="button" class="btn-acao" data-lead="' +
-                    esc(i.telefone) +
-                    '">📄 Detalhe</button>',
+                  compacta
+                    ? detalheCompacto(i.telefone)
+                    : '<button type="button" class="btn-acao" data-lead="' +
+                        esc(i.telefone) +
+                        '">📄 Detalhe</button>',
                 );
               }
+              // Modo compacto: nome comprido não quebra a linha — corta com reticências
+              // e o texto inteiro fica no `title`.
+              const celCorte = (texto) =>
+                compacta
+                  ? '<td class="cel-corte" title="' +
+                    esc(ou(texto)) +
+                    '">' +
+                    esc(ou(texto)) +
+                    '</td>'
+                  : '<td>' + esc(ou(texto)) + '</td>';
               return (
                 '<tr>' +
                 (comData ? '<td>' + esc(dataCurta(i.data)) + '</td>' : '') +
                 '<td>' +
                 esc(ou(i.hora)) +
                 '</td>' +
-                '<td>' +
-                esc(ou(i.bebe)) +
-                '</td>' +
-                '<td>' +
-                esc(ou(i.nome)) +
-                '</td>' +
-                '<td>' +
-                esc(ou(i.turma)) +
-                '</td>' +
+                celCorte(i.bebe) +
+                celCorte(i.nome) +
+                celCorte(i.turma) +
                 '<td>' +
                 esc(ou(i.telefone)) +
                 '</td>' +
@@ -4310,7 +5201,14 @@
             })
             .join('');
           return (
-            '<div class="tabela-wrap"><table>' +
+            '<div class="tabela-wrap' +
+            (compacta
+              ? ' tabela-compacta' +
+                (BGL_CONST.CRM.FLAG_ACOES_ESCRITA && flagLiberada(BGL_CONST.CRM.FLAG_REAGENDAR_TELA)
+                  ? ''
+                  : ' sem-reagendar')
+              : '') +
+            '"><table>' +
             '<thead><tr>' +
             (comData ? '<th>Data</th>' : '') +
             '<th>Hora</th><th>Bebê</th><th>Mãe</th><th>Turma</th><th>Telefone</th>' +
@@ -4321,7 +5219,14 @@
           );
         }
 
-        return { agruparPorHora, bloco, tabela };
+        return {
+          agruparPorHora,
+          bloco,
+          tabela,
+          ICONES_COMPACTOS,
+          detalheCompacto,
+          conversaCompacta,
+        };
       })();
 
       // ─── PainelRenderer ──────────────────────────────────────────────────
@@ -4453,7 +5358,7 @@
                 (passado ? badge('já passou', 'neutro') : '') +
                 (data === hoje ? badge('hoje', 'hoje') : '') +
                 '</h2>' +
-                AgendaRenderer.tabela(lista) +
+                AgendaRenderer.tabela(lista, { compacta: true }) +
                 '</section>'
               );
             })
@@ -4572,7 +5477,7 @@
                 filtrados.length +
                 (filtrados.length === 1 ? ' agendamento' : ' agendamentos') +
                 '</h2>' +
-                AgendaRenderer.tabela(filtrados, { comData: true });
+                AgendaRenderer.tabela(filtrados, { comData: true, compacta: true });
 
           return _navegacao(anoMes) + _filtros(itens, ativos) + corpo;
         }
@@ -4589,16 +5494,15 @@
           if (!itens.length) {
             return '<div class="vazio">Nenhum lead na lista de recuperação.</div>';
           }
+          const { ICONES_COMPACTOS: ICONES } = AgendaRenderer;
+          const celCorte = (texto) =>
+            '<td class="cel-corte" title="' + esc(texto) + '">' + esc(texto) + '</td>';
           const linhas = itens
             .map((i) => {
               const wpp = LinkBuilder.conversa(i.telefone);
               const acoes = [];
               if (i.telefone) {
-                acoes.push(
-                  '<button type="button" class="btn-acao" data-lead="' +
-                    esc(i.telefone) +
-                    '">📄 Detalhe</button>',
-                );
+                acoes.push(AgendaRenderer.detalheCompacto(i.telefone));
               }
               // Travar/destravar recuperação (T6) — mesmo botão, evento
               // conforme o estado atual (`AcoesController.travar`). Não tem
@@ -4611,26 +5515,19 @@
                     i.travado ? 'Destravar recuperação' : 'Travar recuperação',
                     {
                       id: i.id,
+                      icone: i.travado ? ICONES.destravar : ICONES.travar,
                       pendente: AcoesController.estaPendente('recuperacao', i.id),
                     },
                   ),
                 );
               }
               if (wpp) {
-                acoes.push(
-                  '<a class="btn-acao" href="' +
-                    esc(wpp) +
-                    '" target="_blank" rel="noopener">💬 Conversa</a>',
-                );
+                acoes.push(AgendaRenderer.conversaCompacta(wpp));
               }
               return (
                 '<tr>' +
-                '<td>' +
-                esc(ou(i.nome)) +
-                '</td>' +
-                '<td>' +
-                esc(ROTULO_MOTIVO_FRIO[i.motivo] || ou(i.motivo)) +
-                '</td>' +
+                celCorte(ou(i.nome)) +
+                celCorte(ROTULO_MOTIVO_FRIO[i.motivo] || ou(i.motivo)) +
                 '<td>' +
                 esc(dataCurta(i.data)) +
                 '</td>' +
@@ -4649,7 +5546,7 @@
             '<h2 class="secao-titulo">Leads a recuperar (' +
             itens.length +
             ')</h2>' +
-            '<div class="tabela-wrap"><table>' +
+            '<div class="tabela-wrap tabela-compacta tabela-estreita"><table>' +
             '<thead><tr><th>Nome</th><th>Motivo</th><th>Data</th><th></th><th></th></tr></thead>' +
             '<tbody>' +
             linhas +
@@ -5473,7 +6370,13 @@
           CrmController.buscar();
         }
 
+        // Uma vez só: `iniciar` roda a CADA login (`_mostrarApp`), e sem a guarda cada entrada depois
+        // de sair ou de a sessão expirar empilhava mais um timer e mais ouvintes de foco (issue #471).
+        let _ligado = false;
+
         function iniciar() {
+          if (_ligado) return;
+          _ligado = true;
           setInterval(_tique, TIQUE_MS);
           document.addEventListener('visibilitychange', aoRecuperarFoco);
           window.addEventListener('focus', aoRecuperarFoco);
@@ -5761,8 +6664,13 @@
           UIRenderer.render();
         }
 
-        function iniciar() {
-          UIRenderer.renderTabs();
+        // `iniciar` roda a CADA login (`AuthController._mostrarApp`: entrar, sair e entrar de novo, ou a
+        // sessão recusada pela API e um novo login), mas os ouvintes vivem no DOM da página inteira e
+        // só podem ser ligados UMA vez. Ligados de novo, cada clique valia em dobro: o ▶ do Mês
+        // pulava dois meses e o chip de filtro ligava e desligava no mesmo clique (issue #471).
+        let _ouvintesLigados = false;
+
+        function _ligarOuvintes() {
           document.getElementById('tabs').addEventListener('click', (e) => {
             const botao = e.target.closest('[data-aba]');
             if (botao) irPara(botao.dataset.aba);
@@ -5807,10 +6715,24 @@
           });
           document.getElementById('btn-atualizar').addEventListener('click', atualizarAgora);
           document.getElementById('btn-fechar-lead').addEventListener('click', fecharLead);
+          // Altura do cabeçalho fixo → `--crm-topo-h`, o `top` do cabeçalho da tabela do Mês
+          // (issue #467). Medida e observada: o `.crm-topo` quebra em duas linhas em tela estreita.
+          const topoFixo = document.querySelector('.crm-topo');
+          if (topoFixo) {
+            const medirTopo = () =>
+              document.documentElement.style.setProperty(
+                '--crm-topo-h',
+                topoFixo.getBoundingClientRect().height + 'px',
+              );
+            medirTopo();
+            if (typeof ResizeObserver === 'function')
+              new ResizeObserver(medirTopo).observe(topoFixo);
+          }
           PresencaDialog.iniciar();
           PePagaDialog.iniciar();
           // Depois de criar, a agenda atrás do diálogo se atualiza sozinha.
           AgendarDialog.iniciar({ aoCriar: atualizarAgora });
+          ReagendarDialog.iniciar({ aoReagendar: atualizarAgora });
           PreviaDialog.iniciar();
           document.getElementById('lead-modal').addEventListener('click', (e) => {
             if (e.target.id === 'lead-modal') fecharLead();
@@ -5825,7 +6747,14 @@
           corpoLead.addEventListener('input', (e) => {
             if (e.target.id === 'pospe-editor') AcoesController.digitarPosPE(e.target.value);
           });
+        }
 
+        function iniciar() {
+          UIRenderer.renderTabs();
+          if (!_ouvintesLigados) {
+            _ouvintesLigados = true;
+            _ligarOuvintes();
+          }
           UIRenderer.render();
           buscar();
           Atualizador.iniciar();

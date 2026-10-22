@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.25',
-  APP_DATE: '2026-10-16',
+  APP_VERSION: '3.35',
+  APP_DATE: '2026-10-22',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -191,12 +191,18 @@ const BGL_CONST = {
      * Botão "➕ Agendar" (criar agendamento pela tela, issue #271). O botão só
      * aparece com ela E com `FLAG_ACOES_ESCRITA` ligadas, e a API tem a sua
      * (`BGL_REAGENDAR_LINHA`, servidor) — sem as duas a criação não chega à planilha.
-     * Valores: `false` (nasceu assim) = ninguém vê · **`'hml'` = só a tela servida em
-     * `/hml/`** (validação ao vivo da linha nova, o mesmo valor `hml` da flag do
-     * servidor) · `true` = todos, inclusive produção — só depois da validação
-     * (`docs/COMANDOS.md`, "Criar agendamento pela tela"). Promover com `'hml'` para
-     * a `master` não mostra o botão em produção.
+     * Valores: `false` (nasceu assim) = ninguém vê · `'hml'` = só a tela servida em
+     * `/hml/` (validação ao vivo da linha nova) · **`true` = todos, inclusive produção**
+     * (liberado na 3.26, issue #449). Rollback do botão: voltar para `false` (tira só
+     * o botão; a criação no servidor segue em `BGL_REAGENDAR_LINHA`, `docs/COMANDOS.md`).
      */
-    FLAG_REAGENDAR: 'hml',
+    FLAG_REAGENDAR: true,
+    /**
+     * Botão "📅 Reagendar" em cada item da agenda (issue #451). Flag PRÓPRIA, separada da do ➕ Agendar:
+     * reagendar encerra uma linha e pode cancelar um PIX, e o rollback tem de ser independente.
+     * Mesmos valores: `false` = ninguém vê · `'hml'` = só a tela servida em `/hml/` · `true` = todos.
+     * Também exige `FLAG_ACOES_ESCRITA` e `BGL_REAGENDAR_LINHA` no servidor.
+     */
+    FLAG_REAGENDAR_TELA: 'hml',
   },
 };

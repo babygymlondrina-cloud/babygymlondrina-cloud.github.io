@@ -67,7 +67,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Cancelar</td><td>DadosAgendamento, coluna T (status de confirmação = cancelado)</td></tr>
             <tr><td>Travar ou destravar recuperação</td><td>LeadsFrios, coluna A (Travar)</td></tr>
             <tr><td>Anotações pós-PE</td><td>DadosAgendamento, colunas Y, Z e AA</td></tr>
-            <tr><td>💰 Marcar PE paga</td><td>DadosAgendamento, colunas AB (pago), AN (valor), AO (seu e-mail) e AP (o motivo)</td></tr>
+            <tr><td>💰 Marcar PE paga</td><td>DadosAgendamento, colunas AB (pago), AN (valor), AO (seu e-mail) e AP (o motivo); e a T passa de "aguardando_pagamento" para "a confirmar"</td></tr>
           </tbody>
         </table></div>
         <p>O caminho contrário também existe: o que muda na planilha chega ao CRM automaticamente, em até cerca de 30 minutos.</p>
@@ -132,15 +132,15 @@ const BGL_CRM_AJUDA = {
             <tr><td><b>Marcar presença</b></td><td>Registra que a família compareceu (planilha, coluna V) e abre a pergunta sobre a proposta (próxima seção). Depois vira "✓ Presença" e não dá para desmarcar pela tela: se marcou errado, avise o Michel. Aparece nas três faixas, porque a presença é marcada quando a mãe chega, dentro do horário corrente.</td></tr>
             <tr><td><b>Marcar fechou</b></td><td>Registra que a família fechou o plano (coluna X) e <b>manda a mensagem de boas-vindas pelo WhatsApp</b>. Só se marca uma vez; depois vira "✓ Fechou". Quem fechou continua na lista, com o selo.</td></tr>
             <tr><td><b>➕ Agendar</b></td><td>Fica no topo da tela, ao lado de ↻ Atualizar, e só aparece quando o Michel libera. Cria a Primeira Experiência de uma família e a linha na planilha. Veja a seção "Agendar uma Primeira Experiência".</td></tr>
-            <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
+            <tr><td><b>💰 Marcar PE paga</b></td><td>Registra à mão que a Primeira Experiência foi paga (planilha, colunas AB, AN, AO e AP, e a T de "aguardando_pagamento" para "a confirmar"). Pede o valor recebido e o motivo, e some quando a PE já consta como paga. Veja a seção "Marcar a PE como paga à mão".</td></tr>
             <tr><td><b>Cancelar</b></td><td>Cancela o agendamento (coluna T). Pede confirmação ("Cancelar o agendamento de [bebê]? Ele sai da agenda."), por ser a ação mais difícil de desfazer.</td></tr>
             <tr><td><b>📄 Proposta</b></td><td>Só na faixa "Já passou". Abre o detalhe do lead, de onde sai a proposta.</td></tr>
-            <tr><td><b>📄 Detalhe</b></td><td>Nas tabelas (Semana, Mês, Frios, lista do rodapé do Painel). Abre o detalhe do lead.</td></tr>
+            <tr><td><b>📄 Detalhe</b></td><td>Nas tabelas (Semana, Mês, Frios, lista do rodapé do Painel). Abre o detalhe do lead. Na Semana, no Mês e em Frios aparece como 🔍.</td></tr>
             <tr><td><b>💬 Conversa</b></td><td>Abre a conversa no WhatsApp com o telefone do lead. Só aparece se há telefone.</td></tr>
           </tbody>
         </table></div>
         <p>Cada clique aparece na tela <b>na hora</b>, antes de a planilha confirmar. O botão fica desabilitado enquanto o pedido está no ar, o que evita clique duplo. Se algo falhar (sem internet, sessão expirada), a tela desfaz o que mostrou e avisa em vermelho: clique de novo.</p>
-        <p>Presença, Fechou e Cancelar funcionam no Painel, na Semana e no Mês.</p>
+        <p>Presença, Fechou e Cancelar funcionam no Painel, na Semana e no Mês. <b>Cancelar só aparece</b> enquanto a presença não foi marcada e o agendamento não fechou: quem já veio não se cancela.</p>
       `,
     },
     {
@@ -183,10 +183,12 @@ const BGL_CRM_AJUDA = {
           <li><b>PIX do sistema ainda pendente:</b> se já existe um PIX gerado para essa PE e ele <b>ainda não venceu</b>, o diálogo avisa. Se a família ainda puder pagá-lo, o dinheiro entra duas vezes: peça para ela ignorar o PIX antigo. PIX já vencido não pode mais ser pago, então não há aviso.</li>
           <li><b>Já confirmada pelo Mercado Pago:</b> não dá para marcar à mão, porque o pagamento já foi confirmado pelo sistema. A tela avisa e nada muda.</li>
           <li><b>Digitou o valor errado?</b> Depois de marcada, a tela não oferece corrigir (o botão some). Avise o Michel, que corrige.</li>
+          <li><b>A confirmação do dia anterior:</b> se a família estava como "aguardando pagamento" (a mensagem da véspera cobraria a PE), ela passa sozinha para "a confirmar", na planilha e no CRM, e <b>não recebe mais o aviso para pagar</b>. Confirmações já "confirmado" ou "cancelado" não mudam.</li>
+          <li>O botão mostra <b>⏳ Gravando na planilha…</b> até o servidor responder (alguns segundos): aguarde o diálogo fechar.</li>
           <li>Se o servidor recusar, o diálogo <b>continua aberto</b> com o motivo em vermelho e o que você digitou fica lá.</li>
         </ul>
-        <div class="aviso aviso-info"><b>Se vier o aviso "não atualizou a planilha":</b> a PE foi salva no CRM, mas a planilha ainda está com o estado antigo, e <b>na próxima sincronização (até cerca de 30 minutos) a PE volta a "não paga"</b>. Digite você mesma na linha do bebê: <b>AB = pago</b>, <b>AN</b> = o valor, <b>AO</b> = seu e-mail e <b>AP</b> = o motivo. Depois disso nada mais se perde.</div>
-        <p><b>Sem o botão?</b> Agendamentos antigos, sem identificação da linha, não têm o botão 💰: a marcação não teria onde ser gravada na planilha e voltaria sozinha. Nesses, marque direto na planilha (AB, AN, AO e AP).</p>
+        <div class="aviso aviso-info"><b>Se vier o aviso "não atualizou a planilha":</b> a PE foi salva no CRM, mas a planilha ainda está com o estado antigo, e <b>na próxima sincronização (até cerca de 30 minutos) a PE volta a "não paga"</b>. Digite você mesma na linha do bebê: <b>AB = pago</b>, <b>AN</b> = o valor, <b>AO</b> = seu e-mail e <b>AP</b> = o motivo; e, se a coluna <b>T</b> estiver como <b>aguardando_pagamento</b>, troque para <b>a confirmar</b> (senão a mãe recebe o aviso para pagar na véspera). Depois disso nada mais se perde.</div>
+        <p><b>Sem o botão?</b> Agendamentos antigos, sem identificação da linha, não têm o botão 💰: a marcação não teria onde ser gravada na planilha e voltaria sozinha. Nesses, marque direto na planilha (AB, AN, AO e AP) e, se a T estiver como aguardando_pagamento, troque para a confirmar.</p>
       `,
     },
     {
@@ -194,11 +196,10 @@ const BGL_CRM_AJUDA = {
       titulo: 'Agendar uma Primeira Experiência',
       desde: '3.22',
       html: `
-        <div class="aviso aviso-info"><b>Este botão ainda não está liberado.</b> O ➕ Agendar está em teste e só aparece na versão de homologação (endereço com <code>/hml/</code>); lá, a linha criada é <b>real</b> na planilha, então não use com dados de uma família de verdade. No sistema de verdade, continue agendando como hoje até o Michel liberar.</div>
         <p>O botão <b>➕ Agendar</b> marca a Primeira Experiência de uma família que você captou e <b>cria a linha na planilha sozinho</b>, no lugar certo. Acabou o "colar a linha": o sistema grava, e você só confere.</p>
         <ol>
           <li><b>Procure a família primeiro.</b> Digite o <b>telefone</b> ou o <b>nome</b> (da mãe ou do bebê) e clique em 🔎 Buscar. Se a família aparecer, clique em <b>Usar esta família</b>: o formulário já vem com o cadastro dela. <b>Só cadastre uma família nova se ela não estiver na lista</b>: o botão para isso diz "Nenhuma destas é a família", justamente para ninguém criar uma família repetida só porque ela está com outro número.</li>
-          <li><b>Preencha o formulário.</b> Obrigatórios: telefone e responsável (família nova), nome e nascimento do bebê, a <b>turma</b>, o <b>horário</b> da Primeira Experiência e a <b>cobrança da PE</b>. A <b>turma é sugerida pelo nascimento</b> (Pitocos 2 a 6 meses, Sapecas 6 a 12, Exploradores 12 a 18, Artistas 18 meses a 2 anos, Atletas 2 a 4 anos). É só uma sugestão: se a turma que cabe no horário for outra, troque, e a sugestão não volta a mexer. Fora das faixas, escolha você.</li>
+          <li><b>Preencha o formulário.</b> Os <b>9 dados são obrigatórios</b>, para família nova ou antiga, e o sistema <b>não deixa agendar</b> se algum faltar (nem pela tela, nem pela Alice): <b>nome do responsável, e-mail, nome completo do bebê, data de nascimento, sexo do bebê, se possui alguma alergia</b> (escreva "Nenhuma" se não tiver), <b>se é prematuro(a)</b> (Sim ou Não), <b>como chegou até nós</b> e a <b>turma</b>. Se o cadastro antigo da família não tiver o e-mail ou o responsável, o campo vem liberado para você completar. Além disso: telefone (família nova), o <b>horário</b> da Primeira Experiência e a <b>cobrança da PE</b>. A <b>turma é sugerida pelo nascimento</b> (Pitocos 2 a 6 meses, Sapecas 6 a 12, Exploradores 12 a 18, Artistas 18 meses a 2 anos, Atletas 2 a 4 anos). É só uma sugestão: se a turma que cabe no horário for outra, troque, e a sugestão não volta a mexer. Fora das faixas, escolha você.</li>
           <li><b>Escolha o horário da turma.</b> Não se digita data nem hora: com a turma escolhida, aparecem os <b>horários dela</b> (por exemplo "Terça 11:00" e "Quinta 14:00"). Clique no horário e a tela lista as <b>próximas datas</b> que caem naquele dia da semana; clique na data. A Primeira Experiência <b>só pode ser marcada dentro dos horários cadastrados</b>, nunca fora (o sistema recusa). A lista mostra os horários da turma, não as vagas: confira a lotação como sempre. Se mudar a turma, escolha o horário de novo. Se a lista disser que não conseguiu carregar, clique em "Tentar de novo".</li>
           <li><b>Escolha a cobrança da PE.</b> Não vem nada marcado de propósito:
             <ul>
@@ -218,8 +219,38 @@ const BGL_CRM_AJUDA = {
           <li><b>"O PIX NÃO foi gerado":</b> o agendamento e a linha estão salvos, só o PIX não saiu (o Mercado Pago recusou, por exemplo). Clique em <b>🔁 Tentar de novo</b>: ele gera o PIX de novo, <b>sem criar outro agendamento e sem cobrar duas vezes</b>. Se continuar falhando, avise o Michel e peça o PIX pelo caminho de sempre.</li>
           <li><b>"Não respondeu a tempo" ou "a planilha/o CRM não gravou":</b> o Mercado Pago, a planilha ou o CRM demorou ou falhou no meio. <b>Nada foi enviado à mãe</b> até terminar tudo. Aguarde alguns segundos e clique em <b>🔁 Tentar de novo</b>: ele termina o que faltou e o sistema <b>não cobra duas vezes</b>.</li>
           <li><b>"O PIX foi gerado, mas as mensagens NÃO saíram":</b> o PIX existe. A tela mostra o <b>link</b>: mande-o à mãe pelo WhatsApp. <b>Não use Tentar de novo.</b></li>
-          <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. Reagendar ainda é feito na planilha, e o CRM ainda não faz.</li>
+          <li><b>O bebê já tem um agendamento ativo:</b> a tela avisa e trava. O botão <b>📅 Reagendar</b> do próprio agendamento na agenda vai trocar o horário (veja o capítulo seguinte), mas <b>ainda está em teste e só aparece na homologação</b>: por enquanto, reagende pela planilha, como hoje.</li>
           <li>Na planilha, a linha nova mostra seu e-mail na coluna <b>agendadoPor</b>, no lugar do nome genérico de antes.</li>
+        </ul>
+      `,
+    },
+    {
+      id: 'reagendar',
+      titulo: 'Reagendar uma Primeira Experiência',
+      desde: '3.27',
+      html: `
+        <div class="aviso aviso-info"><b>Este botão ainda está em teste.</b> Por enquanto ele só aparece na versão de homologação (endereço com <code>/hml/</code>), e a homologação usa a <b>mesma planilha</b> da produção: a linha criada lá é real. Use só telefone de teste e peça ao Michel para apagar a linha depois. No sistema de verdade, continue reagendando como hoje até o Michel liberar.</div>
+        <p>O botão <b>📅 Reagendar</b> aparece em cada agendamento da agenda (Painel do Dia, Semana e Mês) <b>enquanto a criança ainda não veio</b> e o agendamento tem identidade na planilha. Ele troca o horário da Primeira Experiência: cria a linha nova, encerra a antiga e cuida do PIX da PE sozinho.</p>
+        <ol>
+          <li>Clique em <b>📅 Reagendar</b>. A janela mostra o horário de agora.</li>
+          <li><b>Escolha o novo horário</b> na grade da turma, como no ➕ Agendar: primeiro o dia e a hora, depois a data. A turma já vem escolhida e pode ser trocada.</li>
+          <li><b>A PE:</b>
+            <ul>
+              <li>Se a PE <b>já está paga</b>, o pagamento acompanha o novo horário e <b>nada é cobrado de novo</b>. A janela só avisa; você não escolhe nada.</li>
+              <li>Se a PE foi <b>enviada por PIX à mão</b> ou está <b>dispensada</b>, continua do mesmo jeito.</li>
+              <li>Se ainda <b>falta pagar</b> (PIX gerado ou esperando), você escolhe, <b>sem opção marcada de início</b>: gerar um PIX novo (o PIX atual é cancelado no Mercado Pago e as mensagens do PIX novo saem à mãe), dizer que o PIX já foi enviado (o atual também é cancelado), ou dizer que ela não vai pagar (exige justificativa).</li>
+            </ul>
+          </li>
+          <li>Clique em <b>Revisar e confirmar</b>, confira o resumo e clique em <b>✅ Confirmar e reagendar</b>. Reagendar cria uma linha e encerra outra, e a tela não desfaz.</li>
+        </ol>
+        <h3>Se algo der errado</h3>
+        <ul>
+          <li><b>"A linha NÃO entrou na planilha":</b> o novo horário está salvo no CRM, mas a planilha não recebeu a linha, e a antiga ainda não foi encerrada. Clique em <b>🔁 Tentar de novo</b>. <b>Não reagende de novo.</b></li>
+          <li><b>"O PIX ANTIGO não pôde ser cancelado":</b> nenhum PIX novo foi gerado e a linha antiga continua aberta, porque a mãe poderia pagar o antigo. Clique em <b>🔁 Tentar de novo</b>; se continuar, avise o Michel.</li>
+          <li><b>"O PIX novo NÃO foi gerado":</b> o horário e a linha estão salvos, só o PIX não saiu. Clique em <b>🔁 Tentar de novo</b>: não cobra duas vezes.</li>
+          <li><b>"O agendamento mostrado não é mais o ativo":</b> alguém já reagendou ou a criança já veio. A agenda é recarregada; confira e tente de novo se ainda fizer sentido.</li>
+          <li><b>Se o sistema pedir o e-mail da mãe</b> para gerar o PIX, volte e preencha o campo de e-mail.</li>
+          <li>Erro de conexão: o pedido fica na janela, com tudo o que você escolheu. Clique em Confirmar de novo: o sistema reconhece que é o mesmo pedido.</li>
         </ul>
       `,
     },
@@ -277,14 +308,16 @@ const BGL_CRM_AJUDA = {
           <li>Ao entrar na aba, a tela já rola até hoje e deixa uma faixa do dia anterior à vista: role para cima para ver os dias passados.</li>
           <li>Hoje leva o selo <b>hoje</b>. Os dias passados levam o selo <b>já passou</b> e fundo mais apagado.</li>
           <li>Nada é escondido: quem já fechou continua na lista, com o selo Fechou.</li>
-          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e botões (Marcar presença, Marcar fechou, Cancelar, Detalhe, Conversa).</li>
+          <li>Colunas: hora, bebê, mãe, turma, telefone, confirmação, PE e as ações. Cada dia é uma tabela de <b>linha fina, como a do Mês</b>: as ações são só o símbolo (🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 PE paga, 📅 Reagendar, 🚫 Cancelar — só enquanto a presença não foi marcada —, 💬 Conversa), com o nome ao passar o mouse; a linha inteira acende e o cabeçalho de cada dia fica fixo ao descer (em telas a partir de 1160px).</li>
         </ul>
         <h4>Mês</h4>
         <ul>
           <li>O mês inteiro numa tabela só, com a coluna <b>Data</b> primeiro. As setas <b>◀ ▶</b> trocam o mês.</li>
           <li>Chips de filtro: <b>Compareceu</b>, <b>Fechou</b>, <b>PE paga</b>, <b>Confirmado</b> e <b>Pesquisa enviada</b> (a pesquisa de satisfação já foi enviada; a resposta não aparece).</li>
           <li>Os chips se combinam: a linha precisa atender a todos os chips marcados. O número em cada chip é sempre o total do mês, não do filtro.</li>
-          <li>Mesmos botões de ação da Semana.</li>
+          <li>Cada agendamento é <b>uma linha fina</b>, como na planilha, e as ações são só o <b>símbolo</b>. Passe o mouse (ou use o Tab) sobre o ícone para ler o nome da ação. Cada ação fica sempre na mesma coluna: 🔍 Detalhe, ✅ Presença, 🤝 Fechou, 📤 Enviar proposta, 💰 Marcar PE paga, 📅 Reagendar, 🚫 Cancelar e 💬 Conversa.</li>
+          <li>Ao descer a lista, o <b>cabeçalho da tabela fica fixo</b> abaixo das abas (em telas a partir de 1160px; em tela menor a tabela rola para o lado e o cabeçalho não gruda). A linha inteira acende ao passar o mouse. ✅ e 🤝 ainda não marcados aparecem em <b>cinza</b> (e ganham cor ao passar o mouse); ficam <b>verdes e sem clique</b> quando a presença ou o fechamento já foram marcados. Nomes compridos são cortados com reticências; o nome inteiro aparece ao passar o mouse.</li>
+          <li>As ações são as mesmas da Semana, só que sem o texto no botão. No celular não existe "passar o mouse": use o Painel do Dia ou a Semana, que mantêm o texto.</li>
         </ul>
       `,
     },
@@ -346,7 +379,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Não fechou</td><td>Compareceu e não fechou.</td></tr>
           </tbody>
         </table></div>
-        <p>Etiquetas: <b>Travado</b> (a equipe assumiu o lead) e <b>Sem telefone</b> (não dá para reengajar). Botões: <b>📄 Detalhe</b>, <b>Travar recuperação</b> (vira <b>Destravar recuperação</b> quando já está travado) e <b>💬 Conversa</b>.</p>
+        <p>Etiquetas: <b>Travado</b> (a equipe assumiu o lead) e <b>Sem telefone</b> (não dá para reengajar). A lista é de <b>linha fina, como a do Mês</b> (a linha inteira acende e o cabeçalho fica fixo ao descer, em telas a partir de 760px). As ações são só o símbolo, com o nome ao passar o mouse: <b>🔍 Detalhe</b>, <b>🔒 Travar recuperação</b> (vira <b>🔓 Destravar recuperação</b> quando já está travado) e <b>💬 Conversa</b>.</p>
         <div class="aviso aviso-info"><b>Travar vale dinheiro:</b> travar significa que você assumiu o lead. Se ele fechar um dia, <b>sem prazo</b>, a comissão de quem travou dobra. Só trave um lead que você está de fato trabalhando. O lead que fecha sai da lista de Frios.</div>
       `,
     },
@@ -405,7 +438,7 @@ const BGL_CRM_AJUDA = {
             <tr><td>Q</td><td>resumo (da IA)</td><td>Guardado</td><td>Nenhuma tela mostra; para ler o resumo da conversa, só na planilha.</td></tr>
             <tr><td>R</td><td>humorDoCliente</td><td>Guardado</td><td>Nenhuma tela mostra.</td></tr>
             <tr><td>S</td><td>confirmacaoEnviada</td><td>Guardado</td><td>Não aparece; a tela mostra o resultado da confirmação (coluna T), não quando foi enviada.</td></tr>
-            <tr><td>T</td><td>statusConfirmacao</td><td>Aparece e escreve</td><td>Etiqueta de confirmação (Painel, tabelas, detalhe) e coluna Status do detalhe. "cancelado" e "reagendado" tiram o agendamento das listas do dia. O botão Cancelar grava aqui.</td></tr>
+            <tr><td>T</td><td>statusConfirmacao</td><td>Aparece e escreve</td><td>Etiqueta de confirmação (Painel, tabelas, detalhe) e coluna Status do detalhe. "cancelado" e "reagendado" tiram o agendamento das listas do dia. O botão Cancelar grava aqui, e o 💰 Marcar PE paga troca "aguardando_pagamento" por "a confirmar".</td></tr>
             <tr><td>U</td><td>agendadoPor</td><td>Escreve</td><td>Só nas linhas criadas pelo botão ➕ Agendar: o e-mail de quem criou. Nas demais, o CRM não a usa.</td></tr>
             <tr><td>V</td><td>Compareceu</td><td>Aparece e escreve</td><td>"✓ Presença", chip Compareceu do Mês e etiqueta no detalhe. Marcar presença grava aqui.</td></tr>
             <tr><td>W</td><td>PesquisaEnviada</td><td>Aparece</td><td>Chip Pesquisa enviada do Mês (só o envio, não a resposta).</td></tr>
@@ -497,6 +530,140 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.34',
+      data: '2026-10-22',
+      mudancas: {
+        adicionado: [],
+        alterado: [],
+        corrigido: [
+          'Depois de sair e entrar de novo (ou de a sessão expirar), cada clique da tela passava a valer em dobro: o ▶ da aba Mês pulava dois meses e os chips de filtro ligavam e desligavam no mesmo clique, parecendo não funcionar. Recarregar a página resolvia. Agora a tela liga os cliques uma vez só (#471).',
+        ],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.33',
+      data: '2026-10-22',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'As abas Semana e Frios ficam no mesmo modelo do Mês: linha fina como a planilha, ações só em símbolo com o nome ao passar o mouse, linha inteira acesa e cabeçalho da tabela fixo ao descer (#469).',
+          'Em Frios, Travar recuperação vira 🔒 e, quando o lead já está travado, Destravar recuperação vira 🔓.',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.32',
+      data: '2026-10-20',
+      mudancas: {
+        adicionado: [
+          'Na aba Mês, a linha inteira acende ao passar o mouse, em qualquer célula (#467).',
+          'Na aba Mês, o cabeçalho da tabela fica fixo logo abaixo das abas ao descer a lista, em telas a partir de 1160px (#467).',
+        ],
+        alterado: [
+          'Na aba Mês, presença e fechou ainda não marcados aparecem em cinza e ganham cor ao passar o mouse; depois de marcados ficam coloridos, com fundo e borda verdes mais fortes (#467).',
+          'O botão Cancelar some de quem já teve a presença marcada ou já fechou, no Painel do Dia, na Semana e no Mês: quem já veio não se cancela (#467).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.31',
+      data: '2026-10-20',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'Aba Mês em linha fina, como a planilha: as ações viram só o símbolo (🔍 ✅ 🤝 📤 💰 📅 🚫 💬), com o nome no tooltip ao passar o mouse, cada uma sempre na mesma coluna. Painel do Dia e Semana não mudam (#465).',
+        ],
+        corrigido: [
+          'Na aba Mês, os botões não estouram mais a largura da tabela nem quebram em várias linhas.',
+        ],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.30',
+      data: '2026-10-20',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'O sexo do bebê e a turma passam a ser obrigatórios no agendamento, pela tela e pela Alice (#463), somando-se aos outros 7 dados (#454): agora são 9. A tela mostra "sexo do bebê" no que falta antes de liberar o Revisar; a Alice recebe a lista do que faltou e pede à mãe.',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.29',
+      data: '2026-10-18',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'Os 7 dados do agendamento passam a ser obrigatórios, pela tela e pela Alice (#454): nome do responsável, e-mail, nome completo do bebê, data de nascimento, se possui alguma alergia, se é prematuro(a) e como chegou até nós. A tela mostra o que falta antes de liberar o Revisar; a Alice recebe a lista do que faltou e pede à mãe. O nome do WhatsApp não substitui mais o nome do responsável, e o e-mail padrão do sistema não substitui o da mãe. O reagendar pela tela não pergunta nada disso (usa o cadastro da família).',
+        ],
+        corrigido: [
+          'No ➕ Agendar, o primeiro clique no horário se perdia quando você acabava de digitar em outro campo (como alergia ou "como chegou até nós"): era preciso clicar duas vezes (#454).',
+        ],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.28',
+      data: '2026-10-18',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'Ao marcar a PE como paga à mão, o botão passa a mostrar "Gravando na planilha…" até o servidor responder (#455).',
+        ],
+        corrigido: [
+          'Marcar a PE como paga à mão agora tira a família de "aguardando pagamento": a confirmação passa para "a confirmar", na planilha e no CRM. Antes ela continuava "aguardando pagamento" e a mãe recebia, na véspera, o aviso para pagar uma PE que já tinha pago (#455). Linhas já marcadas antes da correção precisam ser ajustadas à mão na planilha.',
+        ],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.27',
+      data: '2026-10-16',
+      mudancas: {
+        adicionado: [
+          'Botão 📅 Reagendar em cada agendamento da agenda (#451): escolhe o novo horário na grade da turma, cria a linha nova, encerra a antiga e cuida do PIX da PE com a mesma regra da Alice (PIX antigo cancelado, PE já paga acompanha o novo horário e nada é cobrado de novo). Em teste: por enquanto só aparece na versão de homologação (/hml/), que usa a mesma planilha da produção — use só telefone de teste.',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.26',
+      data: '2026-10-15',
+      mudancas: {
+        adicionado: [
+          'O botão ➕ Agendar está liberado no sistema de verdade (#449): a equipe marca a Primeira Experiência de uma família e a linha nasce sozinha na planilha. Atenção: a linha criada é real e, na opção "Pedir para gerar o PIX", o PIX e as mensagens à mãe saem de verdade. Para treinar, use a versão de homologação (endereço com /hml/) só com telefone de teste: a homologação usa a MESMA planilha da produção, então a linha criada lá também é real. Peça ao Michel para apagá-la depois.',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
+      versao: '3.25',
+      data: '2026-10-15',
+      mudancas: {
+        adicionado: [
+          'Quando a família reagenda uma Primeira Experiência que já estava paga, o pagamento acompanha o novo horário: a linha nova fica como paga e a antiga mostra "PE paga (passou para o novo horário)" (#439). Assim existe um só pagamento por PE paga, na linha que vale.',
+          'No histórico de alterações do lead, a origem "Make (Alice)" mostra o que a Alice mudou ao agendar ou reagendar (#417, #438).',
+        ],
+        alterado: [
+          'Agendamentos feitos pela Alice já nascem com a confirmação preenchida: "aguardando pagamento" quando o PIX ainda não foi pago e "a confirmar" quando a PE já está paga ou dispensada. Antes a coluna ficava vazia e a família não entrava no lembrete do dia anterior (#438).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.24',
       data: '2026-10-09',
