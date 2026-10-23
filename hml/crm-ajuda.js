@@ -551,6 +551,18 @@ const BGL_CRM_AJUDA = {
   // `APP_VERSION` e o seguinte).
   novidades: [
     {
+      versao: '3.38',
+      data: '2026-10-23',
+      mudancas: {
+        adicionado: [],
+        alterado: [
+          'Os botões ↩️ Desfazer presença e ↩️ Desfazer fechou também aparecem para a conta babygymlondrina@gmail.com, além do Michel (#398).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
       versao: '3.37',
       data: '2026-10-22',
       mudancas: {
