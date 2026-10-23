@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.37',
-  APP_DATE: '2026-10-22',
+  APP_VERSION: '3.39',
+  APP_DATE: '2026-10-23',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -157,6 +157,9 @@ const BGL_CONST = {
       OBSERVACAO_POS_PE: 'observacao_pos_pe',
       /** PE marcada como paga à mão (issue #397) — `dados: { valor, observacao }`. */
       PE_PAGA: 'pe_paga',
+      /** Desfazer Presença e Fechou marcados por engano (issue #398) — exigem `agendamentoId`. */
+      COMPARECEU_DESFEITO: 'compareceu_desfeito',
+      FECHOU_DESFEITO: 'fechou_desfeito',
     },
     /**
      * Observação obrigatória ao marcar a PE como paga (issue #397): o motivo de
