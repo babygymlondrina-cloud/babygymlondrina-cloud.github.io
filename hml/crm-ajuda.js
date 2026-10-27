@@ -317,6 +317,22 @@ const BGL_CRM_AJUDA = {
       `,
     },
     {
+      id: 'corrigir-dados',
+      titulo: 'Corrigir dados da família',
+      desde: '3.39',
+      html: `
+        <p>Digitou o nome, o e-mail ou a data de nascimento errado? No detalhe do lead, clique em <b>✏️ Corrigir dados</b> no card do bebê. A janela abre com os dados atuais; altere só o que está errado e clique em <b>Revisar correção</b>. A tela mostra cada campo como <i>antes → depois</i>: confira e clique em <b>Confirmar e gravar</b> (ou em <b>Voltar e editar</b> para ajustar). Nada é gravado antes da confirmação.</p>
+        <ul>
+          <li><b>O que se corrige aqui:</b> nome e e-mail da mãe, como chegou até nós, e nascimento, sexo, alergia e prematuro do bebê. Os dados obrigatórios não podem ficar vazios.</li>
+          <li><b>O que não se corrige aqui:</b> data, hora e turma (use <b>📅 Reagendar</b>), nome do bebê e telefone.</li>
+          <li>A correção vale para <b>todos os agendamentos</b> da família (e do bebê) na planilha, não só o da linha aberta. Fica registrado quem corrigiu e qual campo, sem guardar o valor.</li>
+          <li>O botão só aparece em agendamento com identificação. Nos antigos, sem identificação, a correção é na planilha.</li>
+          <li><b>PE marcada paga à mão com valor errado?</b> Use <b>✏️ Corrigir PE paga</b> na linha. PE confirmada pelo Mercado Pago não se corrige.</li>
+        </ul>
+        <div class="aviso aviso-info"><b>Aviso "não atualizou a planilha":</b> se aparecer, a correção ficou no CRM mas a planilha não recebeu. Corrija a célula na planilha também, senão ela devolve o dado errado em até cerca de 30 minutos.</div>
+      `,
+    },
+    {
       id: 'semana-mes',
       titulo: 'Semana e Mês',
       desde: '3.8',
@@ -489,6 +505,7 @@ const BGL_CRM_AJUDA = {
         <ul>
           <li><b>Agendar uma Primeira Experiência nova:</b> é o botão ➕ Agendar (veja "Agendar uma Primeira Experiência"), quando liberado. <b>Reagendar</b> ainda é na planilha. <b>Ao reagendar, crie uma linha nova. Não copie a linha existente.</b> A cópia leva o identificador do agendamento, o sistema acha que são o mesmo e o agendamento antigo some do CRM. Se já copiou, apague o conteúdo da coluna do identificador (código parecido com 8f25a6aa-7901-…) na linha nova.</li>
           <li><b>Desmarcar presença ou fechou:</b> existe (↩️ Desfazer), mas só para quem o Michel autorizou. Se o botão não aparece para você, peça a ele.</li>
+          <li><b>Corrigir data, hora, turma, nome do bebê e telefone:</b> data, hora e turma só por 📅 Reagendar; nome do bebê e telefone ainda são na planilha.</li>
           <li><b>Dispensar a PE (a família não vai pagar) e ler o motivo gravado na AP:</b> ainda não existe na tela.</li>
           <li>Os PIX da PE e as confirmações automáticas continuam sendo gerados pelos fluxos que já existiam (Make e Alice).</li>
         </ul>
@@ -550,6 +567,21 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.39',
+      data: '2026-10-24',
+      mudancas: {
+        adicionado: [
+          'Botão ✏️ Corrigir dados no detalhe do lead: corrige nome e e-mail da mãe, como chegou, e nascimento, sexo, alergia e prematuro do bebê, sem abrir a planilha, com uma tela de conferência (antes → depois) antes de gravar. A correção vale para todos os agendamentos da família na planilha, para não voltar ao erro (#488).',
+          'Botão ✏️ Corrigir PE paga: ajusta o valor e o motivo de uma PE marcada paga à mão (#488).',
+        ],
+        alterado: [
+          'Os botões ↩️ Desfazer das listas de linha fina ganharam coluna própria e não ficam mais fora do lugar (#488).',
+        ],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.38',
       data: '2026-10-23',

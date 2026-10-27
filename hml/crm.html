@@ -578,10 +578,13 @@
       .tabela-compacta [data-acao='proposta'] {
         grid-column: 4;
       }
-      .tabela-compacta [data-acao='pe_paga'] {
+      .tabela-compacta [data-acao='pe_paga'],
+      .tabela-compacta [data-acao='pe_corrigir'] {
         grid-column: 5;
       }
-      .tabela-compacta [data-acao='reagendar'] {
+      .tabela-compacta [data-acao='reagendar'],
+      .tabela-compacta [data-acao='compareceu_desfeito'],
+      .tabela-compacta [data-acao='fechou_desfeito'] {
         grid-column: 6;
       }
       .tabela-compacta [data-acao='cancelado'] {
@@ -1168,6 +1171,19 @@
         min-height: 5.5rem;
         resize: vertical;
         line-height: 1.4;
+      }
+      .cd-resumo-lista {
+        list-style: none;
+        margin: 0 0 12px;
+        padding: 0;
+      }
+      .cd-resumo-lista li {
+        padding: 6px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .cd-resumo-lista .cd-de {
+        text-decoration: line-through;
+        opacity: 0.7;
       }
       .pe-dica {
         font-size: 0.75rem;
@@ -1856,7 +1872,7 @@
           <button class="modal-close" data-pe="cancelar" aria-label="Fechar">×</button>
         </div>
         <div class="modal-body pe-corpo">
-          <p class="presenca-pergunta">
+          <p class="presenca-pergunta" id="pe-intro">
             Só marque quando o pagamento
             <strong>já foi recebido</strong>
             . Fica registrado com o seu e-mail e o motivo abaixo.
@@ -1950,6 +1966,96 @@
           <button class="modal-close" id="btn-fechar-lead" aria-label="Fechar">×</button>
         </div>
         <div class="modal-body" id="lead-modal-body"></div>
+      </div>
+    </div>
+
+    <div id="corrigir-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card presenca-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cd-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="cd-titulo">Corrigir dados</h2>
+          <button class="modal-close" data-cd="cancelar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body pe-corpo">
+          <div id="cd-form">
+            <p class="presenca-pergunta">
+              Corrija só o que está errado. A correção vale para todas as linhas desta família na
+              planilha.
+              <strong>Data, hora e turma</strong>
+              mudam pelo 📅 Reagendar.
+            </p>
+            <label class="pe-rotulo" for="cd-resp-nome">Nome do responsável</label>
+            <input
+              id="cd-resp-nome"
+              class="pe-input"
+              type="text"
+              maxlength="200"
+              autocomplete="off"
+            />
+            <label class="pe-rotulo" for="cd-resp-email">E-mail do responsável</label>
+            <input
+              id="cd-resp-email"
+              class="pe-input"
+              type="email"
+              maxlength="200"
+              autocomplete="off"
+            />
+            <label class="pe-rotulo" for="cd-como">Como chegou até nós</label>
+            <input id="cd-como" class="pe-input" type="text" maxlength="200" autocomplete="off" />
+            <div class="pe-rotulo" id="cd-bebe-titulo">Bebê</div>
+            <label class="pe-rotulo" for="cd-nasc">Nascimento</label>
+            <input id="cd-nasc" class="pe-input" type="date" />
+            <label class="pe-rotulo" for="cd-sexo">Sexo</label>
+            <select id="cd-sexo" class="pe-input">
+              <option value="">Selecione…</option>
+              <option value="m">Masculino</option>
+              <option value="f">Feminino</option>
+            </select>
+            <label class="pe-rotulo" for="cd-alergia">Alergia ("Nenhuma" se não tem)</label>
+            <input
+              id="cd-alergia"
+              class="pe-input"
+              type="text"
+              maxlength="200"
+              autocomplete="off"
+            />
+            <label class="pe-rotulo" for="cd-prematuro">Prematuro(a)</label>
+            <select id="cd-prematuro" class="pe-input">
+              <option value="">Selecione…</option>
+              <option value="Sim">Sim</option>
+              <option value="Não">Não</option>
+            </select>
+            <div class="pe-dica" id="cd-dica"></div>
+            <div class="aviso aviso-erro" id="cd-erro" role="alert" style="display: none"></div>
+            <button type="button" class="btn-presenca" id="cd-salvar" data-cd="salvar">
+              🔎 Revisar correção
+            </button>
+            <button type="button" class="btn-presenca-cancelar" data-cd="cancelar">Cancelar</button>
+          </div>
+          <div id="cd-resumo" style="display: none">
+            <p class="presenca-pergunta">
+              Confira o que vai mudar. A correção vale para todas as linhas desta família na
+              planilha.
+            </p>
+            <ul class="cd-resumo-lista" id="cd-resumo-lista"></ul>
+            <div
+              class="aviso aviso-erro"
+              id="cd-erro-resumo"
+              role="alert"
+              style="display: none"
+            ></div>
+            <button type="button" class="btn-presenca" id="cd-confirmar" data-cd="confirmar">
+              💾 Confirmar e gravar
+            </button>
+            <button type="button" class="btn-presenca-cancelar" id="cd-voltar" data-cd="voltar">
+              ← Voltar e editar
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <script>
@@ -2566,9 +2672,72 @@
           });
           if (resultado.ok) {
             item.valorPE = valor;
+            // Já aparece o ✏️ Corrigir, com o motivo que acabou de ser gravado (issue #488).
+            item.peCorrigivel = true;
+            item.observacaoPE = observacao;
             UIRenderer.render();
           }
           return resultado;
+        }
+
+        /**
+         * Aviso da correção de dados (issue #488), ou `null`: espelho que falhou (o dado antigo pode voltar
+         * do repost da planilha em até ~30 min) ou linhas antigas da família que a planilha não endereça.
+         */
+        function _avisoDosDados(resposta) {
+          const e = resposta && resposta.espelho;
+          if (!e) return null;
+          if (!e.ok) {
+            return (
+              'A correção foi salva no CRM, mas a planilha não foi atualizada e o dado antigo pode voltar em ' +
+              'até cerca de 30 minutos. Peça para corrigir estes dados nas linhas desta família na planilha, ' +
+              'ou salve de novo.'
+            );
+          }
+          const faltam = (e.semIdentidade || 0) + (e.semLinha || 0);
+          return faltam
+            ? 'Corrigido, mas ' +
+                faltam +
+                ' linha(s) antiga(s) desta família na planilha não puderam ser atualizadas ' +
+                '(sem identificação): corrija-as direto na planilha.'
+            : null;
+        }
+
+        /**
+         * Corrigir dados da família (issue #488): `PATCH /leads/{id}/dados`. SEM atualização otimista — dado
+         * pessoal só entra na tela depois que o servidor aceitou. Devolve `{ok, erro}`; o diálogo fica aberto
+         * com a mensagem por dentro se o servidor recusar, para a equipe não perder o que digitou.
+         */
+        async function corrigirDados(doc, agendamentoId, corpo) {
+          const chave = _chave('corrigir', doc.id, agendamentoId);
+          if (_pendentes.has(chave)) return { ok: false, erro: 'Já estou salvando esta correção.' };
+          _pendentes.add(chave);
+          try {
+            const resposta = await ApiClient.patch(
+              '/leads/' + encodeURIComponent(doc.id) + '/dados',
+              {
+                agendamentoId,
+                ...corpo,
+              },
+            );
+            if (CrmState.lead.getDoc() === doc && resposta.lead) {
+              doc.lead = resposta.lead;
+              CrmState.lead.setAviso(_avisoDosDados(resposta));
+              UIRenderer.renderLead();
+            }
+            // As listas da agenda mostram o nome da mãe: busca de novo, sem esperar o polling.
+            CrmController.buscar();
+            return { ok: true };
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              AuthController.expirar(e.message);
+              return { ok: false, erro: e.message };
+            }
+            if (!e.amigavel) console.error('[CRM]', e);
+            return { ok: false, erro: _mensagemErro(e) };
+          } finally {
+            _pendentes.delete(chave);
+          }
         }
 
         /** Por que a proposta padrão não saiu, em linguagem da recepção. */
@@ -2982,6 +3151,11 @@
 
         /** Delegado a partir de `[data-pospe]` no modal — ver `CrmController.iniciar`. */
         function aoClicarNoLead(botao) {
+          if (botao.dataset.corrigir) {
+            const doc = CrmState.lead.getDoc();
+            if (doc) CorrigirDadosDialog.abrir(doc, botao.dataset.bebe, botao.dataset.agendamento);
+            return;
+          }
           const acao = botao.dataset.pospe;
           if (acao === 'editar') editarPosPE(botao.dataset.agendamento, botao.dataset.campo);
           else if (acao === 'cancelar') cancelarPosPE();
@@ -2999,6 +3173,7 @@
             acao === 'fechou' ||
             acao === 'cancelado' ||
             acao === 'pe_paga' ||
+            acao === 'pe_corrigir' ||
             acao === 'reagendar' ||
             acao === EVENTO.COMPARECEU_DESFEITO ||
             acao === EVENTO.FECHOU_DESFEITO
@@ -3009,7 +3184,7 @@
             else if (acao === 'fechou') marcarFechou(local.item);
             else if (acao === EVENTO.COMPARECEU_DESFEITO) desfazer(local.item, 'compareceu');
             else if (acao === EVENTO.FECHOU_DESFEITO) desfazer(local.item, 'fechou');
-            else if (acao === 'pe_paga') PePagaDialog.abrir(local.item);
+            else if (acao === 'pe_paga' || acao === 'pe_corrigir') PePagaDialog.abrir(local.item);
             else if (acao === 'reagendar') ReagendarDialog.abrir(local.item);
             else cancelar(local.item);
           } else if (acao === 'recuperacao') {
@@ -3025,6 +3200,7 @@
           digitarPosPE,
           marcarCompareceu,
           marcarPePaga,
+          corrigirDados,
           enviarPropostaPadrao,
         };
       })();
@@ -3118,6 +3294,9 @@
       const PePagaDialog = (function () {
         let _item = null;
         let _enviando = false;
+        // Issue #488: a PE já consta paga (marcada à mão) e a equipe só CORRIGE o valor ou o motivo. É o
+        // mesmo evento e o mesmo servidor; muda o texto e o que vem preenchido.
+        let _corrigindo = false;
         const _el = (id) => document.getElementById(id);
         const { MIN, MAX } = BGL_CONST.CRM.OBSERVACAO_PE;
 
@@ -3145,7 +3324,9 @@
           // dia): sem isso o diálogo parece travado e a lista atrás dele já mudou (issue #455).
           _el('pe-confirmar').textContent = _enviando
             ? '⏳ Gravando na planilha…'
-            : '💰 Marcar como paga';
+            : _corrigindo
+              ? '💾 Salvar correção'
+              : '💰 Marcar como paga';
         }
 
         // PIX do sistema que a família ainda pode pagar (issue #405): `pix_gerado` e
@@ -3166,13 +3347,20 @@
         function abrir(item) {
           _item = item;
           _enviando = false;
-          _el('pe-titulo').textContent = 'PE paga de ' + ou(item.bebe, 'bebê sem nome');
+          _corrigindo = item.pagamentoPE === BGL_CONST.CRM.PAGAMENTO_PE.PAGO;
+          _el('pe-titulo').textContent =
+            (_corrigindo ? 'Corrigir PE paga de ' : 'PE paga de ') + ou(item.bebe, 'bebê sem nome');
+          _el('pe-intro').innerHTML = _corrigindo
+            ? 'Corrija o <strong>valor recebido</strong> ou o motivo. Fica registrado com o seu e-mail.'
+            : 'Só marque quando o pagamento <strong>já foi recebido</strong>. Fica registrado com o seu e-mail e o motivo abaixo.';
           // Valor que já existe (o Make grava o cobrado no PIX): a equipe só
           // corrige se o recebido for outro.
           _el('pe-valor').value =
             typeof item.valorPE === 'number' ? String(item.valorPE).replace('.', ',') : '';
-          _el('pe-observacao').value = '';
-          _el('pe-aviso-pix').style.display = _pixAindaValido(item) ? 'block' : 'none';
+          // Corrigindo, o motivo original vem preenchido: a correção o ajusta, não o apaga.
+          _el('pe-observacao').value = _corrigindo ? String(item.observacaoPE || '') : '';
+          _el('pe-aviso-pix').style.display =
+            !_corrigindo && _pixAindaValido(item) ? 'block' : 'none';
           _mostrarErro('');
           _atualizar();
           _el('pe-modal').style.display = 'flex';
@@ -3218,6 +3406,272 @@
             const botao = e.target.closest('[data-pe]');
             if (!botao || botao.disabled) return;
             if (botao.dataset.pe === 'confirmar') confirmar();
+            else if (!_enviando) fechar();
+          });
+        }
+
+        return { abrir, iniciar };
+      })();
+
+      // ─── CorrigirDadosDialog ─────────────────────────────────────────────
+      // Issue #488 (onda 1 da #399): corrige nome/e-mail da mãe, "como chegou" e nascimento, sexo, alergia e
+      // prematuro do bebê. Só DOM e conforto: manda SÓ o que mudou, e quem garante a regra é o servidor
+      // (`validarCorrecaoDeDados`). O fundo NÃO cancela ao clicar (um clique fora perderia o que foi digitado)
+      // e, se o servidor recusar, o diálogo fica aberto com a mensagem por dentro. Data, hora e turma NÃO
+      // entram: mudam só pelo 📅 Reagendar.
+      const CorrigirDadosDialog = (function () {
+        let _ctx = null; // { doc, bebe, agendamentoId, original }
+        let _enviando = false;
+        let _etapa = 'form'; // 'form' (editando) | 'resumo' (conferindo o de → para)
+        const _el = (id) => document.getElementById(id);
+
+        /** `AAAA-MM-DD` de uma data ISO ou `dd/MM/yyyy` (a planilha devolve a segunda); `''` se não der. */
+        function _paraISO(valor) {
+          const t = String(valor || '').trim();
+          let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+          if (m) return m[1] + '-' + m[2] + '-' + m[3];
+          m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(t);
+          if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+          return '';
+        }
+
+        /** `m`/`f` do que o lead guarda (`Masculino`, `masculino`, `F`…); `''` se não reconhece. */
+        function _sexoParaTela(valor) {
+          const t = String(valor || '')
+            .trim()
+            .toLowerCase();
+          if (t === 'm' || t.startsWith('masc') || t.startsWith('menino')) return 'm';
+          if (t === 'f' || t.startsWith('fem') || t.startsWith('menina')) return 'f';
+          return '';
+        }
+
+        function _original(lead, bebe) {
+          const r = lead.responsavel || {};
+          return {
+            respNome: String(r.nome || '').trim(),
+            respEmail: String(r.email || '').trim(),
+            como: String(lead.comoConheceu || '').trim(),
+            nascimento: _paraISO(bebe.nascimento),
+            sexo: _sexoParaTela(bebe.sexo),
+            alergia: String(bebe.alergia || '').trim(),
+            prematuro: String(bebe.prematuro || '').trim(),
+          };
+        }
+
+        function _atuais() {
+          return {
+            respNome: _el('cd-resp-nome').value.trim(),
+            respEmail: _el('cd-resp-email').value.trim(),
+            como: _el('cd-como').value.trim(),
+            nascimento: _el('cd-nasc').value.trim(),
+            sexo: _el('cd-sexo').value,
+            alergia: _el('cd-alergia').value.trim(),
+            prematuro: _el('cd-prematuro').value,
+          };
+        }
+
+        const TITULOS = {
+          respNome: 'Nome do responsável',
+          respEmail: 'E-mail do responsável',
+          como: 'Como chegou até nós',
+          nascimento: 'Nascimento',
+          sexo: 'Sexo',
+          alergia: 'Alergia',
+          prematuro: 'Prematuro(a)',
+        };
+
+        /** Como o valor aparece no resumo: data em dd/MM/aaaa, sexo por extenso, vazio como "(vazio)". */
+        function _paraTexto(campo, valor) {
+          if (!valor) return '(vazio)';
+          if (campo === 'nascimento') return valor.split('-').reverse().join('/');
+          if (campo === 'sexo') return valor === 'm' ? 'Masculino' : 'Feminino';
+          return valor;
+        }
+
+        const ROTULOS = {
+          respNome: 'o nome do responsável',
+          respEmail: 'o e-mail',
+          como: '"como chegou até nós"',
+          nascimento: 'o nascimento',
+          sexo: 'o sexo',
+          alergia: 'a alergia ("Nenhuma" vale)',
+          prematuro: 'o prematuro',
+        };
+
+        /** O que MUDOU: o corpo do `PATCH` e a lista de campos esvaziados (que o servidor recusaria). */
+        function _mudancas() {
+          const antes = _ctx.original;
+          const agora = _atuais();
+          const mudou = Object.keys(agora).filter((k) => agora[k] !== antes[k]);
+          const corpo = {};
+          const responsavel = {};
+          const bebe = {};
+          if (mudou.includes('respNome')) responsavel.nome = agora.respNome;
+          if (mudou.includes('respEmail')) responsavel.email = agora.respEmail;
+          if (mudou.includes('nascimento')) bebe.nascimento = agora.nascimento;
+          if (mudou.includes('sexo')) bebe.sexo = agora.sexo;
+          if (mudou.includes('alergia')) bebe.alergia = agora.alergia;
+          if (mudou.includes('prematuro')) bebe.prematuro = agora.prematuro;
+          if (Object.keys(responsavel).length) corpo.responsavel = responsavel;
+          if (Object.keys(bebe).length) corpo.bebe = bebe;
+          if (mudou.includes('como')) corpo.comoConheceu = agora.como;
+          return { corpo, mudou, vazios: mudou.filter((k) => !agora[k]) };
+        }
+
+        function _atualizar() {
+          if (!_ctx) return;
+          const { mudou, vazios } = _mudancas();
+          _el('cd-dica').textContent = vazios.length
+            ? 'Não dá para deixar vazio: ' + vazios.map((k) => ROTULOS[k]).join(', ') + '.'
+            : mudou.length
+              ? ''
+              : 'Nada mudou ainda.';
+          _el('cd-salvar').disabled = _enviando || !mudou.length || vazios.length > 0;
+          _el('cd-confirmar').disabled = _enviando;
+          _el('cd-voltar').disabled = _enviando;
+          _el('cd-confirmar').textContent = _enviando
+            ? '⏳ Gravando na planilha…'
+            : '💾 Confirmar e gravar';
+        }
+
+        function _mostrarEtapa(etapa) {
+          _etapa = etapa;
+          _el('cd-form').style.display = etapa === 'form' ? '' : 'none';
+          _el('cd-resumo').style.display = etapa === 'resumo' ? '' : 'none';
+        }
+
+        /** Monta o "campo: antes → depois" com DOM (nunca innerHTML: é dado de família). */
+        function _desenharResumo(mudou) {
+          const antes = _ctx.original;
+          const agora = _atuais();
+          const lista = _el('cd-resumo-lista');
+          lista.textContent = '';
+          for (const campo of mudou) {
+            const li = document.createElement('li');
+            const nome = document.createElement('b');
+            nome.textContent = TITULOS[campo] + ': ';
+            const de = document.createElement('span');
+            de.className = 'cd-de';
+            de.textContent = _paraTexto(campo, antes[campo]);
+            const para = document.createElement('b');
+            para.textContent = _paraTexto(campo, agora[campo]);
+            li.append(nome, de, document.createTextNode(' → '), para);
+            lista.appendChild(li);
+          }
+        }
+
+        function _mostrarErro(mensagem) {
+          for (const id of ['cd-erro', 'cd-erro-resumo']) {
+            const caixa = _el(id);
+            caixa.textContent = mensagem || '';
+            caixa.style.display = mensagem ? 'block' : 'none';
+          }
+        }
+
+        /** O `<select>` de prematuro aceita o valor que o lead já tem, mesmo fora de Sim/Não. */
+        function _prepararPrematuro(valor) {
+          const select = _el('cd-prematuro');
+          Array.from(select.options)
+            .filter((o) => o.dataset.extra)
+            .forEach((o) => o.remove());
+          if (valor && !Array.from(select.options).some((o) => o.value === valor)) {
+            const extra = document.createElement('option');
+            extra.value = valor;
+            extra.textContent = valor;
+            extra.dataset.extra = '1';
+            select.appendChild(extra);
+          }
+          select.value = valor;
+        }
+
+        function abrir(doc, nomeBebe, agendamentoId) {
+          const lead = doc.lead || {};
+          const bebe = (lead.bebes || []).find((b) => b.nome === nomeBebe);
+          if (!bebe || !agendamentoId) return;
+          const original = _original(lead, bebe);
+          _ctx = { doc, bebe: nomeBebe, agendamentoId, original };
+          _enviando = false;
+          _mostrarEtapa('form');
+          _el('cd-titulo').textContent = 'Corrigir dados — ' + ou(nomeBebe, 'bebê sem nome');
+          _el('cd-bebe-titulo').textContent = 'Bebê: ' + ou(nomeBebe, 'sem nome');
+          _el('cd-resp-nome').value = original.respNome;
+          _el('cd-resp-email').value = original.respEmail;
+          _el('cd-como').value = original.como;
+          _el('cd-nasc').value = original.nascimento;
+          _el('cd-sexo').value = original.sexo;
+          _el('cd-alergia').value = original.alergia;
+          _prepararPrematuro(original.prematuro);
+          _mostrarErro('');
+          _atualizar();
+          _el('corrigir-modal').style.display = 'flex';
+          _el('cd-resp-nome').focus();
+        }
+
+        function fechar() {
+          _ctx = null;
+          _enviando = false;
+          _mostrarEtapa('form');
+          _el('corrigir-modal').style.display = 'none';
+        }
+
+        /** 1º passo: mostra o de → para. Nada vai ao servidor ainda. */
+        function revisar() {
+          if (!_ctx || _enviando) return;
+          const { mudou, vazios } = _mudancas();
+          if (!mudou.length || vazios.length) return;
+          _mostrarErro('');
+          _desenharResumo(mudou);
+          _mostrarEtapa('resumo');
+          _el('cd-confirmar').focus();
+        }
+
+        function voltar() {
+          if (!_ctx || _enviando) return;
+          _mostrarErro('');
+          _mostrarEtapa('form');
+          _el('cd-salvar').focus();
+        }
+
+        /** 2º passo: grava o que o resumo mostrou. */
+        async function salvar() {
+          const ctx = _ctx;
+          if (!ctx || _enviando || _etapa !== 'resumo') return;
+          const { corpo, mudou, vazios } = _mudancas();
+          if (!mudou.length || vazios.length) return;
+          _enviando = true;
+          _mostrarErro('');
+          _atualizar();
+          const r = await AcoesController.corrigirDados(ctx.doc, ctx.agendamentoId, corpo);
+          // O diálogo pode ter sido fechado/reaberto enquanto o PATCH corria: só mexe se ainda é o mesmo.
+          if (_ctx !== ctx) return;
+          _enviando = false;
+          if (r.ok) return fechar();
+          // Recusa do servidor: volta ao formulário, onde o campo errado se corrige.
+          _mostrarEtapa('form');
+          _mostrarErro(r.erro);
+          _atualizar();
+        }
+
+        function iniciar() {
+          for (const id of ['cd-resp-nome', 'cd-resp-email', 'cd-como', 'cd-nasc', 'cd-alergia']) {
+            _el(id).addEventListener('input', _atualizar);
+          }
+          for (const id of ['cd-sexo', 'cd-prematuro']) {
+            _el(id).addEventListener('change', _atualizar);
+          }
+          // Esc só fecha sem nada alterado: um Esc sem querer perderia o que foi digitado.
+          _el('corrigir-modal').addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || _enviando || !_ctx) return;
+            if (_etapa === 'resumo') return voltar();
+            if (_mudancas().mudou.length) return;
+            fechar();
+          });
+          _el('corrigir-modal').addEventListener('click', (e) => {
+            const botao = e.target.closest('[data-cd]');
+            if (!botao || botao.disabled) return;
+            if (botao.dataset.cd === 'salvar') revisar();
+            else if (botao.dataset.cd === 'confirmar') salvar();
+            else if (botao.dataset.cd === 'voltar') voltar();
             else if (!_enviando) fechar();
           });
         }
@@ -4999,6 +5453,7 @@
           fechou_desfeito: '↩️',
           proposta: '📤',
           pe_paga: '💰',
+          pe_corrigir: '✏️',
           reagendar: '📅',
           cancelado: '🚫',
           conversa: '💬',
@@ -5182,6 +5637,24 @@
               partes.push(
                 botaoAcao('pe_paga', '💰 Marcar PE paga', {
                   icone: ic('pe_paga'),
+                  id: item.id,
+                  bebe: item.bebe,
+                  pendente: AcoesController.estaPendente('pe_paga', item.id, item.bebe),
+                }),
+              );
+            }
+            // Corrigir PE já marcada paga (issue #488): valor digitado errado não manda mais a equipe de volta
+            // para a planilha. Só PE que o Mercado Pago NÃO confirmou (o servidor também recusa essa com 409) e
+            // só com `agendamentoId`, pelo mesmo motivo do 💰: sem a identidade da linha o repost desfaz.
+            if (
+              escritaLigada &&
+              item.agendamentoId &&
+              item.peCorrigivel &&
+              item.pagamentoPE === BGL_CONST.CRM.PAGAMENTO_PE.PAGO
+            ) {
+              partes.push(
+                botaoAcao('pe_corrigir', '✏️ Corrigir PE paga', {
+                  icone: ic('pe_corrigir'),
                   id: item.id,
                   bebe: item.bebe,
                   pendente: AcoesController.estaPendente('pe_paga', item.id, item.bebe),
@@ -5832,6 +6305,34 @@
             );
         }
 
+        /**
+         * ✏️ Corrigir dados (issue #488). Só com a flag de escrita e com `agendamentoId`: sem a identidade da
+         * linha o write-back não acha onde escrever e o próximo repost da planilha desfaria a correção
+         * (mesmo critério da anotação pós-PE). O agendamento mais recente COM identidade basta: o servidor
+         * acha as demais linhas do bebê e da família a partir dele.
+         */
+        function _botaoCorrigir(bebe, agendamentos) {
+          if (!BGL_CONST.CRM.FLAG_ACOES_ESCRITA) return '';
+          const alvo = agendamentos.find((a) => a.agendamentoId);
+          if (!alvo) return '';
+          return (
+            '<button type="button" class="btn-acao" data-corrigir="abrir" data-bebe="' +
+            esc(bebe.nome) +
+            '" data-agendamento="' +
+            esc(alvo.agendamentoId) +
+            '">✏️ Corrigir dados</button>'
+          );
+        }
+
+        function _notaCorrigir(agendamentos) {
+          if (!BGL_CONST.CRM.FLAG_ACOES_ESCRITA) return '';
+          if (!agendamentos.length || agendamentos.some((a) => a.agendamentoId)) return '';
+          return (
+            '<div class="pospe-nota">Agendamento antigo, sem identificação da linha: ' +
+            'corrija estes dados direto na planilha.</div>'
+          );
+        }
+
         function _bebe(lead, bebe, telefoneFallback) {
           const agendamentos = _agendamentosDo(lead, bebe.nome);
           const ultimo = agendamentos[0] || {};
@@ -5868,7 +6369,9 @@
             '<a class="btn-acao" data-proposta href="' +
             esc(href) +
             '" target="_blank" rel="noopener">📄 Gerar proposta</a>' +
+            _botaoCorrigir(bebe, agendamentos) +
             '</div>' +
+            _notaCorrigir(agendamentos) +
             '</div>'
           );
         }
@@ -6908,6 +7411,7 @@
           }
           PresencaDialog.iniciar();
           PePagaDialog.iniciar();
+          CorrigirDadosDialog.iniciar();
           // Depois de criar, a agenda atrás do diálogo se atualiza sozinha.
           AgendarDialog.iniciar({ aoCriar: atualizarAgora });
           ReagendarDialog.iniciar({ aoReagendar: atualizarAgora });
@@ -6919,7 +7423,7 @@
           // escrita da agenda, dentro do modal.
           const corpoLead = document.getElementById('lead-modal-body');
           corpoLead.addEventListener('click', (e) => {
-            const botao = e.target.closest('[data-pospe]');
+            const botao = e.target.closest('[data-pospe], [data-corrigir]');
             if (botao) AcoesController.aoClicarNoLead(botao);
           });
           corpoLead.addEventListener('input', (e) => {
