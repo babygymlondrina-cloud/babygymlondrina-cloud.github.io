@@ -5548,7 +5548,10 @@
                   icone: ic('compareceu'),
                   id: item.id,
                   bebe: item.bebe,
-                  pendente: AcoesController.estaPendente('compareceu', item.id, item.bebe),
+                  // Também espera um Desfazer ainda no ar: o inverso da corrida do #486.
+                  pendente:
+                    AcoesController.estaPendente('compareceu', item.id, item.bebe) ||
+                    AcoesController.estaPendente('compareceu_desfeito', item.id, item.bebe),
                 }),
               );
             } else {
@@ -5568,7 +5571,9 @@
                   icone: ic('fechou'),
                   id: item.id,
                   bebe: item.bebe,
-                  pendente: AcoesController.estaPendente('fechou', item.id, item.bebe),
+                  pendente:
+                    AcoesController.estaPendente('fechou', item.id, item.bebe) ||
+                    AcoesController.estaPendente('fechou_desfeito', item.id, item.bebe),
                 }),
               );
             } else {
@@ -5598,7 +5603,11 @@
                   icone: ic('compareceu_desfeito'),
                   id: item.id,
                   bebe: item.bebe,
-                  pendente: AcoesController.estaPendente('compareceu_desfeito', item.id, item.bebe),
+                  // Enquanto o "marcar" ainda está no ar o desfazer espera: senão ele chega antes,
+                  // vira no-op, e a marca grava depois (issue #486).
+                  pendente:
+                    AcoesController.estaPendente('compareceu', item.id, item.bebe) ||
+                    AcoesController.estaPendente('compareceu_desfeito', item.id, item.bebe),
                 }),
               );
             }
@@ -5608,7 +5617,9 @@
                   icone: ic('fechou_desfeito'),
                   id: item.id,
                   bebe: item.bebe,
-                  pendente: AcoesController.estaPendente('fechou_desfeito', item.id, item.bebe),
+                  pendente:
+                    AcoesController.estaPendente('fechou', item.id, item.bebe) ||
+                    AcoesController.estaPendente('fechou_desfeito', item.id, item.bebe),
                 }),
               );
             }
@@ -7435,9 +7446,15 @@
          * `GET /permissoes` (issue #398): decide só se o botão Desfazer aparece. Falha = sem botão
          * (fechado), em silêncio: não é motivo para incomodar quem não vai desfazer nada.
          */
+        let _geracaoPermissoes = 0;
         function carregarPermissoes() {
+          // Zera a do login anterior: entrar com outra conta na mesma aba não herda o botão (issue #486).
+          CrmState.permissoes.definir(null);
+          // Resposta de uma chamada que já não é a última (login anterior, ainda no ar) é descartada.
+          const geracao = ++_geracaoPermissoes;
           return ApiClient.get('/permissoes')
             .then((p) => {
+              if (geracao !== _geracaoPermissoes) return;
               CrmState.permissoes.definir(p);
               UIRenderer.render();
             })

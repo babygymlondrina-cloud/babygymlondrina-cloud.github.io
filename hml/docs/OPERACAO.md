@@ -56,13 +56,14 @@ Em **todas as três faixas**, cada linha tem:
 
 - **Marcar presença** — o mesmo que marcar o checkbox `Compareceu` (coluna V) na
   planilha. Só aparece enquanto a presença ainda não foi marcada: depois de um
-  clique, vira "✓ Presença" e não tem como desmarcar pela tela (se marcou errado,
-  avise o Michel). Fica nas três faixas de propósito: a presença é marcada quando
+  clique, vira "✓ Presença". Se marcou errado, quem tem a permissão (o Michel define) usa o
+  **↩️ Desfazer presença**; quem não tem, avisa o Michel (issue #398). Fica nas três faixas de propósito: a presença é marcada quando
   a mãe **chega** — ou seja, dentro do horário corrente, não só depois que ele
   passa —, e você precisa enxergar como está cada agendamento antes mesmo de a
   hora chegar.
 - **Marcar fechou** — o mesmo que marcar o checkbox `Fechou` (coluna X). Mesma
-  regra do "Marcar presença": só aparece enquanto ainda não foi marcado.
+  regra do "Marcar presença": só aparece enquanto ainda não foi marcado; se marcou errado,
+  quem tem a permissão usa o **↩️ Desfazer fechou**.
 - **Cancelar** — o mesmo que escrever `cancelado` na coluna de status
   (`statusConfirmacao`, coluna T) da planilha. **Pede confirmação** antes de
   agir, porque é a única das quatro ações difícil de desfazer: o agendamento sai
