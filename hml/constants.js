@@ -33,7 +33,8 @@ const BGL_CONST = {
   },
   /**
    * Atalho "Baby Friday 2026" do `proposta.html` (issue #496): preenche o
-   * desconto especial com estes valores. `ULTIMO_DIA` é o último dia (hora de
+   * desconto especial com estes valores. O rótulo do checkbox
+   * (`#baby-friday-row`) repete 50% e Semestral no HTML: mude os dois juntos. `ULTIMO_DIA` é o último dia (hora de
    * Londrina, `TZ`) em que o checkbox aparece; some em 2026-12-01.
    */
   PROMO_BABY_FRIDAY: {

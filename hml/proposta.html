@@ -35,6 +35,7 @@
         --white: #ffffff;
         --text: #19151f;
         --text-light: #736880;
+        --border-soft: #e8e8f0;
         --shadow: 0 6px 28px rgba(98, 95, 183, 0.13);
         --shadow-sm: 0 2px 12px rgba(98, 95, 183, 0.09);
         --warning-bg: #fffbeb;
@@ -1615,7 +1616,7 @@
                   display: block;
                   font-size: 0.75rem;
                   font-weight: 700;
-                  color: #6b6b8a;
+                  color: var(--text-light);
                   text-transform: uppercase;
                   letter-spacing: 1px;
                   margin-bottom: 0.3rem;
@@ -1627,13 +1628,13 @@
                 id="inp-desc-modo"
                 style="
                   width: 100%;
-                  border: 2px solid #e8e8f0;
+                  border: 2px solid var(--border-soft);
                   border-radius: 10px;
                   padding: 0.6rem 0.7rem;
                   font-family: Nunito, sans-serif;
                   font-size: 1rem;
                   font-weight: 700;
-                  color: #2d2d2d;
+                  color: var(--text);
                   background: white;
                   outline: none;
                 "
@@ -2739,11 +2740,19 @@
           document.getElementById('chk-desc-' + BGL_CONST.PLANO.TRIMESTRAL).checked = false;
         }
         // O checkbox Baby Friday 2026 (#496) aparece até o último dia da campanha,
-        // pelo relógio de Londrina (`BGL_CONST.TZ`): 'en-CA' formata AAAA-MM-DD,
-        // que compara como texto.
+        // pelo relógio de Londrina (`BGL_CONST.TZ`). Monta AAAA-MM-DD com
+        // `formatToParts` (como o `normalize.js`), sem depender do formato do locale.
         function _babyFridayAtiva(agora) {
-          const hoje = new Date(agora).toLocaleDateString('en-CA', { timeZone: BGL_CONST.TZ });
-          return hoje <= BGL_CONST.PROMO_BABY_FRIDAY.ULTIMO_DIA;
+          const p = {};
+          new Intl.DateTimeFormat('en-US', {
+            timeZone: BGL_CONST.TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          })
+            .formatToParts(new Date(agora))
+            .forEach((x) => (p[x.type] = x.value));
+          return p.year + '-' + p.month + '-' + p.day <= BGL_CONST.PROMO_BABY_FRIDAY.ULTIMO_DIA;
         }
         function _atualizarBabyFridayRow() {
           document.getElementById('baby-friday-row').style.display = _babyFridayAtiva(Date.now())
@@ -3080,6 +3089,9 @@
             ? d.desconto.pct +
               '% — ' +
               d.desconto.motivo +
+              (d.desconto.modo === BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA
+                ? ' na 1ª parcela'
+                : '') +
               ' (' +
               (d.desconto.planos || []).join(', ') +
               ')'
