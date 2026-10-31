@@ -2160,8 +2160,45 @@
             label: '-' + pct + '%',
           };
         }
-        function calcPixEfetivo(btn) {
+        // Desconto especial "só na 1ª parcela" (issue #496). Trabalha com NÚMEROS e
+        // nunca relê o texto que ele mesmo gera: "1ª de R$X + 5x de R$Y" casaria a
+        // regex de parseInstallments com 5 parcelas. A PE paga entra aqui: abate do
+        // total, divide por n e só então desconta a 1ª parcela. `pctTotal` é o %
+        // equivalente sobre o total (pct ÷ n) — é ele que calcDescontoAula espera.
+        function calcPrimeiraParcela(precoStr, pct, peValor) {
+          const parsed = PriceFormatter.parseInstallments(precoStr);
+          if (!parsed) return null;
+          // Em centavos inteiros: meio centavo sobe sempre (1ª parcela de
+          // R$169,585 vira R$169,59) e o total fecha com as parcelas mostradas.
+          const baseC = Math.round((peValor ? parsed.val - peValor / parsed.n : parsed.val) * 100);
+          const primeiraC = Math.round((baseC * (100 - pct)) / 100);
+          const base = baseC / 100;
+          const primeira = primeiraC / 100;
+          const total = (primeiraC + (parsed.n - 1) * baseC) / 100;
+          // formatPE: inteiro sem centavos, fracionário com 2 casas (mesma regra)
+          const preco =
+            '1ª de R$' +
+            PriceFormatter.formatPE(primeira) +
+            ' + ' +
+            (parsed.n - 1) +
+            'x de R$' +
+            PriceFormatter.formatPE(base);
+          return { n: parsed.n, base, primeira, total, preco, pctTotal: pct / parsed.n };
+        }
+        function calcPixEfetivo(btn, peValor) {
           const ad = AppState.getActiveDiscount();
+          // Primeiro: o `pct > 5` abaixo leria os 50% da 1ª parcela como 50% do total.
+          if (DiscountStrategy.isPrimeiraParcela(ad, btn.dataset.plano) && btn.dataset.preco) {
+            const pp = calcPrimeiraParcela(btn.dataset.preco, ad.pct, peValor);
+            if (pp) {
+              return {
+                valor: 'R$' + PriceFormatter.formatBRL(pp.total),
+                pct: ad.pct,
+                especial: true,
+                primeiraParcela: true,
+              };
+            }
+          }
           if (
             ad &&
             ad.tipo === BGL_CONST.DESCONTO.ESPECIAL &&
@@ -2205,6 +2242,18 @@
               : null;
           }
           const ad = AppState.getActiveDiscount();
+          if (DiscountStrategy.isPrimeiraParcela(ad, btn.dataset.plano) && btn.dataset.preco) {
+            const pp = calcPrimeiraParcela(btn.dataset.preco, ad.pct, 0);
+            if (pp)
+              return {
+                preco: pp.preco,
+                porAula: btn.dataset.porAula,
+                tipo: 'desconto',
+                label: '1ª parcela -' + ad.pct + '%',
+                pctTotal: pp.pctTotal,
+                primeiraParcela: true,
+              };
+          }
           if (ad && btn.dataset.preco && DiscountStrategy.appliesTo(ad, btn.dataset.plano)) {
             const calc = calcDesconto(btn.dataset.preco, ad.pct);
             if (calc)
@@ -2224,6 +2273,7 @@
         return {
           calcDescontoAula,
           calcDesconto,
+          calcPrimeiraParcela,
           calcPixEfetivo,
           calcDeducaoPE,
           calcPixComPE,
@@ -2237,7 +2287,7 @@
         // Passo reutilizado por renderClient e setPagamento (elimina duplicação)
         function _updatePixNoteVisibility(ad) {
           const el = document.querySelector('.pix-note');
-          if (el) el.style.display = ad && ad.pct >= 5 ? 'none' : 'block';
+          if (el) el.style.display = DiscountStrategy.substituiPix(ad) ? 'none' : 'block';
         }
         function _renderHero(data, artigo, isRenovacao, turmaConf, apelido) {
           document.getElementById('hero-greeting').textContent = msg(BGL_MESSAGES.heroSaudacao, {
@@ -2356,8 +2406,13 @@
             db.style.background = 'linear-gradient(135deg, var(--pink-hot), #e0006e)';
             db.style.boxShadow = '0 4px 20px rgba(252,0,124,0.3)';
             if (isPrimeiroDia) db.style.animation = 'pulse-banner 2.5s ease-in-out infinite';
+            const tituloEspecial =
+              ad.modo === BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA
+                ? BGL_MESSAGES.bannerTituloPrimeiraParcela ||
+                  '[pct]% de desconto na 1ª parcela — [motivo]! 🎁'
+                : BGL_MESSAGES.bannerTituloEspecial;
             document.getElementById('desc-banner-titulo').textContent = msg(
-              isPrimeiroDia ? BGL_MESSAGES.bannerTituloIsHoje : BGL_MESSAGES.bannerTituloEspecial,
+              isPrimeiroDia ? BGL_MESSAGES.bannerTituloIsHoje : tituloEspecial,
               { pct: ad.pct, motivo: ad.motivo },
             );
             let planosLabel;
@@ -2385,10 +2440,15 @@
         }
         function _renderPlanNotes(ad) {
           if (ad) {
+            const modelo =
+              ad.modo === BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA
+                ? BGL_MESSAGES.freqNotePrimeiraParcela ||
+                  '✦ [pct]% de desconto na 1ª parcela ([motivo])'
+                : BGL_MESSAGES.freqNoteEspecial;
             const noteText =
               ad.tipo === BGL_CONST.DESCONTO.HOJE
                 ? BGL_MESSAGES.freqNoteIsHoje
-                : msg(BGL_MESSAGES.freqNoteEspecial, { pct: ad.pct, motivo: ad.motivo });
+                : msg(modelo, { pct: ad.pct, motivo: ad.motivo });
             const planosComDesconto = {
               [BGL_CONST.PLANO.ANUAL]:
                 ad.tipo === BGL_CONST.DESCONTO.HOJE ||
@@ -2504,7 +2564,29 @@
             const pix = PriceCalculator.calcPixEfetivo(btn);
             const icon = pix.especial ? '\uD83C\uDF81' : '\u26A1';
             priceEl.innerHTML = `<span style="font-size:0.82rem;color:var(--teal-dark);font-weight:800;">${pix.valor} \u00e0 vista ${icon}</span>`;
-            perEl.textContent = pix.pct + '% off no total';
+            perEl.textContent = pix.primeiraParcela
+              ? '1\u00AA parcela com ' + pix.pct + '% off'
+              : pix.pct + '% off no total';
+          } else if (
+            !isPix &&
+            ad &&
+            btn.dataset.preco &&
+            DiscountStrategy.isPrimeiraParcela(ad, btn.dataset.plano)
+          ) {
+            // Desconto s\u00F3 na 1\u00AA parcela (#496): sem tachado \u2014 o texto novo j\u00E1 traz
+            // "5x de R$347" e a 1\u00AA parcela com desconto.
+            const pp = PriceCalculator.calcPrimeiraParcela(btn.dataset.preco, ad.pct, 0);
+            if (pp) {
+              priceEl.innerHTML = `<span style="color:var(--purple-dark)">${pp.preco} \uD83C\uDF81</span>`;
+              perEl.textContent =
+                PriceCalculator.calcDescontoAula(btn.dataset.porAula, pp.pctTotal) +
+                ' (1\u00AA parcela -' +
+                ad.pct +
+                '%)';
+            } else {
+              priceEl.innerHTML = btn.dataset.preco;
+              perEl.textContent = btn.dataset.porAula;
+            }
           } else if (
             !isPix &&
             ad &&
@@ -2554,7 +2636,7 @@
           } else {
             note.style.display = 'none';
           }
-          const descontoSuperaPix = ad && ad.pct >= 5;
+          const descontoSuperaPix = DiscountStrategy.substituiPix(ad);
           document.querySelectorAll('.freq-day1-note').forEach((n) => {
             n.style.display =
               descontoSuperaPix || tipo === BGL_CONST.PAGAMENTO.CARTAO ? 'block' : 'none';
@@ -2635,8 +2717,27 @@
           const activeBtn = document.querySelector(
             `.freq-btn[data-plano="${plano}"][data-freq="${freq}"]`,
           );
+          const _isPePaga = d.pePaga && BGL_PLANOS.primeiraExp && plano !== BGL_CONST.PLANO.AVULSA;
+          const _peValor = _isPePaga ? BGL_PLANOS.primeiraExp.valor : 0;
+          // Desconto só na 1ª parcela (#496): a PE paga já está dentro da conta
+          // (abate do total, divide por n, desconta a 1ª parcela) e o PIX é a
+          // soma das parcelas, sem 5% extra. Por isso pula o abatimento abaixo.
+          const _pp =
+            activeBtn && DiscountStrategy.isPrimeiraParcela(_ad, plano)
+              ? PriceCalculator.calcPrimeiraParcela(activeBtn.dataset.preco, _ad.pct, _peValor)
+              : null;
           let diaLabel;
-          if (AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX) {
+          if (_pp) {
+            diaLabel = msg(
+              BGL_MESSAGES.wppDiaPrimeiraParcela ||
+                '🎁 [pct]% de desconto na 1ª parcela — [motivo]',
+              { pct: _ad.pct, motivo: _ad.motivo },
+            );
+            preco =
+              AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX
+                ? PriceCalculator.calcPixEfetivo(activeBtn, _peValor).valor
+                : _pp.preco;
+          } else if (AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX) {
             const pix = activeBtn
               ? PriceCalculator.calcPixEfetivo(activeBtn)
               : { valor: preco, pct: 5 };
@@ -2650,9 +2751,7 @@
           } else {
             diaLabel = null;
           }
-          const _isPePaga = d.pePaga && BGL_PLANOS.primeiraExp && plano !== BGL_CONST.PLANO.AVULSA;
-          if (_isPePaga) {
-            const _peValor = BGL_PLANOS.primeiraExp.valor;
+          if (_isPePaga && !_pp) {
             if (AppState.getPagamento() === BGL_CONST.PAGAMENTO.PIX) {
               preco = PriceCalculator.calcPixComPE(preco, _peValor);
             } else {

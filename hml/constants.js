@@ -6,8 +6,8 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.39',
-  APP_DATE: '2026-10-24',
+  APP_VERSION: '3.40',
+  APP_DATE: '2026-10-31',
   PLANO: {
     ANUAL: 'anual',
     SEMESTRAL: 'semestral',
@@ -21,6 +21,26 @@ const BGL_CONST = {
   DESCONTO: {
     HOJE: 'hoje',
     ESPECIAL: 'especial',
+  },
+  /**
+   * Como o % do desconto especial incide (issue #496). `TODAS` é o padrão e o
+   * de todo link antigo (campo `modo` ausente); `PRIMEIRA_PARCELA` aplica o %
+   * só na 1ª parcela e deixa as demais cheias.
+   */
+  MODO_DESCONTO: {
+    TODAS: 'todas',
+    PRIMEIRA_PARCELA: 'primeira_parcela',
+  },
+  /**
+   * Atalho "Baby Friday 2026" do `proposta.html` (issue #496): preenche o
+   * desconto especial com estes valores. `ULTIMO_DIA` é o último dia (hora de
+   * Londrina, `TZ`) em que o checkbox aparece; some em 2026-12-01.
+   */
+  PROMO_BABY_FRIDAY: {
+    MOTIVO: 'Baby Friday 2026',
+    PCT: 50,
+    PLANO: 'semestral',
+    ULTIMO_DIA: '2026-11-30',
   },
   TIPO: {
     RENOVACAO: 'renovacao',

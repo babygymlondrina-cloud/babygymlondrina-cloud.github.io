@@ -257,7 +257,12 @@ const DiscountStrategy = (function () {
       data.created &&
       Date.now() - data.created < 86400000;
     const desc = data.desconto;
-    const especial = desc && desc.exp && Date.now() < desc.exp && desc.pct > 0;
+    // `modo` ausente = todas as parcelas (links antigos). Modo desconhecido
+    // ignora o desconto: aplicar um 50% de "1ª parcela" em todas as parcelas
+    // venderia o plano pela metade do preço.
+    const modo = desc && desc.modo ? desc.modo : BGL_CONST.MODO_DESCONTO.TODAS;
+    const modoValido = Object.values(BGL_CONST.MODO_DESCONTO).includes(modo);
+    const especial = desc && desc.exp && Date.now() < desc.exp && desc.pct > 0 && modoValido;
     return especial
       ? {
           pct: desc.pct,
@@ -265,6 +270,7 @@ const DiscountStrategy = (function () {
           exp: desc.exp,
           tipo: BGL_CONST.DESCONTO.ESPECIAL,
           planos: desc.planos,
+          modo,
         }
       : isHoje
         ? {
@@ -282,7 +288,20 @@ const DiscountStrategy = (function () {
     if (ad.tipo === BGL_CONST.DESCONTO.ESPECIAL) return !ad.planos || ad.planos.includes(plano);
     return false;
   }
-  return { resolve, appliesTo };
+  /** Desconto no modo "só na 1ª parcela" (issue #496) que se aplica a este plano. */
+  function isPrimeiraParcela(ad, plano) {
+    return !!ad && ad.modo === BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA && appliesTo(ad, plano);
+  }
+  /**
+   * O desconto vence o PIX de 5% e dispensa o aviso dele? Em todas as parcelas,
+   * vale quando `pct >= 5`. No modo "1ª parcela" vale sempre: o PIX desse plano
+   * não ganha desconto extra (a equipe dá só se a família pedir).
+   */
+  function substituiPix(ad) {
+    if (!ad) return false;
+    return ad.modo === BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA || ad.pct >= 5;
+  }
+  return { resolve, appliesTo, isPrimeiraParcela, substituiPix };
 })();
 
 // ─── AuthSession ─────────────────────────────────────────────────────────────

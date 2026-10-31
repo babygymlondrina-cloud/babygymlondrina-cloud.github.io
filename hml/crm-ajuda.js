@@ -568,6 +568,19 @@ const BGL_CRM_AJUDA = {
   // `APP_VERSION` e o seguinte).
   novidades: [
     {
+      versao: '3.40',
+      data: '2026-10-31',
+      mudancas: {
+        adicionado: [
+          'Proposta: o desconto especial agora pode valer só na 1ª parcela (campo "Aplicar o % em"). Com ele, a família vê "1ª de R$X + 5x de R$Y" e o PIX à vista soma as parcelas, sem os 5% do PIX (#496).',
+          'Proposta: checkbox "Baby Friday 2026" que preenche o desconto de 50% na 1ª parcela do Semestral. Ele aparece até 30/11/2026 e some em 01/12/2026 (#496).',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
+    {
       versao: '3.39',
       data: '2026-10-24',
       mudancas: {
