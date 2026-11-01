@@ -35,6 +35,7 @@
         --white: #ffffff;
         --text: #19151f;
         --text-light: #736880;
+        --border-soft: #e8e8f0;
         --shadow: 0 6px 28px rgba(98, 95, 183, 0.13);
         --shadow-sm: 0 2px 12px rgba(98, 95, 183, 0.09);
         --warning-bg: #fffbeb;
@@ -1453,6 +1454,45 @@
         </div>
         <div style="margin-bottom: 1.1rem">
           <div
+            id="baby-friday-row"
+            style="
+              display: none;
+              align-items: center;
+              gap: 0.7rem;
+              padding: 0.75rem 1rem;
+              margin-bottom: 0.6rem;
+              background: var(--cream);
+              border: 2px solid var(--pink);
+              border-radius: 12px;
+              cursor: pointer;
+            "
+          >
+            <input
+              type="checkbox"
+              id="chk-baby-friday"
+              onchange="toggleBabyFriday()"
+              style="
+                width: 18px;
+                height: 18px;
+                accent-color: var(--pink-hot);
+                cursor: pointer;
+                flex-shrink: 0;
+              "
+            />
+            <label
+              for="chk-baby-friday"
+              style="
+                font-size: 0.85rem;
+                font-weight: 700;
+                color: var(--text-light);
+                cursor: pointer;
+                margin: 0;
+              "
+            >
+              🛍️ Baby Friday 2026 — 50% na 1ª parcela do Semestral
+            </label>
+          </div>
+          <div
             style="
               display: flex;
               align-items: center;
@@ -1569,6 +1609,39 @@
                   "
                 />
               </div>
+            </div>
+            <div style="margin-bottom: 0.6rem">
+              <label
+                style="
+                  display: block;
+                  font-size: 0.75rem;
+                  font-weight: 700;
+                  color: var(--text-light);
+                  text-transform: uppercase;
+                  letter-spacing: 1px;
+                  margin-bottom: 0.3rem;
+                "
+              >
+                Aplicar o % em
+              </label>
+              <select
+                id="inp-desc-modo"
+                style="
+                  width: 100%;
+                  border: 2px solid var(--border-soft);
+                  border-radius: 10px;
+                  padding: 0.6rem 0.7rem;
+                  font-family: Nunito, sans-serif;
+                  font-size: 1rem;
+                  font-weight: 700;
+                  color: var(--text);
+                  background: white;
+                  outline: none;
+                "
+              >
+                <option value="todas" selected>Todas as parcelas</option>
+                <option value="primeira_parcela">Só na 1ª parcela</option>
+              </select>
             </div>
             <div>
               <label
@@ -2460,6 +2533,10 @@
               return;
             }
             descontoObj = { pct, motivo, exp: Date.now() + descDias * 86400000, planos };
+            // `modo` só entra no link quando muda o cálculo (#496): sem ele o link
+            // fica idêntico ao de antes, e uma planos.html antiga não o lê errado.
+            const modo = document.getElementById('inp-desc-modo').value;
+            if (modo === BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA) descontoObj.modo = modo;
           }
           const pePaga = document.getElementById('chk-pe-paga').checked;
           // Valor que a família PAGOU na PE (#358). Vazio = o da config, que é o
@@ -2625,8 +2702,7 @@
           document.getElementById('chk-pe-paga').checked = false;
           document.getElementById('inp-pe-valor').value = '';
           document.getElementById('desconto-fields').style.display = 'none';
-          document.getElementById('inp-desc-pct').value = '';
-          document.getElementById('inp-desc-motivo').value = '';
+          _limparCamposDesconto();
           document.getElementById('link-box').style.display = 'none';
           document.getElementById('btn-wpp-share').dataset.wppUrl = '';
           document.getElementById('btn-wpp-share').dataset.wppMsg = '';
@@ -2650,6 +2726,56 @@
         function toggleDesconto() {
           const on = document.getElementById('chk-desconto').checked;
           document.getElementById('desconto-fields').style.display = on ? 'block' : 'none';
+          // Sem desconto especial não há Baby Friday: o atalho só preenche esse bloco.
+          if (!on) document.getElementById('chk-baby-friday').checked = false;
+        }
+        // Campos do desconto especial de volta ao estado inicial da tela.
+        function _limparCamposDesconto() {
+          document.getElementById('inp-desc-pct').value = '';
+          document.getElementById('inp-desc-motivo').value = '';
+          document.getElementById('inp-desc-modo').value = BGL_CONST.MODO_DESCONTO.TODAS;
+          document.getElementById('chk-baby-friday').checked = false;
+          document.getElementById('chk-desc-' + BGL_CONST.PLANO.ANUAL).checked = true;
+          document.getElementById('chk-desc-' + BGL_CONST.PLANO.SEMESTRAL).checked = true;
+          document.getElementById('chk-desc-' + BGL_CONST.PLANO.TRIMESTRAL).checked = false;
+        }
+        // O checkbox Baby Friday 2026 (#496) aparece até o último dia da campanha,
+        // pelo relógio de Londrina (`BGL_CONST.TZ`). Monta AAAA-MM-DD com
+        // `formatToParts` (como o `normalize.js`), sem depender do formato do locale.
+        function _babyFridayAtiva(agora) {
+          const p = {};
+          new Intl.DateTimeFormat('en-US', {
+            timeZone: BGL_CONST.TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          })
+            .formatToParts(new Date(agora))
+            .forEach((x) => (p[x.type] = x.value));
+          return p.year + '-' + p.month + '-' + p.day <= BGL_CONST.PROMO_BABY_FRIDAY.ULTIMO_DIA;
+        }
+        function _atualizarBabyFridayRow() {
+          document.getElementById('baby-friday-row').style.display = _babyFridayAtiva(Date.now())
+            ? 'flex'
+            : 'none';
+        }
+        // Marcar preenche o desconto especial; desmarcar devolve a tela ao inicial.
+        function toggleBabyFriday() {
+          const P = BGL_CONST.PROMO_BABY_FRIDAY;
+          const on = document.getElementById('chk-baby-friday').checked;
+          _limparCamposDesconto(); // também desmarca o Baby Friday: remarca abaixo
+          document.getElementById('chk-baby-friday').checked = on;
+          document.getElementById('chk-desconto').checked = on;
+          toggleDesconto();
+          if (!on) return;
+          document.getElementById('inp-desc-pct').value = P.PCT;
+          document.getElementById('inp-desc-motivo').value = P.MOTIVO;
+          document.getElementById('inp-desc-modo').value = BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA;
+          [BGL_CONST.PLANO.ANUAL, BGL_CONST.PLANO.SEMESTRAL, BGL_CONST.PLANO.TRIMESTRAL].forEach(
+            function (plano) {
+              document.getElementById('chk-desc-' + plano).checked = plano === P.PLANO;
+            },
+          );
         }
         function populateTurmas() {
           const turmaSel = document.getElementById('inp-turma');
@@ -2681,6 +2807,7 @@
         }
         function init() {
           sincronizarDescDias();
+          _atualizarBabyFridayRow();
           populateTurmas();
           _atualizarAvulsaVisibility();
           _atualizarPeRow();
@@ -2708,6 +2835,7 @@
           gerarLink,
           copiarLink,
           toggleDesconto,
+          toggleBabyFriday,
           sincronizarDescDias,
           limparFormulario,
           populateTurmas,
@@ -2961,6 +3089,9 @@
             ? d.desconto.pct +
               '% — ' +
               d.desconto.motivo +
+              (d.desconto.modo === BGL_CONST.MODO_DESCONTO.PRIMEIRA_PARCELA
+                ? ' na 1ª parcela'
+                : '') +
               ' (' +
               (d.desconto.planos || []).join(', ') +
               ')'
@@ -3370,6 +3501,7 @@
       window.FormController = FormController;
       window.gerarLink = () => FormController.gerarLink();
       window.toggleDesconto = () => FormController.toggleDesconto();
+      window.toggleBabyFriday = () => FormController.toggleBabyFriday();
       window.copiarLink = () => FormController.copiarLink();
       window.sincronizarDescDias = () => FormController.sincronizarDescDias();
       window.limparFormulario = () => FormController.limparFormulario();
