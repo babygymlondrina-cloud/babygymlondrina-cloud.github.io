@@ -2007,6 +2007,14 @@
             <label class="pe-rotulo" for="cd-como">Como chegou até nós</label>
             <input id="cd-como" class="pe-input" type="text" maxlength="200" autocomplete="off" />
             <div class="pe-rotulo" id="cd-bebe-titulo">Bebê</div>
+            <label class="pe-rotulo" for="cd-bebe-nome">Nome do bebê</label>
+            <input
+              id="cd-bebe-nome"
+              class="pe-input"
+              type="text"
+              maxlength="200"
+              autocomplete="off"
+            />
             <label class="pe-rotulo" for="cd-nasc">Nascimento</label>
             <input id="cd-nasc" class="pe-input" type="date" />
             <label class="pe-rotulo" for="cd-sexo">Sexo</label>
@@ -2042,6 +2050,10 @@
               planilha.
             </p>
             <ul class="cd-resumo-lista" id="cd-resumo-lista"></ul>
+            <div class="aviso aviso-info" id="cd-resumo-nome" style="display: none">
+              O nome do bebê passa a valer em todos os agendamentos dele, na planilha também. A
+              Alice reconhece o bebê pelo nome: use o nome completo, como a mãe informou.
+            </div>
             <div
               class="aviso aviso-erro"
               id="cd-erro-resumo"
@@ -2684,10 +2696,21 @@
          * Aviso da correção de dados (issue #488), ou `null`: espelho que falhou (o dado antigo pode voltar
          * do repost da planilha em até ~30 min) ou linhas antigas da família que a planilha não endereça.
          */
-        function _avisoDosDados(resposta) {
+        function _avisoDosDados(resposta, corpo) {
           const e = resposta && resposta.espelho;
           if (!e) return null;
+          // O nome é a chave do bebê: com a planilha no nome velho, o próximo repost o divide em dois
+          // bebês (issue #489). Não é "o dado antigo pode voltar": é corrigir a coluna G já.
+          const mudouNome = !!(corpo && corpo.bebe && corpo.bebe.nome !== undefined);
+          const avisoNome =
+            ' ATENÇÃO: o nome do bebê mudou. Corrija já a coluna G (nome do bebê) em todas as linhas deste ' +
+            'bebê na planilha; senão o bebê pode aparecer duplicado no CRM.';
           if (!e.ok) {
+            if (mudouNome) {
+              return (
+                'O nome do bebê foi salvo no CRM, mas a planilha não foi atualizada.' + avisoNome
+              );
+            }
             return (
               'A correção foi salva no CRM, mas a planilha não foi atualizada e o dado antigo pode voltar em ' +
               'até cerca de 30 minutos. Peça para corrigir estes dados nas linhas desta família na planilha, ' +
@@ -2699,7 +2722,8 @@
             ? 'Corrigido, mas ' +
                 faltam +
                 ' linha(s) antiga(s) desta família na planilha não puderam ser atualizadas ' +
-                '(sem identificação): corrija-as direto na planilha.'
+                '(sem identificação): corrija-as direto na planilha.' +
+                (mudouNome ? avisoNome : '')
             : null;
         }
 
@@ -2722,7 +2746,7 @@
             );
             if (CrmState.lead.getDoc() === doc && resposta.lead) {
               doc.lead = resposta.lead;
-              CrmState.lead.setAviso(_avisoDosDados(resposta));
+              CrmState.lead.setAviso(_avisoDosDados(resposta, corpo));
               UIRenderer.renderLead();
             }
             // As listas da agenda mostram o nome da mãe: busca de novo, sem esperar o polling.
@@ -3451,6 +3475,7 @@
             respNome: String(r.nome || '').trim(),
             respEmail: String(r.email || '').trim(),
             como: String(lead.comoConheceu || '').trim(),
+            bebeNome: String(bebe.nome || '').trim(),
             nascimento: _paraISO(bebe.nascimento),
             sexo: _sexoParaTela(bebe.sexo),
             alergia: String(bebe.alergia || '').trim(),
@@ -3463,6 +3488,7 @@
             respNome: _el('cd-resp-nome').value.trim(),
             respEmail: _el('cd-resp-email').value.trim(),
             como: _el('cd-como').value.trim(),
+            bebeNome: _el('cd-bebe-nome').value.trim(),
             nascimento: _el('cd-nasc').value.trim(),
             sexo: _el('cd-sexo').value,
             alergia: _el('cd-alergia').value.trim(),
@@ -3474,6 +3500,7 @@
           respNome: 'Nome do responsável',
           respEmail: 'E-mail do responsável',
           como: 'Como chegou até nós',
+          bebeNome: 'Nome do bebê',
           nascimento: 'Nascimento',
           sexo: 'Sexo',
           alergia: 'Alergia',
@@ -3492,6 +3519,7 @@
           respNome: 'o nome do responsável',
           respEmail: 'o e-mail',
           como: '"como chegou até nós"',
+          bebeNome: 'o nome do bebê',
           nascimento: 'o nascimento',
           sexo: 'o sexo',
           alergia: 'a alergia ("Nenhuma" vale)',
@@ -3508,6 +3536,7 @@
           const bebe = {};
           if (mudou.includes('respNome')) responsavel.nome = agora.respNome;
           if (mudou.includes('respEmail')) responsavel.email = agora.respEmail;
+          if (mudou.includes('bebeNome')) bebe.nome = agora.bebeNome;
           if (mudou.includes('nascimento')) bebe.nascimento = agora.nascimento;
           if (mudou.includes('sexo')) bebe.sexo = agora.sexo;
           if (mudou.includes('alergia')) bebe.alergia = agora.alergia;
@@ -3597,6 +3626,7 @@
           _el('cd-resp-nome').value = original.respNome;
           _el('cd-resp-email').value = original.respEmail;
           _el('cd-como').value = original.como;
+          _el('cd-bebe-nome').value = original.bebeNome;
           _el('cd-nasc').value = original.nascimento;
           _el('cd-sexo').value = original.sexo;
           _el('cd-alergia').value = original.alergia;
@@ -3621,6 +3651,7 @@
           if (!mudou.length || vazios.length) return;
           _mostrarErro('');
           _desenharResumo(mudou);
+          _el('cd-resumo-nome').style.display = mudou.includes('bebeNome') ? '' : 'none';
           _mostrarEtapa('resumo');
           _el('cd-confirmar').focus();
         }
@@ -3653,7 +3684,14 @@
         }
 
         function iniciar() {
-          for (const id of ['cd-resp-nome', 'cd-resp-email', 'cd-como', 'cd-nasc', 'cd-alergia']) {
+          for (const id of [
+            'cd-resp-nome',
+            'cd-resp-email',
+            'cd-como',
+            'cd-bebe-nome',
+            'cd-nasc',
+            'cd-alergia',
+          ]) {
             _el(id).addEventListener('input', _atualizar);
           }
           for (const id of ['cd-sexo', 'cd-prematuro']) {
