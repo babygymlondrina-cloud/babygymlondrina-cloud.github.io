@@ -2070,6 +2070,58 @@
         </div>
       </div>
     </div>
+    <div id="unir-modal" class="modal-backdrop" style="display: none">
+      <div
+        class="modal-card presenca-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="un-titulo"
+      >
+        <div class="modal-header">
+          <h2 id="un-titulo">Unir a outra família</h2>
+          <button class="modal-close" data-un="cancelar" aria-label="Fechar">×</button>
+        </div>
+        <div class="modal-body pe-corpo">
+          <div id="un-busca">
+            <p class="presenca-pergunta">
+              Procure a
+              <strong>outra</strong>
+              ficha da mesma família (o mesmo número pode estar escrito com ou sem o 9). Nada muda
+              até você confirmar.
+            </p>
+            <label class="pe-rotulo" for="un-q">Telefone, nome do bebê ou da mãe</label>
+            <input id="un-q" class="pe-input" type="text" maxlength="80" autocomplete="off" />
+            <button type="button" class="btn-presenca" id="un-procurar" data-un="procurar">
+              🔎 Procurar
+            </button>
+            <div id="un-resultados"></div>
+            <button type="button" class="btn-presenca-cancelar" data-un="cancelar">Cancelar</button>
+          </div>
+          <div id="un-conferir" style="display: none">
+            <p class="presenca-pergunta">
+              Confira. A ficha que
+              <strong>desaparece</strong>
+              entra na que
+              <strong>fica</strong>
+              : agendamentos, bebês, mensagens, propostas e histórico. Nome, e-mail e “como chegou”
+              são os da ficha que fica.
+              <strong>Não dá para desfazer pela tela.</strong>
+            </p>
+            <div id="un-cartoes"></div>
+            <div class="aviso aviso-erro" id="un-erro" role="alert" style="display: none"></div>
+            <button type="button" class="btn-presenca" id="un-confirmar" data-un="confirmar">
+              🔗 Unir as famílias
+            </button>
+            <button type="button" class="btn-presenca-cancelar" id="un-inverter" data-un="inverter">
+              ⇄ Inverter (a outra fica)
+            </button>
+            <button type="button" class="btn-presenca-cancelar" id="un-voltar" data-un="voltar">
+              ← Escolher outra
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <script>
       // ═══════════════════════════════════════════════════════════════════════
       // CRM BGL — tela da equipe (Fase 3, T4 + T6).
@@ -2343,12 +2395,15 @@
         // O que ESTE login pode fazer (`GET /permissoes`, issue #398). Fechado até a API
         // dizer que sim: a tela só esconde o botão, quem recusa de verdade é o servidor.
         let _podeDesfazer = false;
+        let _podeUnir = false;
 
         return {
           permissoes: {
             podeDesfazer: () => _podeDesfazer,
+            podeUnir: () => _podeUnir,
             definir: (p) => {
               _podeDesfazer = !!(p && p.desfazer === true);
+              _podeUnir = !!(p && p.unir === true);
             },
           },
           ui: {
@@ -2752,6 +2807,33 @@
             // As listas da agenda mostram o nome da mãe: busca de novo, sem esperar o polling.
             CrmController.buscar();
             return { ok: true };
+          } catch (e) {
+            if (e.sessaoExpirada) {
+              AuthController.expirar(e.message);
+              return { ok: false, erro: e.message };
+            }
+            if (!e.amigavel) console.error('[CRM]', e);
+            return { ok: false, erro: _mensagemErro(e) };
+          } finally {
+            _pendentes.delete(chave);
+          }
+        }
+
+        /**
+         * Unir duas famílias (issue #512): `POST /leads/{origem}/unir`. SEM atualização otimista: o que some é
+         * um lead inteiro. Devolve `{ok, erro, resposta}`; o diálogo mostra o erro por dentro e a equipe não
+         * perde a escolha.
+         */
+        async function unirFamilias(origemId, destinoId) {
+          const chave = _chave('unir', origemId, destinoId);
+          if (_pendentes.has(chave)) return { ok: false, erro: 'Já estou unindo estas famílias.' };
+          _pendentes.add(chave);
+          try {
+            const resposta = await ApiClient.post(
+              '/leads/' + encodeURIComponent(origemId) + '/unir',
+              { destinoId },
+            );
+            return { ok: true, resposta };
           } catch (e) {
             if (e.sessaoExpirada) {
               AuthController.expirar(e.message);
@@ -3175,6 +3257,11 @@
 
         /** Delegado a partir de `[data-pospe]` no modal — ver `CrmController.iniciar`. */
         function aoClicarNoLead(botao) {
+          if (botao.dataset.unir) {
+            const doc = CrmState.lead.getDoc();
+            if (doc) UnirDialog.abrir(doc);
+            return;
+          }
           if (botao.dataset.corrigir) {
             const doc = CrmState.lead.getDoc();
             if (doc) CorrigirDadosDialog.abrir(doc, botao.dataset.bebe, botao.dataset.agendamento);
@@ -3225,6 +3312,7 @@
           marcarCompareceu,
           marcarPePaga,
           corrigirDados,
+          unirFamilias,
           enviarPropostaPadrao,
         };
       })();
@@ -3711,6 +3799,216 @@
             else if (botao.dataset.cd === 'confirmar') salvar();
             else if (botao.dataset.cd === 'voltar') voltar();
             else if (!_enviando) fechar();
+          });
+        }
+
+        return { abrir, iniciar };
+      })();
+
+      // ─── UnirDialog ──────────────────────────────────────────────────────
+      // Issue #512 (etapa B da #490): unir duas fichas da MESMA família. Só DOM e a escolha de qual fica; quem
+      // une é `AcoesController.unirFamilias` e quem decide o que vale é o servidor (`functions/unir.js`).
+      // Duas telas: procurar a outra ficha (a busca já mostra o mesmo número com e sem o 9, issue #510) e
+      // conferir, com o que FICA e o que DESAPARECE e um botão para inverter.
+      const UnirDialog = (function () {
+        const _el = (id) => document.getElementById(id);
+        let _aoUnir = null;
+        let _ctx = null; // { doc: ficha aberta, outro: doc escolhido | null, invertido: bool }
+        let _buscaToken = 0;
+        let _enviando = false;
+
+        function _mostrar(etapa) {
+          _el('un-busca').style.display = etapa === 'busca' ? '' : 'none';
+          _el('un-conferir').style.display = etapa === 'conferir' ? '' : 'none';
+        }
+
+        function _erro(mensagem) {
+          const caixa = _el('un-erro');
+          caixa.textContent = mensagem || '';
+          caixa.style.display = mensagem ? 'block' : 'none';
+        }
+
+        /** Quem fica: por padrão a ficha da Alice (com `chatID`); empate = a escolhida. `invertido` troca. */
+        function _papeis() {
+          const aberta = _ctx.doc;
+          const outra = _ctx.outro;
+          const abertaTemChat = !!(aberta.lead && aberta.lead.chatID);
+          const outraTemChat = !!(outra.lead && outra.lead.chatID);
+          const abertaFica = abertaTemChat && !outraTemChat;
+          const fica = (abertaFica ? !_ctx.invertido : _ctx.invertido) ? aberta : outra;
+          return { fica, some: fica === aberta ? outra : aberta };
+        }
+
+        function _cartao(doc, rotulo, classe) {
+          const lead = doc.lead || {};
+          const bebes = (lead.bebes || []).map((b) => esc(ou(b.nome, 'sem nome'))).join(', ');
+          const ags = (lead.agendamentos || []).length;
+          return (
+            '<div class="bebe-card" data-papel="' +
+            classe +
+            '"><div class="bebe-nome">' +
+            esc(rotulo) +
+            '</div><div class="item-sub">' +
+            esc(ou(lead.responsavel && lead.responsavel.nome, 'Sem nome')) +
+            ' · ' +
+            esc(ou(lead.telefone || doc.id)) +
+            '</div><div class="item-sub">👶 ' +
+            (bebes || 'nenhum bebê') +
+            ' · ' +
+            ags +
+            ' agendamento(s)' +
+            (lead.recuperacao && lead.recuperacao.travado ? ' · travado' : '') +
+            '</div></div>'
+          );
+        }
+
+        function _desenharConferencia() {
+          const { fica, some } = _papeis();
+          _el('un-cartoes').innerHTML =
+            _cartao(fica, '✅ Fica', 'fica') +
+            _cartao(some, '🗑️ Desaparece (entra na que fica)', 'some');
+          _erro('');
+          _atualizarBotoes();
+        }
+
+        function _atualizarBotoes() {
+          for (const id of ['un-confirmar', 'un-inverter', 'un-voltar'])
+            _el(id).disabled = _enviando;
+          _el('un-confirmar').textContent = _enviando ? '⏳ Unindo…' : '🔗 Unir as famílias';
+        }
+
+        function _desenharResultados(itens, erro) {
+          const caixa = _el('un-resultados');
+          if (erro) {
+            caixa.innerHTML = '<div class="aviso aviso-erro" role="alert">' + esc(erro) + '</div>';
+            return;
+          }
+          const outros = (itens || []).filter((i) => (i.telefone || i.id) !== _ctx.doc.id);
+          if (!outros.length) {
+            caixa.innerHTML = '<div class="vazio">Nenhuma outra ficha encontrada.</div>';
+            return;
+          }
+          caixa.innerHTML = outros
+            .map(
+              (item) =>
+                '<button type="button" class="busca-item" data-un="escolher" data-id="' +
+                esc(item.telefone || item.id) +
+                '"><div class="busca-item-nome">' +
+                esc(ou(item.nome, 'Sem nome')) +
+                '</div>' +
+                (item.bebeCasado
+                  ? '<div class="busca-item-sub">👶 ' + esc(item.bebeCasado) + '</div>'
+                  : '') +
+                '<div class="busca-item-tel">' +
+                esc(ou(item.telefone)) +
+                '</div></button>',
+            )
+            .join('');
+        }
+
+        async function procurar() {
+          if (!_ctx) return;
+          const ctx = _ctx;
+          const q = _el('un-q').value.trim();
+          if (q.length < BGL_CONST.CRM.MIN_CARACTERES_BUSCA) {
+            _desenharResultados(
+              null,
+              'Digite ao menos ' + BGL_CONST.CRM.MIN_CARACTERES_BUSCA + ' caracteres.',
+            );
+            return;
+          }
+          const token = ++_buscaToken;
+          _el('un-resultados').innerHTML = '<div class="vazio">Procurando…</div>';
+          try {
+            const r = await ApiClient.get('/leads', { view: VIEW.BUSCA, q });
+            if (token !== _buscaToken || _ctx !== ctx) return;
+            _desenharResultados(r.itens || [], null);
+          } catch (e) {
+            if (token !== _buscaToken || _ctx !== ctx) return;
+            if (e.sessaoExpirada) return AuthController.expirar(e.message);
+            _desenharResultados(null, e.amigavel ? e.message : 'Erro inesperado na busca.');
+          }
+        }
+
+        async function escolher(id) {
+          const ctx = _ctx;
+          if (!ctx || !id) return;
+          try {
+            const doc = await ApiClient.get('/leads/' + encodeURIComponent(id));
+            if (_ctx !== ctx) return;
+            ctx.outro = doc;
+            ctx.invertido = false;
+            _mostrar('conferir');
+            _desenharConferencia();
+            _el('un-confirmar').focus();
+          } catch (e) {
+            if (_ctx !== ctx) return;
+            if (e.sessaoExpirada) return AuthController.expirar(e.message);
+            _desenharResultados(null, e.amigavel ? e.message : 'Não consegui abrir essa ficha.');
+          }
+        }
+
+        function abrir(doc) {
+          _ctx = { doc, outro: null, invertido: false };
+          _enviando = false;
+          _buscaToken++;
+          _mostrar('busca');
+          _el('un-resultados').innerHTML = '';
+          _el('un-q').value = (doc.lead && doc.lead.telefone) || doc.id || '';
+          _el('unir-modal').style.display = 'flex';
+          procurar();
+          _el('un-q').focus();
+        }
+
+        function fechar() {
+          _ctx = null;
+          _enviando = false;
+          _buscaToken++;
+          _el('unir-modal').style.display = 'none';
+        }
+
+        async function confirmar() {
+          const ctx = _ctx;
+          if (!ctx || !ctx.outro || _enviando) return;
+          const { fica, some } = _papeis();
+          _enviando = true;
+          _erro('');
+          _atualizarBotoes();
+          const r = await AcoesController.unirFamilias(some.id, fica.id);
+          if (_ctx !== ctx) return;
+          _enviando = false;
+          if (!r.ok) {
+            _erro(r.erro);
+            _atualizarBotoes();
+            return;
+          }
+          fechar();
+          if (_aoUnir) _aoUnir(r.resposta);
+        }
+
+        function iniciar({ aoUnir }) {
+          _aoUnir = aoUnir;
+          _el('un-q').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              procurar();
+            }
+          });
+          _el('unir-modal').addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !_enviando && _ctx) fechar();
+          });
+          _el('unir-modal').addEventListener('click', (e) => {
+            const botao = e.target.closest('[data-un]');
+            if (!botao || botao.disabled) return;
+            const acao = botao.dataset.un;
+            if (acao === 'procurar') procurar();
+            else if (acao === 'escolher') escolher(botao.dataset.id);
+            else if (acao === 'confirmar') confirmar();
+            else if (acao === 'inverter' && _ctx && !_enviando) {
+              _ctx.invertido = !_ctx.invertido;
+              _desenharConferencia();
+            } else if (acao === 'voltar' && _ctx && !_enviando) _mostrar('busca');
+            else if (acao === 'cancelar' && !_enviando) fechar();
           });
         }
 
@@ -6385,6 +6683,18 @@
           );
         }
 
+        /**
+         * 🔗 Unir a outra família (issue #512). Só com a flag de escrita, a flag própria, a permissão do login
+         * (`GET /permissoes`, que já considera a flag do servidor). As regras de quem pode ser unido a quem (chatID,
+         * bebê ativo repetido…) são do servidor: ele recusa com o motivo.
+         */
+        function _botaoUnir(lead) {
+          if (!BGL_CONST.CRM.FLAG_ACOES_ESCRITA) return '';
+          if (!flagLiberada(BGL_CONST.CRM.FLAG_UNIR_FAMILIAS)) return '';
+          if (!CrmState.permissoes.podeUnir()) return '';
+          return '<button type="button" class="btn-acao" data-unir="abrir">🔗 Unir a outra família</button>';
+        }
+
         function _bebe(lead, bebe, telefoneFallback) {
           const agendamentos = _agendamentosDo(lead, bebe.nome);
           const ultimo = agendamentos[0] || {};
@@ -6558,6 +6868,12 @@
           const lead = (resposta && resposta.lead) || {};
           const wpp = LinkBuilder.conversa(lead.telefone || resposta.id);
           const aviso = CrmState.lead.getAviso();
+          const botoes =
+            (wpp
+              ? '<a class="btn-acao" href="' +
+                esc(wpp) +
+                '" target="_blank" rel="noopener">💬 Abrir conversa</a>'
+              : '') + _botaoUnir(lead);
           const bebes = lead.bebes || [];
           const agendamentos = (lead.agendamentos || [])
             .slice()
@@ -6589,11 +6905,7 @@
                   : badge('Reengajável', 'ok')),
             ) +
             '</dl>' +
-            (wpp
-              ? '<div class="acoes"><a class="btn-acao" href="' +
-                esc(wpp) +
-                '" target="_blank" rel="noopener">💬 Abrir conversa</a></div>'
-              : '') +
+            (botoes ? '<div class="acoes">' + botoes + '</div>' : '') +
             '<h3 class="secao-titulo">Bebês (' +
             bebes.length +
             ')</h3>' +
@@ -7287,6 +7599,22 @@
           }
         }
 
+        /**
+         * Depois de unir (issue #512): abre a ficha que ficou, com o resultado como aviso — a planilha que não
+         * gravou nunca chega aqui (a união é recusada antes); o que pode sobrar é a limpeza do histórico.
+         */
+        async function aoUnirFamilias(resposta) {
+          await abrirLead((resposta && resposta.id) || '');
+          const falhou = resposta && resposta.limpeza && resposta.limpeza.ok === false;
+          CrmState.lead.setAviso(
+            falhou
+              ? 'As famílias foram unidas, mas parte do histórico (mensagens, propostas) da ficha antiga não terminou de ser movida. Avise o responsável pelo CRM: repetir a união termina o serviço.'
+              : 'As famílias foram unidas. Confira os dados e os agendamentos desta ficha.',
+          );
+          UIRenderer.renderLead();
+          buscar();
+        }
+
         function atualizarAgora() {
           if (CrmState.ui.getAba() === ABA.BUSCA || CrmState.ui.getAba() === ABA.AJUDA) return;
           buscar();
@@ -7464,6 +7792,7 @@
           PresencaDialog.iniciar();
           PePagaDialog.iniciar();
           CorrigirDadosDialog.iniciar();
+          UnirDialog.iniciar({ aoUnir: aoUnirFamilias });
           // Depois de criar, a agenda atrás do diálogo se atualiza sozinha.
           AgendarDialog.iniciar({ aoCriar: atualizarAgora });
           ReagendarDialog.iniciar({ aoReagendar: atualizarAgora });
@@ -7475,7 +7804,7 @@
           // escrita da agenda, dentro do modal.
           const corpoLead = document.getElementById('lead-modal-body');
           corpoLead.addEventListener('click', (e) => {
-            const botao = e.target.closest('[data-pospe], [data-corrigir]');
+            const botao = e.target.closest('[data-pospe], [data-corrigir], [data-unir]');
             if (botao) AcoesController.aoClicarNoLead(botao);
           });
           corpoLead.addEventListener('input', (e) => {

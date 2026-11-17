@@ -6,7 +6,7 @@
 // Nunca commite sem rodar: npm run lint && npm test
 
 const BGL_CONST = {
-  APP_VERSION: '3.42',
+  APP_VERSION: '3.43',
   APP_DATE: '2026-11-17',
   PLANO: {
     ANUAL: 'anual',
@@ -229,5 +229,13 @@ const BGL_CONST = {
      * Liberado para todos na 3.35 (issue #473). Rollback do botão: voltar para `false` (ou `'hml'`).
      */
     FLAG_REAGENDAR_TELA: true,
+    /**
+     * Botão "🔗 Unir a outra família" no detalhe do lead (issue #512, etapa B da #490). Flag PRÓPRIA: unir
+     * apaga um lead e reescreve linhas da planilha mestre, e o rollback tem de ser independente.
+     * Valores: `false` = ninguém vê · `'hml'` = só a tela servida em `/hml/` (nasce assim) · `true` = todos.
+     * Também exige `FLAG_ACOES_ESCRITA`, `BGL_UNIR_FAMILIAS` no servidor e a permissão do login
+     * (`GET /permissoes` → `unir`, doc `config_servidor/crm`, `docs/COMANDOS.md`).
+     */
+    FLAG_UNIR_FAMILIAS: 'hml',
   },
 };

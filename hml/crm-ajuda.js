@@ -334,6 +334,27 @@ const BGL_CRM_AJUDA = {
       `,
     },
     {
+      id: 'unir-familias',
+      titulo: 'Unir duas fichas da mesma família',
+      desde: '3.43',
+      html: `
+        <p>A mesma mãe aparece em <b>duas fichas</b>? Acontece quando o número foi escrito com e sem o 9º dígito: a Alice cadastra uma ficha e a equipe, outra. No detalhe de uma delas, clique em <b>🔗 Unir a outra família</b>. O botão só aparece para quem a configuração autoriza (hoje, o Michel e a conta do estúdio).</p>
+        <ol>
+          <li>A tela procura sozinha pelo telefone da ficha aberta. Clique na <b>outra</b> ficha da lista (se ela não apareceu, mude o texto e clique em <b>Procurar</b>).</li>
+          <li>A tela mostra <b>✅ Fica</b> e <b>🗑️ Desaparece</b>. Por padrão fica a ficha da Alice (a que tem conversa do WhatsApp). O botão <b>⇄ Inverter</b> troca os papéis.</li>
+          <li>Confira e clique em <b>🔗 Unir as famílias</b>. Nada muda antes desse clique.</li>
+        </ol>
+        <ul>
+          <li><b>O que entra na ficha que fica:</b> agendamentos, bebês, mensagens enviadas, propostas e o histórico de quem mexeu. Se o bebê é o mesmo nas duas, os dados dele se completam.</li>
+          <li><b>O que vale:</b> nome, e-mail e "como chegou" da ficha que <b>fica</b>. Os da outra só entram se a que fica estiver com o campo vazio.</li>
+          <li><b>Lead travado:</b> se qualquer uma das fichas estava travada, a união fica travada (a comissão não se perde).</li>
+          <li><b>A planilha acompanha:</b> as linhas da ficha antiga ganham o telefone e os dados da ficha que fica, para a planilha não recriar a ficha antiga.</li>
+          <li><b>Não dá para desfazer pela tela.</b> Confira antes de confirmar.</li>
+        </ul>
+        <div class="aviso aviso-info"><b>Quando a tela recusa:</b> a ficha que desaparece tem conversa própria do WhatsApp (inverta); o mesmo bebê tem agendamento ativo nas duas (cancele ou reagende um deles antes); uma linha antiga está sem identificação; ou a planilha não aceitou a alteração (nada é unido; tente de novo).</div>
+      `,
+    },
+    {
       id: 'semana-mes',
       titulo: 'Semana e Mês',
       desde: '3.8',
@@ -568,6 +589,18 @@ const BGL_CRM_AJUDA = {
   // reconstruídas do histórico do git (o que entrou entre um bump de
   // `APP_VERSION` e o seguinte).
   novidades: [
+    {
+      versao: '3.43',
+      data: '2026-11-17',
+      mudancas: {
+        adicionado: [
+          'No detalhe do lead, o botão 🔗 Unir a outra família junta duas fichas da mesma mãe (por exemplo, o mesmo número com e sem o 9º dígito). Os agendamentos, bebês, mensagens e propostas vão para a ficha que fica, e a planilha acompanha. Só aparece para quem a configuração autoriza.',
+        ],
+        alterado: [],
+        corrigido: [],
+        removido: [],
+      },
+    },
     {
       versao: '3.42',
       data: '2026-11-17',
