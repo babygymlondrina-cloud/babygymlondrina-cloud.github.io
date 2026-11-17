@@ -4461,6 +4461,9 @@
                     esc(ou(i.nome, 'Sem nome')) +
                     '</div><div class="ag-candidato-info">' +
                     esc(ou(i.telefone, 'sem telefone')) +
+                    (i.telefoneParecido
+                      ? ' · <b class="ag-parecido">mesmo número, com ou sem o 9º dígito</b>'
+                      : '') +
                     (i.bebeCasado ? ' · bebê ' + esc(i.bebeCasado) : '') +
                     (i.turma ? ' · ' + esc(i.turma) : '') +
                     '</div></div><button type="button" class="btn-acao" data-ag="usar" data-ag-id="' +
